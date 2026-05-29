@@ -118,6 +118,13 @@ Durable project rules:
 .agents/review-rules/rejected-review-rules.md
 ```
 
+If these durable rule files do not exist in the reviewed repository, initialise them from this skill's bundled defaults:
+
+```text
+references/review-rules/project-review-rules.md
+references/review-rules/rejected-review-rules.md
+```
+
 ## Session bootstrap
 
 Resolve base ref using the invocation contract. Then determine the merge-base commit:
@@ -260,7 +267,7 @@ stop
 
 If the human replies with bare `y`, `n`, `change`, `gen`, `skip`, or `clarify` while multiple cards are active, do not guess. Ask which card the response applies to and repeat the batch menu.
 
-Every candidate rule, similarity sweep, fix plan, and final report must also end with explicit options. Use `templates/reply-menu.md` as the canonical menu.
+Every candidate rule, similarity sweep, fix plan, and final report must also end with explicit options. Use the menus in this skill and the role-specific skills as the canonical command set.
 
 Recognise these canonical commands and aliases:
 

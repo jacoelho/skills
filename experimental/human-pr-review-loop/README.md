@@ -65,7 +65,28 @@ The workflow turns review into a loop:
 
 The review state is local and auditable. It is intentionally boring: Markdown, JSONL, and normal git output.
 
-## Directory model
+## Pack layout
+
+Skill directories live directly under this folder:
+
+```text
+human-pr-review-loop/
+  pr-human-review/
+  pr-review-diff-cartographer/
+  pr-review-card-questioner/
+  pr-review-feedback-generalizer/
+  pr-review-similarity-sweeper/
+  pr-review-fix-applier/
+  pr-review-verifier-reporter/
+```
+
+Default review-rule seeds belong to the main skill:
+
+```text
+pr-human-review/references/review-rules/
+```
+
+## Runtime directory model
 
 The main skill creates this structure inside the reviewed repository:
 
@@ -102,9 +123,11 @@ Reusable, accepted rules can be promoted into:
 .agents/review-rules/rejected-review-rules.md
 ```
 
+If those files do not exist, `pr-human-review` seeds them from `pr-human-review/references/review-rules/`.
+
 ## How to use with a skill-aware agent
 
-Copy `.agents/skills/` and `.agents/review-rules/` into a repository.
+Copy the skill directories into the agent's skill location or expose this folder as a skill source. No pack-level `.agents/` directory is required.
 
 Then invoke:
 
@@ -124,7 +147,7 @@ For an exact base ref or commit:
 pr-human-review --base=abc1234
 ```
 
-The older long-form bootstrap text is no longer the normal path. It remains only as a fallback in `prompts/single-prompt.md` for agents that do not support named skills.
+Named skills are the supported path. There is no separate long-form bootstrap prompt.
 
 ## Human response menus
 
