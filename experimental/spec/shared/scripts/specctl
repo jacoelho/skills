@@ -1,0 +1,626 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import re
+import shutil
+import sys
+from pathlib import Path
+
+
+ROOT = Path("spec")
+SPECS = ROOT / "specs"
+CHANGES = ROOT / "changes"
+ARCHIVE = CHANGES / "archive"
+
+CHANGE_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CHECKBOX_TASK_RE = re.compile(r"(?m)^- \[[ xX]\] (?:\d+\.\d+|TASK-\d+)\b")
+DONE_CHECKBOX_TASK_RE = re.compile(r"(?m)^- \[[xX]\] (?:\d+\.\d+|TASK-\d+)\b")
+TASK_HEADING_RE = re.compile(r"(?m)^### (TASK-\d+): .+")
+DONE_STATUS_RE = re.compile(r"(?mi)^Status:\s*(?:completed|complete|done|x)\s*$")
+SECTION_RE = re.compile(r"(?m)^## (ADDED|MODIFIED|REMOVED|RENAMED) Requirements\s*$")
+REQ_RE = re.compile(r"(?m)^### Requirement: .+\s*$")
+SCENARIO_RE = re.compile(r"(?m)^#### Scenario: .+\s*$")
+REPLACE_WITH_RE = re.compile(r"(?mi)^\s*Replace with:\s*$")
+
+
+def fail(message: str, code: int = 1) -> int:
+    print(f"ERROR: {message}", file=sys.stderr)
+    return code
+
+
+def valid_change_id(change_id: str) -> bool:
+    return bool(CHANGE_RE.fullmatch(change_id))
+
+
+def read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text.rstrip() + "\n", encoding="utf-8")
+
+
+def write_if_missing(path: Path, text: str) -> bool:
+    if path.exists():
+        return False
+    write(path, text)
+    return True
+
+
+def ensure_base() -> None:
+    SPECS.mkdir(parents=True, exist_ok=True)
+    ARCHIVE.mkdir(parents=True, exist_ok=True)
+
+
+def command_init(_: argparse.Namespace) -> int:
+    ensure_base()
+    config = ROOT / "config.yaml"
+    if not config.exists():
+        write(config, "schema: spec-driven\n")
+    print(ROOT)
+    return 0
+
+
+def command_new(args: argparse.Namespace) -> int:
+    change_id = args.change_id
+    if not valid_change_id(change_id):
+        return fail("change-id must be kebab-case: lowercase letters, digits, single hyphens", 2)
+    if not valid_change_id(args.schema):
+        return fail("schema must be a schema name such as spec-driven, not a file path", 2)
+
+    ensure_base()
+    root = CHANGES / change_id
+    if root.exists() and not root.is_dir():
+        return fail(f"change path exists and is not a directory: {root}")
+
+    (root / "specs").mkdir(parents=True, exist_ok=True)
+    write_if_missing(
+        root / ".spec.yaml",
+        f"schema: {args.schema}\ncreated: {dt.date.today().isoformat()}\n",
+    )
+    write_if_missing(
+        root / "proposal.md",
+        """## Why
+
+<!-- Problem or opportunity. Why now? -->
+
+## What Changes
+
+<!-- Specific new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**. -->
+
+## Capabilities
+
+### New Capabilities
+<!-- Each item needs specs/<capability>/spec.md. Use kebab-case. -->
+- `<capability>`: <brief description>
+
+### Modified Capabilities
+<!-- Existing spec-level behavior changes. Use names from spec/specs/. Leave empty if none. -->
+
+## Impact
+
+<!-- Affected code, APIs, dependencies, data, validation, docs. -->
+""",
+    )
+    write_if_missing(
+        root / "design.md",
+        """## Context
+
+<!-- Background, current state, constraints. -->
+
+## Goals / Non-Goals
+
+**Goals:**
+
+**Non-Goals:**
+
+## Decisions
+
+<!-- Key technical choices and rationale. -->
+
+## Risks / Trade-offs
+
+<!-- Risk -> mitigation. -->
+
+## Migration Plan
+
+<!-- Deployment, rollback, data migration if applicable. -->
+
+## Open Questions
+
+<!-- Only unresolved decisions that affect implementation. -->
+""",
+    )
+    write_if_missing(
+        root / "tasks.md",
+        """## 1. Planning
+
+- [ ] 1.1 Replace placeholder tasks with implementation tasks.
+
+## 2. Validation
+
+- [ ] 2.1 Run validation appropriate for changed files.
+""",
+    )
+    print(root)
+    return 0
+
+
+def task_counts(path: Path) -> tuple[int, int]:
+    if not path.exists():
+        return (0, 0)
+    text = read(path)
+    checkbox_total = len(CHECKBOX_TASK_RE.findall(text))
+    if checkbox_total:
+        return (len(DONE_CHECKBOX_TASK_RE.findall(text)), checkbox_total)
+
+    matches = list(TASK_HEADING_RE.finditer(text))
+    done = 0
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        if DONE_STATUS_RE.search(text[match.end() : end]):
+            done += 1
+    return (done, len(matches))
+
+
+def spec_files(change: Path) -> list[Path]:
+    return sorted((change / "specs").glob("*/spec.md"))
+
+
+def artifact_status(change: Path) -> list[dict[str, str]]:
+    proposal_done = (change / "proposal.md").is_file()
+    specs_done = bool(spec_files(change))
+    design_done = (change / "design.md").is_file()
+    tasks_done = (change / "tasks.md").is_file()
+    task_done_count, task_total = task_counts(change / "tasks.md")
+    if tasks_done and task_total == 0:
+        tasks_status = "blocked"
+    elif tasks_done and task_done_count != task_total:
+        tasks_status = "in_progress"
+    elif tasks_done:
+        tasks_status = "done"
+    else:
+        tasks_status = "ready" if specs_done and design_done else "blocked"
+    return [
+        {"id": "proposal", "status": "done" if proposal_done else "ready", "path": str(change / "proposal.md")},
+        {"id": "specs", "status": "done" if specs_done else ("ready" if proposal_done else "blocked"), "path": str(change / "specs")},
+        {"id": "design", "status": "done" if design_done else ("ready" if proposal_done else "blocked"), "path": str(change / "design.md")},
+        {"id": "tasks", "status": tasks_status, "path": str(change / "tasks.md")},
+    ]
+
+
+def change_status(change: Path) -> dict[str, object]:
+    done, total = task_counts(change / "tasks.md")
+    specs = spec_files(change)
+    return {
+        "id": change.name,
+        "schemaName": read_schema(change),
+        "planningHome": {
+            "root": str(ROOT),
+            "specsDir": str(SPECS),
+            "changesDir": str(CHANGES),
+        },
+        "changeRoot": str(change),
+        "artifactPaths": {
+            "proposal": {"existingOutputPaths": [str(change / "proposal.md")] if (change / "proposal.md").exists() else []},
+            "design": {"existingOutputPaths": [str(change / "design.md")] if (change / "design.md").exists() else []},
+            "tasks": {"existingOutputPaths": [str(change / "tasks.md")] if (change / "tasks.md").exists() else []},
+            "specs": {"existingOutputPaths": [str(path) for path in specs]},
+        },
+        "applyRequires": ["tasks"],
+        "artifacts": artifact_status(change),
+        "tasks": {"done": done, "total": total},
+    }
+
+
+def read_schema(change: Path) -> str:
+    meta = change / ".spec.yaml"
+    if not meta.exists():
+        return "spec-driven"
+    for line in read(meta).splitlines():
+        if line.startswith("schema:"):
+            value = line.split(":", 1)[1].strip() or "spec-driven"
+            return value if valid_change_id(value) else "spec-driven"
+    return "spec-driven"
+
+
+def list_active_changes() -> list[Path]:
+    if not CHANGES.exists():
+        return []
+    return sorted(path for path in CHANGES.iterdir() if path.is_dir() and path.name != "archive")
+
+
+def command_status(args: argparse.Namespace) -> int:
+    active = list_active_changes()
+    archived = []
+    if ARCHIVE.exists():
+        archived = [path.name for path in sorted(ARCHIVE.iterdir()) if path.is_dir()]
+
+    if args.change_id:
+        change = CHANGES / args.change_id
+        if not change.is_dir():
+            return fail(f"missing change directory: {change}")
+        payload: object = change_status(change)
+    else:
+        payload = {
+            "active": [change_status(change) for change in active],
+            "archived": archived,
+        }
+
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        if args.change_id:
+            item = payload  # type: ignore[assignment]
+            print_change_summary(item)  # type: ignore[arg-type]
+        else:
+            data = payload  # type: ignore[assignment]
+            for item in data["active"]:  # type: ignore[index]
+                print_change_summary(item)
+            if not data["active"]:  # type: ignore[index]
+                print("No active changes.")
+    return 0
+
+
+def print_change_summary(item: dict[str, object]) -> None:
+    tasks = item["tasks"]  # type: ignore[index]
+    print(f"{item['id']} ({item['schemaName']}): {tasks['done']}/{tasks['total']} tasks")  # type: ignore[index]
+    for artifact in item["artifacts"]:  # type: ignore[index]
+        print(f"  {artifact['id']}: {artifact['status']} - {artifact['path']}")  # type: ignore[index]
+
+
+def requirement_blocks(text: str) -> dict[str, str]:
+    matches = list(REQ_RE.finditer(text))
+    blocks: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        start = match.start()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        block = text[start:end].strip()
+        header = match.group(0).strip()
+        blocks[header] = block
+    return blocks
+
+
+def split_delta_sections(text: str) -> dict[str, str]:
+    matches = list(SECTION_RE.finditer(text))
+    sections: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        sections[match.group(1)] = text[start:end].strip()
+    return sections
+
+
+def validate_change(change: Path, *, require_current_refs: bool = True) -> list[str]:
+    errors: list[str] = []
+    if not change.is_dir():
+        return [f"missing change directory: {change}"]
+
+    for name in ["proposal.md", "tasks.md"]:
+        path = change / name
+        if not path.is_file():
+            errors.append(f"missing {path}")
+        elif "<!--" in read(path):
+            errors.append(f"{path} still contains template comments")
+
+    if not (change / ".spec.yaml").is_file():
+        errors.append(f"missing {change / '.spec.yaml'}")
+
+    proposal = change / "proposal.md"
+    if proposal.exists():
+        text = read(proposal)
+        simple_sections = ["## Why", "## What Changes", "## Capabilities", "## Impact"]
+        brownfield_sections = [
+            "## Summary",
+            "## Problem",
+            "## Current behaviour",
+            "## Proposed behaviour",
+            "## Non-goals",
+            "## Compatibility",
+            "## Risk level",
+            "## Affected specs",
+            "## Validation strategy",
+        ]
+        simple_ok = all(section in text for section in simple_sections)
+        brownfield_ok = all(section in text for section in brownfield_sections)
+        if not simple_ok and not brownfield_ok:
+            errors.append(
+                f"{proposal} must use either standard sections ({', '.join(simple_sections)}) "
+                f"or brownfield sections ({', '.join(brownfield_sections)})"
+            )
+
+    meta = change / ".spec.yaml"
+    if meta.exists():
+        schema = read_schema(change)
+        raw_schema = ""
+        for line in read(meta).splitlines():
+            if line.startswith("schema:"):
+                raw_schema = line.split(":", 1)[1].strip()
+                break
+        if raw_schema and raw_schema != schema:
+            errors.append(f"{meta} schema must be a name such as spec-driven, not {raw_schema}")
+
+    tasks = change / "tasks.md"
+    if tasks.exists():
+        task_text = read(tasks)
+        if not CHECKBOX_TASK_RE.search(task_text) and not TASK_HEADING_RE.search(task_text):
+            errors.append(f"{tasks} has no trackable checkbox or TASK-* tasks")
+
+    specs = spec_files(change)
+    if not specs:
+        errors.append(f"missing delta specs under {change / 'specs'}")
+
+    for spec in specs:
+        errors.extend(validate_delta_spec(spec, require_current_refs=require_current_refs))
+
+    return errors
+
+
+def validate_delta_spec(path: Path, *, require_current_refs: bool = True) -> list[str]:
+    errors: list[str] = []
+    text = read(path)
+    if "<!--" in text:
+        errors.append(f"{path} still contains template comments")
+    if REPLACE_WITH_RE.search(text):
+        errors.append(f"{path} contains literal Replace with: marker")
+    sections = split_delta_sections(text)
+    if not sections:
+        errors.append(f"{path} has no delta requirement section")
+    headers_seen: set[str] = set()
+    capability = path.parent.name
+    current_spec = SPECS / capability / "spec.md"
+    current_blocks = requirement_blocks(read(current_spec)) if current_spec.exists() else {}
+    for kind, body in sections.items():
+        if kind == "RENAMED":
+            if "FROM:" not in body or "TO:" not in body:
+                errors.append(f"{path} RENAMED section must include FROM: and TO:")
+                continue
+            renames = parse_renames(body)
+            if not renames:
+                errors.append(f"{path} RENAMED section has no complete FROM:/TO: pair")
+            if require_current_refs:
+                for old, _new in renames:
+                    if old not in current_blocks:
+                        errors.append(f"{path} cannot rename missing current requirement: {old}")
+            continue
+        blocks = requirement_blocks(body)
+        if not blocks:
+            errors.append(f"{path} empty {kind} section")
+            continue
+        for header, block in blocks.items():
+            requirement_name = header.removeprefix("### Requirement:").strip().lower()
+            if requirement_name in {"none", "n/a", "na", "not applicable", "<name>", "<existing requirement name>"}:
+                errors.append(f"{path} contains placeholder requirement header: {header}")
+            if header in headers_seen:
+                errors.append(f"{path} duplicate requirement header: {header}")
+            headers_seen.add(header)
+            if kind != "REMOVED" and not SCENARIO_RE.search(block):
+                line = text[: text.find(header)].count("\n") + 1
+                errors.append(f"{path} requirement at line {line} has no #### Scenario")
+            if kind == "REMOVED" and "Reason" not in block:
+                errors.append(f"{path} removed requirement lacks reason: {header}")
+            if require_current_refs and kind in {"MODIFIED", "REMOVED"} and header not in current_blocks:
+                verb = "modify" if kind == "MODIFIED" else "remove"
+                errors.append(f"{path} cannot {verb} missing current requirement: {header}")
+    return errors
+
+
+def command_validate(args: argparse.Namespace) -> int:
+    errors = validate_change(CHANGES / args.change_id)
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    print(f"OK: {args.change_id}")
+    return 0
+
+
+def canonical_requirement(value: str) -> str:
+    value = value.strip().strip("`")
+    if value.startswith("### Requirement:"):
+        return value.strip()
+    return f"### Requirement: {value}"
+
+
+def parse_renames(body: str) -> list[tuple[str, str]]:
+    renames: list[tuple[str, str]] = []
+    from_value: str | None = None
+    for line in body.splitlines():
+        stripped = line.strip()
+        if "FROM:" in stripped:
+            from_value = canonical_requirement(stripped.split("FROM:", 1)[1].strip())
+        elif "TO:" in stripped and from_value:
+            to_value = canonical_requirement(stripped.split("TO:", 1)[1].strip())
+            renames.append((from_value, to_value))
+            from_value = None
+    return renames
+
+
+def remove_requirement(text: str, header: str) -> tuple[str, bool]:
+    blocks = requirement_blocks(text)
+    block = blocks.get(header)
+    if not block:
+        return text, False
+    return text.replace(block, "").replace("\n\n\n", "\n\n"), True
+
+
+def replace_requirement(text: str, header: str, new_block: str) -> tuple[str, bool]:
+    blocks = requirement_blocks(text)
+    block = blocks.get(header)
+    if not block:
+        return text, False
+    return text.replace(block, new_block.strip()), True
+
+
+def clean_requirement_block(block: str) -> str:
+    lines = block.strip().splitlines()
+    cleaned: list[str] = []
+    skipped = False
+    for line in lines:
+        if not skipped and line.strip() == "Replace with:":
+            skipped = True
+            continue
+        cleaned.append(line)
+    return "\n".join(cleaned).strip()
+
+
+def append_requirement(text: str, block: str, title: str) -> str:
+    block = clean_requirement_block(block)
+    text = text.strip()
+    if not text:
+        return f"# {title} Specification\n\n## Purpose\n\nTBD.\n\n## Requirements\n\n{block.strip()}\n"
+    if "## Requirements" not in text:
+        return f"{text}\n\n## Requirements\n\n{block.strip()}\n"
+    return f"{text.rstrip()}\n\n{block.strip()}\n"
+
+
+def sync_change(change_id: str, *, dry_run: bool = False) -> tuple[list[str], list[str]]:
+    change = CHANGES / change_id
+    errors = validate_change(change)
+    if errors:
+        return ([], errors)
+
+    summaries: list[str] = []
+    for delta in spec_files(change):
+        capability = delta.parent.name
+        main = SPECS / capability / "spec.md"
+        main_text = read(main) if main.exists() else ""
+        sections = split_delta_sections(read(delta))
+        changed: list[str] = []
+
+        for old, new in parse_renames(sections.get("RENAMED", "")):
+            if old not in requirement_blocks(main_text):
+                errors.append(f"{delta}: cannot rename missing requirement {old}")
+                continue
+            main_text = main_text.replace(old, new, 1)
+            changed.append(f"renamed {old} -> {new}")
+
+        for header, _block in requirement_blocks(sections.get("REMOVED", "")).items():
+            main_text, ok = remove_requirement(main_text, header)
+            if not ok:
+                errors.append(f"{delta}: cannot remove missing requirement {header}")
+            else:
+                changed.append(f"removed {header}")
+
+        for header, block in requirement_blocks(sections.get("MODIFIED", "")).items():
+            main_text, ok = replace_requirement(main_text, header, clean_requirement_block(block))
+            if not ok:
+                errors.append(f"{delta}: cannot modify missing requirement {header}")
+            else:
+                changed.append(f"modified {header}")
+
+        for header, block in requirement_blocks(sections.get("ADDED", "")).items():
+            if header in requirement_blocks(main_text):
+                main_text, _ = replace_requirement(main_text, header, clean_requirement_block(block))
+                changed.append(f"updated existing {header}")
+            else:
+                main_text = append_requirement(main_text, block, capability.replace("-", " ").title())
+                changed.append(f"added {header}")
+
+        if errors:
+            continue
+        if changed:
+            if not dry_run:
+                write(main, main_text)
+            displayed = [f"would {item}" for item in changed] if dry_run else changed
+            summaries.append(f"{capability}: " + "; ".join(displayed))
+        else:
+            summaries.append(f"{capability}: no changes")
+
+    return summaries, errors
+
+
+def command_sync(args: argparse.Namespace) -> int:
+    summaries, errors = sync_change(args.change_id, dry_run=args.dry_run)
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    for summary in summaries:
+        print(summary)
+    if not summaries:
+        print("No delta specs.")
+    return 0
+
+
+def command_archive(args: argparse.Namespace) -> int:
+    change = CHANGES / args.change_id
+    if not change.is_dir():
+        return fail(f"missing active change: {change}")
+
+    if not args.no_validate:
+        errors = validate_change(change, require_current_refs=not args.skip_sync)
+        if errors:
+            for error in errors:
+                print(f"ERROR: {error}", file=sys.stderr)
+            return 1
+
+    done, total = task_counts(change / "tasks.md")
+    if total and done != total and not args.yes:
+        return fail(f"{total - done} incomplete task(s); pass --yes to archive anyway", 3)
+
+    if not args.skip_sync:
+        summaries, errors = sync_change(args.change_id)
+        if errors:
+            for error in errors:
+                print(f"ERROR: {error}", file=sys.stderr)
+            return 1
+        for summary in summaries:
+            print(summary)
+
+    archive_root = ARCHIVE
+    archive_root.mkdir(parents=True, exist_ok=True)
+    target = archive_root / f"{dt.date.today().isoformat()}-{args.change_id}"
+    if target.exists():
+        return fail(f"archive already exists: {target}")
+    shutil.move(str(change), str(target))
+    print(target)
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="specctl")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    init = sub.add_parser("init")
+    init.set_defaults(func=command_init)
+
+    new = sub.add_parser("new")
+    new.add_argument("change_id")
+    new.add_argument("--schema", default="spec-driven")
+    new.set_defaults(func=command_new)
+
+    status = sub.add_parser("status")
+    status.add_argument("change_id", nargs="?")
+    status.add_argument("--json", action="store_true")
+    status.set_defaults(func=command_status)
+
+    validate = sub.add_parser("validate")
+    validate.add_argument("change_id")
+    validate.set_defaults(func=command_validate)
+
+    sync = sub.add_parser("sync")
+    sync.add_argument("change_id")
+    sync.add_argument("--dry-run", action="store_true")
+    sync.set_defaults(func=command_sync)
+
+    archive = sub.add_parser("archive")
+    archive.add_argument("change_id")
+    archive.add_argument("--yes", "-y", action="store_true")
+    archive.add_argument("--skip-sync", action="store_true")
+    archive.add_argument("--no-validate", action="store_true")
+    archive.set_defaults(func=command_archive)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
