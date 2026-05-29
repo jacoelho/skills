@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Card Questioner"
+  short_description: "Create focused PR review cards"
+  default_prompt: "Use $pr-review-card-questioner to turn this risk cluster into focused human review cards."

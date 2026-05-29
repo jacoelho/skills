@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Feedback Generalizer"
+  short_description: "Generalise PR review feedback"
+  default_prompt: "Use $pr-review-feedback-generalizer to convert this reviewer feedback into scoped findings and candidate rules."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Diff Cartographer"
+  short_description: "Map PR diffs into risk clusters"
+  default_prompt: "Use $pr-review-diff-cartographer to map this branch diff into risk clusters and review-card candidates."

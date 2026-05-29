@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Verifier Reporter"
+  short_description: "Verify PR review session state"
+  default_prompt: "Use $pr-review-verifier-reporter to verify this review session and write the final report."
