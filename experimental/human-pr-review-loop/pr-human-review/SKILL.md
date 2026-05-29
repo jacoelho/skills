@@ -1,6 +1,6 @@
 ---
 name: pr-human-review
-description: Run a local human-in-the-loop PR or branch review. Use when Codex should inspect the current git branch against a base ref, create auditable review state, show focused review cards, capture human feedback, generalise approved feedback into scoped rules, apply only explicitly approved fixes, and produce a final review report.
+description: Run a local human-in-the-loop PR or branch review. Use when Codex should inspect the current git branch against a base ref, create auditable review state, ask focused review questions one at a time, capture human feedback, generalise approved feedback into scoped rules, apply only explicitly approved fixes, and produce a final review report.
 ---
 
 # PR Human Review
@@ -56,11 +56,11 @@ When this skill is invoked, immediately do the following unless the human explic
 4. Determine the current branch with `git rev-parse --abbrev-ref HEAD`.
 5. Create or reuse local state under `.agents/reviews/`.
 6. Build the diff map and risk register.
-7. Show the first batch of highest-risk review cards.
-8. End the card batch with a visible `How to answer` menu.
+7. Show the highest-risk review card as one interactive question.
+8. End the question with visible answer options.
 9. Do not patch code until the human explicitly approves a fix.
 
-The first human-facing result after startup should normally be review cards, not a broad explanation of the workflow.
+The first human-facing result after startup should normally be one review question, not a broad explanation of the workflow.
 
 ## Prompt discipline
 
@@ -70,7 +70,7 @@ The first human-facing result after startup should normally be review cards, not
 - Keep large diffs, command output, and generated artifacts in session files. Pass paths plus focused snippets to subagents instead of pasting full artifacts into the parent context.
 - Do not run or paste broad repository listings such as plain `rg --files`, `find .`, or full `git ls-files` unless the changed-file evidence proves it is needed. Start from changed files and use targeted related-file reads.
 - Prefer subagents for role-specific analysis when available so the parent context keeps only orchestration state, human decisions, and concise summaries.
-- Ask for one human decision per card. In batches, make each card independently answerable.
+- Ask one human question at a time by default. Do not show a multi-card wall unless the human asks for `batch`.
 - Do not ask for chain-of-thought or hidden reasoning. Ask for conclusions, evidence, commands run, and unresolved uncertainty.
 - Explain major tool use briefly before running it, then record results in session files before asking the next question.
 
@@ -82,7 +82,7 @@ The review is an interactive loop:
 
 1. Map the diff.
 2. Categorise risk.
-3. Ask the human focused questions using small review cards.
+3. Ask the human focused questions one at a time using small review cards.
 4. Capture feedback.
 5. Convert feedback into scoped candidate rules.
 6. Search for similar cases.
@@ -291,9 +291,44 @@ Delegation boundaries:
 
 If subagents are unavailable or current policy requires explicit user permission before delegation, execute those roles yourself using the corresponding skill instructions and the same file-backed boundaries.
 
+## Interactive question mode
+
+Default to `interactive-single` mode:
+
+- Show one card or one follow-up question at a time.
+- Keep full evidence in the card file and session artifacts.
+- Human-facing output should be compact: ID, risk, files, one-sentence reason, exact question, and answer options.
+- Do not paste full snippets, full context, or multiple cards unless the human chooses `more`, `batch`, or `final report`.
+- After each answer, update session files, then ask the next unresolved highest-risk card.
+
+If the host exposes a structured user-input tool with choice buttons/select boxes and free text, use it for every human decision. Ask one short question. Prefer three primary choices:
+
+```text
+Accept / OK
+Needs change
+Need more context
+```
+
+Use the free-text or Other field for less-common commands such as `reject: <reason>`, `skip: <reason>`, `gen: <scope>`, `more`, `batch`, `stop`, or detailed change instructions. If the selected choice needs detail and none was provided, ask one follow-up free-text question.
+
+If structured input is unavailable, use this compact fallback:
+
+```text
+R-0001 [medium] <short title>
+Files: <path:line>, <path:line>
+Question: <one exact question>
+
+Answer:
+- `y` - accept / OK
+- `change: <instruction>` - needs change
+- `clarify: <question>` - need more context
+- `more` - show evidence
+- `skip: <reason>` / `n: <reason>` / `gen: <scope>` / `stop`
+```
+
 ## Review loop
 
-Show 3-5 review cards at a time. Prioritise:
+Queue review cards by priority, then ask them one at a time. Prioritise:
 
 1. Critical risk.
 2. High risk.
@@ -302,7 +337,9 @@ Show 3-5 review cards at a time. Prioritise:
 5. Repeated patterns.
 6. Medium and low risk.
 
-After showing cards, always include a compact reply menu. The human should never have to infer the command syntax.
+After showing a card, always include compact answer options. The human should never have to infer the command syntax.
+
+Batch mode is opt-in. If the human says `batch`, `show batch`, or `show 3-5`, show 3-5 cards and require card IDs or visible numbers in replies.
 
 ## Human response protocol
 
@@ -348,13 +385,21 @@ Recognise these canonical commands and aliases:
 
 ```text
 accept R-0001                         # alias: R-0001 y, 1 y
+accept                                # single-card alias: y, yes
 reject R-0001: <reason>               # alias: R-0001 n: <reason>
+reject: <reason>                      # single-card alias: n: <reason>
 needs-change R-0001: <instruction>    # alias: R-0001 change: <instruction>
+change: <instruction>                 # single-card alias
 generalise R-0001: <scope/instruction># alias: R-0001 gen: <scope/instruction>
+gen: <scope/instruction>              # single-card alias
 skip R-0001: <reason>
+skip: <reason>                        # single-card alias
 clarify R-0001: <question>            # alias: R-0001 clarify: <question>
+clarify: <question>                   # single-card alias
 all y                                 # accept all cards in the current visible batch
 more R-0001                           # show more context
+more                                  # show more context for the active single card
+batch                                 # show the next 3-5 queued cards
 show next                             # alias: next
 focus <file/category>
 change-base <ref>
@@ -388,9 +433,9 @@ Each card must include:
 - Test or verification evidence.
 - Possible similar areas.
 - Suggested feedback commands and aliases.
-- A visible `How to answer` section after every card or batch.
+- A visible `How to answer` section in the card file.
 
-When writing card files under `cards/`, include the `How to answer` section in the file itself, not only in the human-facing response.
+When writing card files under `cards/`, include the full `How to answer` section in the file itself. The human-facing prompt may use the compact interactive form instead of repeating the full card.
 
 Bad card:
 
