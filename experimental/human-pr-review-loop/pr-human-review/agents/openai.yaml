@@ -1,4 +1,4 @@
 interface:
   display_name: "PR Human Review"
   short_description: "Human review loop for branch PRs"
-  default_prompt: "Use $pr-human-review to review the current branch against origin/main with human review cards."
+  default_prompt: "Use $pr-human-review to review the current branch against origin/main, asking one interactive review question at a time."

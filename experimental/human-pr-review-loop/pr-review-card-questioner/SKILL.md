@@ -1,6 +1,6 @@
 ---
 name: pr-review-card-questioner
-description: Create focused human review cards from a PR risk cluster. Use when Codex has a diff map, risk register, snippets, or feedback and needs small decision-oriented cards with exact questions, evidence, context, and reply menus.
+description: Create focused human review cards from a PR risk cluster. Use when Codex has a diff map, risk register, snippets, or feedback and needs small decision-oriented cards with exact questions, evidence, context, and one-at-a-time interactive reply prompts.
 ---
 
 # PR Review Card Questioner
@@ -53,13 +53,25 @@ Bad card questions:
 - Please review this diff.
 - Are there any bugs here?
 
-## Reply menu requirement
+## Interactive prompt requirement
 
-Every card or card batch must include an explicit `How to answer` menu. Do not rely on the human remembering the command syntax.
+Every card file must include an explicit `How to answer` menu. Do not rely on the human remembering the command syntax.
 
-For one card, allow bare shorthand such as `y`, `n: reason`, `change: ...`, `gen: ...`, and `skip: ...`.
+Human-facing prompts should ask one card at a time by default. Keep the displayed prompt compact: card ID, risk, files, one-sentence reason, exact question, and answer options. Full evidence belongs in the card file.
 
-For multiple cards, require the card ID or visible number, for example `R-0001 y`, `1 y`, `R-0002 change: ...`, or `3 gen: ...`. Bare `y` or `n` in a batch is ambiguous and must not be guessed.
+If the host exposes a structured user-input tool with choice buttons/select boxes and free text, use it for each card. Prefer three primary choices:
+
+```text
+Accept / OK
+Needs change
+Need more context
+```
+
+Use the free-text or Other field for `reject: <reason>`, `skip: <reason>`, `gen: <scope>`, `more`, `batch`, `stop`, or detailed instructions.
+
+If structured input is unavailable, show a compact text menu. For one active card, allow bare shorthand such as `y`, `n: reason`, `change: ...`, `gen: ...`, and `skip: ...`.
+
+Batch mode is opt-in. For multiple cards, require the card ID or visible number, for example `R-0001 y`, `1 y`, `R-0002 change: ...`, or `3 gen: ...`. Bare `y` or `n` in a batch is ambiguous and must not be guessed.
 
 ## Card format
 
@@ -118,17 +130,19 @@ Batch form requires an ID or number: `R-0001 y`, `1 y`, `R-0002 change: ...`, `3
 - Possible AST shape:
 ```
 
-## Batch size
+## Question cadence
 
-Show 3-5 cards per batch.
+Create an ordered card queue, but show only the next highest-value card by default.
 
-If the branch is large, start with:
+If the branch is large, queue cards in this order:
 
 1. one critical/high card from the riskiest cluster;
 2. one repeated-pattern card;
 3. one test-evidence card;
 4. one API/contract card if present;
 5. one low-risk skip candidate to reduce review surface.
+
+Show 3-5 cards only when the human asks for `batch`, `show batch`, or `show 3-5`.
 
 ## Hidden pattern to look for
 
