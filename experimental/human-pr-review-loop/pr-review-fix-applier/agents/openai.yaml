@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Fix Applier"
+  short_description: "Apply approved PR review fixes"
+  default_prompt: "Use $pr-review-fix-applier to apply this approved review fix and update review state."

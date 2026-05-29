@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Similarity Sweeper"
+  short_description: "Search similar PR review cases"
+  default_prompt: "Use $pr-review-similarity-sweeper to search for other branch cases matching this approved candidate rule."
