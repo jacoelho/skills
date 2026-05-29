@@ -20,15 +20,17 @@ pr-human-review
 pr-human-review <base-branch>
 pr-human-review origin/<base-branch>
 pr-human-review --base=<ref>
+pr-human-review --worktree
 ```
 
 Base-ref rules:
 
-1. If no argument is provided, use `origin/main`.
-2. If the argument is `--base=<ref>`, use `<ref>` exactly.
-3. If the argument already starts with `origin/`, `refs/`, or `HEAD`, use it exactly.
-4. Otherwise treat the argument as a remote branch name and use `origin/<argument>`.
-5. For an exact commit SHA or arbitrary ref, use `--base=<ref>`.
+1. If the invocation is `--worktree`, review current uncommitted and untracked work instead of a branch diff.
+2. If no argument is provided, use `origin/main`.
+3. If the argument is `--base=<ref>`, use `<ref>` exactly.
+4. If the argument already starts with `origin/`, `refs/`, or `HEAD`, use it exactly.
+5. Otherwise treat the argument as a remote branch name and use `origin/<argument>`.
+6. For an exact commit SHA or arbitrary ref, use `--base=<ref>`.
 
 Examples:
 
@@ -39,6 +41,7 @@ pr-human-review develop         # base ref: origin/develop
 pr-human-review release/1.4     # base ref: origin/release/1.4
 pr-human-review origin/develop  # base ref: origin/develop
 pr-human-review --base=abc1234  # base ref: abc1234
+pr-human-review --worktree      # review uncommitted/untracked work
 ```
 
 Do not silently change the base ref. If the selected base ref does not exist, show the failing ref and likely available alternatives from `git branch -r`, then ask for a corrected invocation.
@@ -48,7 +51,7 @@ Do not silently change the base ref. If the selected base ref does not exist, sh
 When this skill is invoked, immediately do the following unless the human explicitly asks for a different mode:
 
 1. Determine the base ref from the invocation contract.
-2. Determine the merge-base commit with `git merge-base <base-ref> HEAD`.
+2. Determine the merge-base commit with `git merge-base <base-ref> HEAD`, unless running in worktree mode.
 3. Determine the current head with `git rev-parse HEAD`.
 4. Determine the current branch with `git rev-parse --abbrev-ref HEAD`.
 5. Create or reuse local state under `.agents/reviews/`.
@@ -65,6 +68,7 @@ The first human-facing result after startup should normally be review cards, not
 - State the role, inputs, expected output files, and success criteria for each delegated task.
 - Pass raw evidence and current state, not conclusions that would bias the role.
 - Keep large diffs, command output, and generated artifacts in session files. Pass paths plus focused snippets to subagents instead of pasting full artifacts into the parent context.
+- Do not run or paste broad repository listings such as plain `rg --files`, `find .`, or full `git ls-files` unless the changed-file evidence proves it is needed. Start from changed files and use targeted related-file reads.
 - Prefer subagents for role-specific analysis when available so the parent context keeps only orchestration state, human decisions, and concise summaries.
 - Ask for one human decision per card. In batches, make each card independently answerable.
 - Do not ask for chain-of-thought or hidden reasoning. Ask for conclusions, evidence, commands run, and unresolved uncertainty.
@@ -145,13 +149,22 @@ Determine branch:
 git rev-parse --abbrev-ref HEAD
 ```
 
-Sanitise the branch name for a path by replacing slashes, whitespace, and punctuation with `-`.
+Sanitise the branch name for a path by replacing slashes, whitespace, and punctuation with `-`:
+
+```bash
+safe_branch=$(printf '%s' "$branch" | sed 's/[^A-Za-z0-9._-]/-/g; s/-\{2,\}/-/g; s/^-//; s/-$//')
+if [ -z "$safe_branch" ]; then safe_branch=detached-head; fi
+```
 
 Create the session directory and these files:
 
 ```text
 metadata.json
 changed-files.txt
+git-status-short.txt
+numstat.txt
+diff-stat.txt
+diff-unified-u80.patch
 diff-map.md
 risk-register.md
 session.jsonl
@@ -164,6 +177,28 @@ fix-plan.md
 verification.md
 final-report.md
 cards/
+```
+
+Create every file before updating it. Do not use `apply_patch` on a session artifact that may not exist. A safe bootstrap pattern is:
+
+```bash
+mkdir -p "$SESSION_DIR/cards"
+: > "$SESSION_DIR/changed-files.txt"
+: > "$SESSION_DIR/git-status-short.txt"
+: > "$SESSION_DIR/numstat.txt"
+: > "$SESSION_DIR/diff-stat.txt"
+: > "$SESSION_DIR/diff-unified-u80.patch"
+: > "$SESSION_DIR/diff-map.md"
+: > "$SESSION_DIR/risk-register.md"
+: > "$SESSION_DIR/session.jsonl"
+: > "$SESSION_DIR/findings.jsonl"
+: > "$SESSION_DIR/coverage.md"
+: > "$SESSION_DIR/human-feedback.md"
+: > "$SESSION_DIR/candidate-rules.md"
+: > "$SESSION_DIR/similar-sweep.md"
+: > "$SESSION_DIR/fix-plan.md"
+: > "$SESSION_DIR/verification.md"
+: > "$SESSION_DIR/final-report.md"
 ```
 
 Append a `session_started` event to `session.jsonl`.
@@ -187,7 +222,7 @@ Append a `session_started` event to `session.jsonl`.
 Collect and write evidence from:
 
 ```bash
-git status --short
+git status --short --untracked-files=all
 git diff --name-status --find-renames BASE...HEAD
 git diff --numstat --find-renames BASE...HEAD
 git diff --stat --find-renames BASE...HEAD
@@ -196,9 +231,49 @@ git diff --find-renames --unified=80 BASE...HEAD
 
 Use the merge-base SHA as `BASE`. If the diff is too large, store only the summary files and inspect per-file diffs on demand. Do not flood the human.
 
+If `changed-files.txt` is empty, do not pretend there are review cards. Tell the human there is no tracked diff for the selected base ref, show the selected base/head and any `git status --short` output, then ask one concise question:
+
+```text
+No tracked branch diff found for <base-ref>...HEAD.
+
+Question: Which review target should I use?
+
+How to answer:
+- `change-base <ref>` — rerun with a different base.
+- `review-worktree` — review current uncommitted/untracked work instead of branch diff.
+- `stop` — stop with no review cards.
+```
+
+Keep the session status `blocked` or `incomplete` until the human chooses one of those options.
+
+If the human replies `change-base <ref>`, restart bootstrap with `--base=<ref>`.
+
+If the human replies `review-worktree`, restart bootstrap in worktree mode. Use:
+
+```bash
+git status --short --untracked-files=all
+git diff --name-status --cached
+git diff --name-status
+git ls-files --others --exclude-standard
+git diff --cached --unified=80
+git diff --unified=80
+```
+
+Also include untracked text files as new-file diffs, using focused snippets for large files and recording skipped binary or oversized files in `coverage.md`. Store worktree review state under:
+
+```text
+.agents/reviews/<safe-branch>/sessions/worktree..<head-short>/
+```
+
+Exclude `.agents/reviews/` and `.agents/review-rules/` from worktree review evidence; those are this skill's local state, not user changes.
+
+When collecting worktree evidence, use `git status --short --untracked-files=all` so `.agents/reviews/` and `.agents/review-rules/` can be filtered precisely. Avoid shell variable names with special meaning in common shells, especially `path` in `zsh`; use names such as `file_path` instead.
+
+Set `metadata.json` `base_ref` to `WORKTREE` and continue the normal diff-map, risk-register, and review-card flow. If worktree evidence is also empty, report that and keep the session blocked.
+
 ## Role delegation
 
-If subagents are available:
+If subagents are available and current agent policy permits delegation:
 
 1. Send changed file evidence to `pr-review-diff-cartographer`.
 2. Send the cartography result to `pr-review-card-questioner`.
@@ -214,7 +289,7 @@ Delegation boundaries:
 - Do not broadcast the full unified diff to every subagent. Store it once, then pass targeted hunks by cluster or card.
 - Keep the parent agent responsible for human interaction, approvals, sequencing, and final integration.
 
-If subagents are not available, execute those roles yourself using the corresponding skill instructions.
+If subagents are unavailable or current policy requires explicit user permission before delegation, execute those roles yourself using the corresponding skill instructions and the same file-backed boundaries.
 
 ## Review loop
 
@@ -282,6 +357,8 @@ all y                                 # accept all cards in the current visible 
 more R-0001                           # show more context
 show next                             # alias: next
 focus <file/category>
+change-base <ref>
+review-worktree
 stop
 final report
 ```
@@ -312,6 +389,8 @@ Each card must include:
 - Possible similar areas.
 - Suggested feedback commands and aliases.
 - A visible `How to answer` section after every card or batch.
+
+When writing card files under `cards/`, include the `How to answer` section in the file itself, not only in the human-facing response.
 
 Bad card:
 
