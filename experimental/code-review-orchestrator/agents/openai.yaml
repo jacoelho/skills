@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review Orchestrator"
+  short_description: "Multi-agent review orchestration"
+  default_prompt: "Use $code-review-orchestrator to run a multi-facet review of the current diff, pasted diff, target path, or current codebase."
