@@ -1,0 +1,12 @@
+interface:
+  display_name: Evolve Architecture
+  short_description: Explore, select, implement, and audit designs
+  default_prompt: Use $evolve-architecture to reshape this feature into the simplest
+    coherent architecture and verify it against an accepted plan.
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
