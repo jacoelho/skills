@@ -1,0 +1,4 @@
+interface:
+  display_name: "Testing"
+  short_description: "Build high-signal behavioral evidence"
+  default_prompt: "Use $testing to design, implement, diagnose, or review tests for this behavior."
