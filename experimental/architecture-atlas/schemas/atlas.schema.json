@@ -1,0 +1,591 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Architecture Atlas v1",
+  "description": "One semantic model; views reference shared entity and relationship IDs. JSON Schema validates shape; Python validates graph constraints and replay. All $ref targets are local.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "title",
+    "summary",
+    "root_view",
+    "source",
+    "evidence",
+    "entities",
+    "relations",
+    "views"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional editor hint only. The CLI always uses the bundled schema; it never fetches this URL."
+    },
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "title": {
+      "$ref": "#/$defs/text"
+    },
+    "summary": {
+      "$ref": "#/$defs/text"
+    },
+    "root_view": {
+      "$ref": "#/$defs/id"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      },
+      "minItems": 1
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relation"
+      }
+    },
+    "views": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/view"
+      },
+      "minItems": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scenario"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,79}(?![\\s\\S])"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "uniqueItems": true
+    },
+    "certainty": {
+      "enum": [
+        "verified",
+        "inferred",
+        "unknown",
+        "illustrative"
+      ]
+    },
+    "status": {
+      "enum": [
+        "current",
+        "in-progress",
+        "planned"
+      ]
+    },
+    "jsonValue": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "boolean",
+            "string"
+          ]
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        }
+      ]
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/jsonValue"
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "scope",
+        "excluded"
+      ],
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/text"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "minLength": 40,
+          "maxLength": 40
+        },
+        "scope": {
+          "$ref": "#/$defs/text"
+        },
+        "excluded": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "enum": [
+            "code",
+            "documentation",
+            "test",
+            "experiment"
+          ]
+        },
+        "path": {
+          "$ref": "#/$defs/text"
+        },
+        "url": {
+          "$ref": "#/$defs/text"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "path"
+          ]
+        },
+        {
+          "required": [
+            "url"
+          ]
+        }
+      ],
+      "dependentRequired": {
+        "start": [
+          "end",
+          "path"
+        ],
+        "end": [
+          "start",
+          "path"
+        ],
+        "sha256": [
+          "path"
+        ]
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "type",
+        "meaning"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "type": {
+          "$ref": "#/$defs/text"
+        },
+        "meaning": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "kind",
+        "summary",
+        "status",
+        "certainty",
+        "coverage",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "enum": [
+            "actor",
+            "component",
+            "function",
+            "document",
+            "artifact",
+            "store",
+            "type",
+            "stage",
+            "boundary"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/text"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "certainty": {
+          "$ref": "#/$defs/certainty"
+        },
+        "evidence": {
+          "$ref": "#/$defs/refs"
+        },
+        "coverage": {
+          "enum": [
+            "inspected",
+            "partial",
+            "unexplored"
+          ]
+        },
+        "parent": {
+          "$ref": "#/$defs/id"
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "certainty": {
+                "const": "verified"
+              }
+            },
+            "required": [
+              "certainty"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from",
+        "to",
+        "kind",
+        "label",
+        "summary",
+        "status",
+        "certainty",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/id"
+        },
+        "to": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "$ref": "#/$defs/text"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "summary": {
+          "$ref": "#/$defs/text"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "certainty": {
+          "$ref": "#/$defs/certainty"
+        },
+        "evidence": {
+          "$ref": "#/$defs/refs"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "certainty": {
+                "const": "verified"
+              }
+            },
+            "required": [
+              "certainty"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "question",
+        "summary",
+        "level",
+        "lens",
+        "entities",
+        "relations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "question": {
+          "$ref": "#/$defs/text"
+        },
+        "summary": {
+          "$ref": "#/$defs/text"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "lens": {
+          "enum": [
+            "structure",
+            "flow",
+            "data",
+            "state",
+            "failure",
+            "code"
+          ]
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "relations": {
+          "$ref": "#/$defs/refs"
+        },
+        "parent": {
+          "$ref": "#/$defs/id"
+        },
+        "focus": {
+          "$ref": "#/$defs/id"
+        },
+        "links": {
+          "$ref": "#/$defs/refs"
+        },
+        "takeaways": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "direction": {
+          "enum": [
+            "TB",
+            "LR"
+          ]
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "description",
+        "certainty",
+        "evidence"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "certainty": {
+          "$ref": "#/$defs/certainty"
+        },
+        "evidence": {
+          "$ref": "#/$defs/refs"
+        },
+        "entities": {
+          "$ref": "#/$defs/refs"
+        },
+        "relations": {
+          "$ref": "#/$defs/refs"
+        },
+        "set": {
+          "$ref": "#/$defs/state"
+        },
+        "expect": {
+          "$ref": "#/$defs/state"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "certainty": {
+                "const": "verified"
+              }
+            },
+            "required": [
+              "certainty"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "description",
+        "basis",
+        "view",
+        "status",
+        "initial",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "basis": {
+          "$ref": "#/$defs/text"
+        },
+        "view": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "initial": {
+          "$ref": "#/$defs/state"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

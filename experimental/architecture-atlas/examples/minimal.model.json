@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "title": "Skill entrypoint and reference",
+  "summary": "A small source-backed example of shared identities and one view. Replace these facts when analysing another repository.",
+  "root_view": "overview",
+  "source": {
+    "repository": "https://github.com/07130918/Agents",
+    "commit": "2766d4aa35acb1436f09f7a22415038ff75a663f",
+    "scope": "The visualization skill wrapper and its authoring reference.",
+    "excluded": "Renderer details, scenario playback, the installer and unrelated skills."
+  },
+  "evidence": [
+    {
+      "id": "ev-wrapper",
+      "kind": "documentation",
+      "label": "Skill entrypoint and global reference dependency",
+      "path": "codex/skills/visualize-architecture-flow/SKILL.md"
+    },
+    {
+      "id": "ev-guide",
+      "kind": "documentation",
+      "label": "Documented evidence-first, state-first workflow and manual browser checks",
+      "path": "shared/references/visualize-architecture-flow.md"
+    },
+    {
+      "id": "ev-install",
+      "kind": "code",
+      "label": "Global installer supplies the shared reference and Codex script",
+      "path": "scripts/apply-to-local.sh"
+    }
+  ],
+  "entities": [
+    {
+      "id": "wrapper",
+      "label": "SKILL.md entrypoint",
+      "kind": "document",
+      "summary": "A small routing instruction directs the assistant to read a shared reference before building HTML. It is not an extraction or rendering program.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-wrapper",
+        "ev-install"
+      ],
+      "facts": [
+        "The wrapper expects ~/.agents/references/visualize-architecture-flow.md.",
+        "The repository-wide installer supplies that location. Copying only this wrapper does not create a portable standalone skill."
+      ]
+    },
+    {
+      "id": "guide",
+      "label": "Authoring workflow",
+      "kind": "document",
+      "summary": "A prescribed process for an assistant to investigate one feature and create a state-driven HTML explanation. The procedure is documentation, not an implemented generation pipeline.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "facts": [
+        "Evidence \u2192 domain state \u2192 scenarios \u2192 visual encoding \u2192 HTML.",
+        "Normal and evidence-backed failure/recovery paths are expected."
+      ],
+      "invariants": [
+        "An implementation claim needs evidence. Planned paths remain separate from current behavior."
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "id": "wrapper-guide",
+      "from": "wrapper",
+      "to": "guide",
+      "label": "Loads shared procedure",
+      "kind": "references",
+      "summary": "Loads shared procedure",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-wrapper"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "title": "Entrypoint and reference",
+      "question": "Where is the authoring procedure defined?",
+      "summary": "The wrapper names a separately installed reference. This edge describes documented loading, not an observed agent execution.",
+      "level": 0,
+      "lens": "structure",
+      "entities": [
+        "wrapper",
+        "guide"
+      ],
+      "relations": [
+        "wrapper-guide"
+      ],
+      "direction": "LR"
+    }
+  ]
+}
