@@ -1,0 +1,19 @@
+Feature: <capability>
+  # Contract: <version/path; existing rule ID when one exists>
+  # Oracle: <independent decision, external contract, or justified property>
+  # Boundary: <caller/API/event/output boundary where the result is observed>
+  # Evidence: proposed example | existing record <path/link>
+  # Existing record should state command/check, input state, result, and limits.
+  # Evidence is optional while drafting; do not create a separate evidence ledger.
+  # Include success/rejection cases where required; label permitted outcomes as illustrative.
+
+  Rule: <existing rule ID or rule summary>
+
+    Scenario: <positive or meaningful negative behaviour>
+      Given <domain state>
+      When <one material event>
+      Then <observable result at the boundary>
+      And <observable invariant or prohibited effect when relevant>
+
+  # Question: <case whose expected result remains unresolved; do not encode it as a Then>
+  # Deferred: <independent behaviour outside this increment>
