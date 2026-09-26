@@ -1,0 +1,6 @@
+interface:
+  display_name: "Voice: Technical Writer"
+  short_description: "Write precise, evidence-led technical prose"
+  default_prompt: "Use $voice-technical-writer to write an original technical proposal for this audience and purpose."
+policy:
+  allow_implicit_invocation: false
