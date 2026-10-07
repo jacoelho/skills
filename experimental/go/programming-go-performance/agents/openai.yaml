@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go Performance"
+  short_description: "Investigate and measure Go performance changes"
+  default_prompt: "Use $programming-go-performance to investigate this Go performance issue and validate any proposed optimisation."
