@@ -1,0 +1,6 @@
+interface:
+  display_name: "Find Architecture Opportunities"
+  short_description: "Find and hand off structural refactors"
+  default_prompt: "Use $find-architecture-opportunities to inspect this codebase, rank a small set of architecture improvements, and produce an $evolve-architecture handoff when I select one."
+policy:
+  allow_implicit_invocation: false

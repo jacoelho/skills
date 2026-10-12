@@ -2,7 +2,7 @@
 name: spectacular-spec-grilling
 description: Clarify consequential software requirements with concrete, dependency-aware questions and a decision record. Use when a bounded commitment still has unresolved behavioural choices; skip when the contract settles the work or the change is mechanical.
 metadata:
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # Spectacular spec grilling
@@ -25,6 +25,8 @@ Use grilling for unresolved product decisions that affect the next commitment. A
 ## Outcome
 
 Return the current scope, settled decisions and their basis, unresolved questions with a disposition, affected requirements or examples, and the next action. Keep unresolved decisions in the existing task or decision record until their basis is settled. The specification writer or maintainer owns normative edits; this skill owns clarification and its record.
+
+When handing work to another context, identify retrievable source and workspace states, completed and remaining work, and executed checks with results and limits where relevant. The recipient compares the record with current sources and reopens only decisions or evidence affected by a changed premise.
 
 ## Start from available evidence
 

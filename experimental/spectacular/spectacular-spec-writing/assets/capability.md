@@ -22,7 +22,7 @@ Preserved: [existing promises that the change must retain].
 
 ### REQ-CAP-001 — [One reviewable obligation]
 
-Status: [proposed or accepted, matching the recorded decision]
+Status: accepted
 Statement: [Boundary, conditions, required result, and relevant failure effect.]
 Basis: [Authorised decision or binding source and rationale. Do not put unresolved questions here.]
 

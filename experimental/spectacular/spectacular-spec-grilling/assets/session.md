@@ -5,6 +5,7 @@ Use this shape only when no existing task or decision record already captures th
 Session status: [active / handed off / stopped / awaiting evidence]
 Scope: [next bounded commitment]
 Source state: [current contract/history, supplied decisions, accessible evidence; label each origin]
+Workspace state: [repository/workspace and relevant code or document revisions; note local changes when they affect the assignment]
 
 ## Established context
 
@@ -48,5 +49,9 @@ Investigation findings: [observed results and their evidence; keep recommendatio
 Remaining questions: [owner, evidence, blocked work, disposition].
 Next action: [write bounded contract / investigate / revise / stop].
 Unblocked scope: [if any].
+Completed work: [artifacts or decisions already produced; link their current homes].
+Remaining work: [bounded action, owner, and dependency].
+Executed checks: [existing evidence reference, or actual command, source/configuration state, result, and limits; mark unrun checks as planned].
+Restart: [retrieve the named sources, compare their current state with this record, and refresh only affected decisions or observations].
 
 This record is an input to the maintained specification, not a second normative specification or evidence that implementation passed.
