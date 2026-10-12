@@ -4,7 +4,7 @@ Distinguish HTTP requirements from product conventions. Apply a decision only wh
 
 ## Resources and methods
 
-- Identify resources from the client's domain vocabulary. Keep paths stable and readable. Use query parameters for collection selection; document whether a missing single resource returns `404` and whether an empty collection returns `200` with an empty list.
+- Use [resources and methods](resources-and-methods.md) for names, canonical paths, relationships, actions, and operation resources. Document whether a missing single resource returns `404` and whether an empty collection returns `200` with an empty list.
 - `GET` and `HEAD` do not request state changes; incidental server-side effects such as logging remain possible. `POST` submits processing or creates under a collection. `PUT` replaces the target resource (or creates it at a client-chosen URI if supported). `PATCH` applies a documented partial-update format, including how omitted fields and explicit `null` differ. `DELETE` requests removal and is idempotent in intended effect, though repeat responses may differ; document whether removal is soft, reversible, or asynchronous.
 - Use `201 Created` when a resource is created; include `Location` when its URI needs to be conveyed or differs from the request target. For accepted asynchronous work, use `202 Accepted` with a way to inspect its status. Use `204 No Content` only with no response body. An overall failed operation needs a failure status; a documented batch or partial-result operation may return per-item outcomes within a successful response.
 
@@ -16,14 +16,11 @@ Distinguish HTTP requirements from product conventions. Apply a decision only wh
 - If a mutation crosses an external side-effect boundary, persist an operation record before the call and propagate a stable operation ID or provider-supported idempotency key. Represent in-progress and unknown outcomes; reconcile an unknown outcome before another attempt. Define the pending response or status resource, terminal replay, and compensation or partial-commit behavior. Do not promise exactly-once effects without support across the boundary.
 - For writes that may race, document an optimistic-concurrency strategy such as `ETag` with `If-Match`; return `412` when a supplied precondition fails. If a precondition is required but missing, use `428` or document another policy. Define whether a `409` domain conflict remains possible. Identify the atomic point at which the write and its result become committed.
 
-## Representations and collections
+## Representations and caching
 
-- Define field meaning, units, formats, defaults, nullability, and which fields clients may write. Separate writeable inputs from read-only outputs. Ensure response fields cannot disclose data beyond the caller's authorization.
-- Bound page size and select a stable ordering with an unambiguous tie-breaker. Define whether pagination is offset or cursor based, how the next page is requested, what happens when data changes between pages, and whether totals are exact, approximate, or absent. Whitelist and document filters and sort keys; reject unsupported ones consistently.
-- For cursor pagination, make tokens opaque and URL-safe, bound to the original filters, sort, tenant or resource scope, and relevant caller scope, and protected against tampering. Reject mismatched scope before querying and reauthorize each page; a snapshot must not preserve revoked access. Define expiry and distinct handling for invalid and expired cursors. Expose an unambiguous next-page token or link; state when no further page exists.
-- Define a traversal guarantee. For a live collection, state the effects of inserts, deletes, and changed sort keys between pages, including possible duplicates or omissions; an immutable ordering key reduces movement but cannot guarantee a complete snapshot. When complete traversal is required, use a snapshot or another consistency mechanism with defined identity, retention, authorization, and expiry. RFC 9865 gives a concrete SCIM-specific cursor design, not a general REST mandate. RFC 8288 defines HTTP links that can carry `next` and `prev` relations when links are chosen for navigation.
+- Use [payload design](payload-design.md) for schemas, field semantics, content types, projection, and expansion limits. Use [queries and pagination](queries-and-pagination.md) for collection selection, ordering, continuation, token security, and traversal guarantees.
 - State cache behavior when relevant. `Cache-Control`, validators such as `ETag`, and `304 Not Modified` should reflect the representation and authorization context. Avoid shared caching of sensitive user-specific responses unless explicitly safe.
-- Document content types and negotiation where clients can request more than one representation. Set limits on payload size and collection expansion when applicable.
+- When responses vary by negotiated headers, define the corresponding `Vary` fields and validators for each representation. Field selection and embedded relationships are part of the representation's cache identity. [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-12.5.5), [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111.html).
 
 ## Security and evolution
 
@@ -36,8 +33,7 @@ Distinguish HTTP requirements from product conventions. Apply a decision only wh
 - [HTTP Semantics (RFC 9110)](https://www.rfc-editor.org/rfc/rfc9110.html): methods, statuses, preconditions, content negotiation.
 - [Additional HTTP Status Codes (RFC 6585)](https://www.rfc-editor.org/rfc/rfc6585.html): `428 Precondition Required` and `429 Too Many Requests`.
 - [Problem Details for HTTP APIs (RFC 9457)](https://www.rfc-editor.org/rfc/rfc9457.html): standard problem representation.
-- [Cursor-Based Pagination of SCIM Resources (RFC 9865)](https://www.rfc-editor.org/rfc/rfc9865.html): domain-specific cursor contract and security considerations to adapt, not impose wholesale.
-- [Web Linking (RFC 8288)](https://www.rfc-editor.org/rfc/rfc8288.html): link relations and HTTP `Link` header for page navigation.
+- [HTTP Caching (RFC 9111)](https://www.rfc-editor.org/rfc/rfc9111.html): cache storage, freshness, and reuse.
 - [Idempotency-Key HTTP Header Field (expired IETF draft)](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/): header convention for key-based retries; apply it as this skill's default while accurately identifying its draft status.
 - [OpenAPI Specification](https://spec.openapis.org/oas/): machine-readable HTTP API descriptions.
 - [OWASP API Security Top 10](https://api-security.owasp.org/editions/2023/en/0x11-t10/): object and property authorization risks.
