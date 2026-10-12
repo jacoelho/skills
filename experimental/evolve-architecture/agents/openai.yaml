@@ -1,0 +1,6 @@
+interface:
+  display_name: "Evolve Architecture"
+  short_description: "Reshape code without additive layering"
+  default_prompt: "Use $evolve-architecture to analyze and carry out this concrete architecture-changing task, including a selected $find-architecture-opportunities candidate when present."
+policy:
+  allow_implicit_invocation: false

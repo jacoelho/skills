@@ -70,10 +70,10 @@ Text output includes counts for active documents and declarations, unmarked docu
 
 Overlapping input paths are deduplicated. Counts for active documents, skipped entries, symlinks, and rejected inputs refer to unique absolute path entries across the supplied roots. Traversal skips directory and file symlinks and counts them. A hidden directory counts as one skipped entry; its descendants are not traversed or counted individually. Review the reported counts rather than assuming every repository document was included. A rejected input or a skipped document is not evidence that its contents were reviewed.
 
-When changing the linter, run its bundled regression tests from the repository root:
+When changing the linter, run its bundled regression tests from any working directory, using the same installed `skill_dir` as above:
 
 ```sh
-python3 -B -m unittest discover -s experimental/spectacular/spectacular-spec-review/scripts -p 'test_*.py' -q
+python3 -B -m unittest discover -s "$skill_dir/scripts" -p 'test_*.py' -q
 ```
 
 A clean run does not detect paraphrased duplicates, contradictory statements, invalid refinements, missed requirements, interaction defects, or unsupported guarantees. Those remain the responsibility of semantic review.

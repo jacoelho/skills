@@ -1,8 +1,8 @@
 ---
 name: spectacular-spec-writing
-description: Write or revise bounded software capability contracts with precise behaviour and acceptance evidence. Use for new or changed requirements, overlap cleanup, or coding-agent handoffs.
+description: Write or revise bounded software capability contracts. Use for new or changed requirements, duplicate-rule cleanup, or handing settled requirements to an implementer; ordinary implementation status handoffs need no contract rewrite.
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Spectacular spec writing
@@ -27,7 +27,7 @@ Narrow uncertain work rather than freezing unrelated scope. An investigation sta
 
 Label important inputs as an authorised decision, binding external contract, executed observation, user-reported observation, code-reading inference, hypothesis, or proposed design. Preserve source and version where they matter.
 
-Use implementation and tests as evidence of current behaviour. Use an authorised contract or decision to establish intended behaviour. A draft may contain proposed obligations, but the maintained contract must not turn an unresolved question or hypothesis into a rule. When sources disagree, classify the mismatch before editing either one.
+Use implementation and tests as evidence of current behaviour. Use an authorised contract or decision to establish intended behaviour. An explicitly labelled, non-governing draft may contain proposed obligations; the maintained contract contains settled obligations. Preserve an existing obligation while a replacement remains unresolved. When sources disagree, classify the mismatch before editing either one.
 
 ## 3. Resolve consequential ambiguity
 
@@ -75,6 +75,8 @@ Return:
 - remaining decisions and blocked work in the task or decision record, outside the current contract;
 - acceptance basis and verification boundary;
 - recommended next action: implement, investigate, revise, or no specification change.
+
+For a handoff to another context, update the existing task record with retrievable contract and workspace identities, completed and remaining work, and references to checks actually executed with their results and limits. The recipient verifies relevant current sources before reusing an observation; refresh only evidence or decisions affected by a changed premise. A handoff points to governing obligations rather than redefining them.
 
 Recommend implementation when the bounded scope has no unresolved consequential decision, applicable constraints are retrievable, required outcomes have a credible basis, and a feasible verification path exists.
 
