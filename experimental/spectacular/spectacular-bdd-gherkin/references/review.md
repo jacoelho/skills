@@ -18,6 +18,7 @@ Use only lenses relevant to the rule under review.
   absence of protected data, and absence of forbidden partial state at that
   boundary?
 - **Applicability:** Are actor, state, timing, version, and preconditions clear enough to know when the rule applies?
+- **Requirement form:** Does the scenario reference a governing EARS requirement rather than introduce behavioural policy in its `Rule` heading or setup? Treat source syntax and scenario correctness as separate findings.
 - **Mechanism leakage:** Would the scenario survive a valid implementation change?
 - **Decision leakage:** Did the scenario invent ordering, retries, identity, timing, errors, or another product choice absent from the contract?
 - **Boundary sensitivity:** Are important just-below/at/above, invalid,

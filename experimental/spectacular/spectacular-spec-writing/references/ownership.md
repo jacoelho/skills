@@ -47,3 +47,5 @@ Do not merge by concatenating sentences or taking the numerically stricter value
 Keep an identifier when the same obligation moves. A changed meaning needs an identified revision. For a split or merge, retain an explicit mapping from retired IDs to their replacements and update live references. Mark history so that it cannot masquerade as another current authority.
 
 A local contract may reference a versioned external requirement. Preserve the external identifier and source; do not mint a second local definition unless the local text deliberately adds or translates an obligation and records that relationship.
+
+Use [EARS](ears.md) for the normative statement in every local requirement or invariant. A glossary owns term meanings; a reference table or diagram illustrates requirements by ID. Neither adds behavioural rules outside the EARS statements.

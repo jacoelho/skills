@@ -1,8 +1,8 @@
 ---
 name: spectacular-spec-writing
-description: Write or revise bounded software capability contracts with precise behaviour and acceptance evidence. Use for new or changed requirements, overlap cleanup, or coding-agent handoffs.
+description: Write or revise bounded software capability contracts using EARS requirements. Use for new or changed requirements, duplicate-rule cleanup, or handing settled requirements to an implementer; ordinary implementation status handoffs need no contract rewrite.
 metadata:
-  version: "1.2.0"
+  version: "2.0.0"
 ---
 
 # Spectacular spec writing
@@ -10,6 +10,8 @@ metadata:
 Write the smallest current contract that makes the next consequential commitment deliberate and reviewable. Keep unresolved questions in the working record, not in the maintained contract.
 
 The user's explicit task and decisions take precedence over this workflow. Preserve binding constraints and surface conflicts that need an authorised decision.
+
+Read [EARS requirements and terms](references/ears.md) before drafting or revising normative statements. EARS is the only requirement syntax, including for invariants and proposed requirements. Repository conventions govern layout, not an alternative sentence form.
 
 ## Outcome
 
@@ -27,7 +29,7 @@ Narrow uncertain work rather than freezing unrelated scope. An investigation sta
 
 Label important inputs as an authorised decision, binding external contract, executed observation, user-reported observation, code-reading inference, hypothesis, or proposed design. Preserve source and version where they matter.
 
-Use implementation and tests as evidence of current behaviour. Use an authorised contract or decision to establish intended behaviour. A draft may contain proposed obligations, but the maintained contract must not turn an unresolved question or hypothesis into a rule. When sources disagree, classify the mismatch before editing either one.
+Use implementation and tests as evidence of current behaviour. Use an authorised contract or decision to establish intended behaviour. An explicitly labelled, non-governing draft may contain proposed obligations; the maintained contract contains settled obligations. Preserve an existing obligation while a replacement remains unresolved. When sources disagree, classify the mismatch before editing either one.
 
 ## 3. Resolve consequential ambiguity
 
@@ -37,7 +39,7 @@ Keep the question in the working record and exclude dependent behaviour from the
 
 ## 4. Write obligations
 
-Use [the contract template](assets/capability.md) when the repository has no better convention. Include only sections that carry useful information.
+Use [the contract template](assets/capability.md), adapting its layout to repository conventions. Write each obligation as one complete EARS sentence in its `Statement` field or equivalent requirement entry, following the reference's enforced lexical grammar. Tables, diagrams, and Gherkin illustrate requirements by reference; they do not define additional behaviour.
 
 For each consequential requirement state:
 
@@ -47,7 +49,7 @@ For each consequential requirement state:
 4. rationale and source separately from the normative statement;
 5. a stable identifier when it will be referenced or maintained across files.
 
-Separate obligations that can change independently. Keep an indivisible state transition together. Preserve justified technical contracts such as wire formats, error semantics, ownership rules, numerical algorithms, mandated dependencies, or deployment boundaries when they are part of correctness.
+Select the EARS pattern by applicability: ubiquitous, event-driven, state-driven, unwanted behaviour, optional feature, or complex. Preserve permissions as constraints on authorised behaviour, following the reference's permission rules. Separate obligations that can change independently and keep an indivisible state transition together. Express binding wire formats, error semantics, ownership rules, numerical algorithms, mandated dependencies, and deployment boundaries as EARS obligations referring to their definitions or governing sources.
 
 ## 5. Maintain one authoritative home
 
@@ -65,6 +67,8 @@ Use `spectacular-bdd-gherkin` when it is available and Gherkin improves shared u
 
 When writing a new contract or changing an existing promise, perform a focused comparison against sources that could conflict: active contracts, binding constraints, affected code paths, and relevant tests. Use [change handling](references/changes.md) for mismatch classifications and version transitions. An ordinary local writing change or repair under an unchanged valid contract does not require a full repository review or migration analysis. Use `spectacular-spec-review` when available; otherwise follow that reference and record only affected sources. Preserve a valid contract when code is wrong, and add migration or compatibility work only where a binding constraint requires it.
 
+For the bundled declaration layout, mark maintained specification documents active with `<!-- spec-lint: active -->` and run the review skill's linter when available, including the referenced canonical roots. Resolve syntax errors before claiming automated compliance. If the executable is unavailable or the repository uses another declaration layout, report that enforcement limit; manual review does not count as an executed check.
+
 ## 8. Return the bounded result
 
 Return:
@@ -75,6 +79,8 @@ Return:
 - remaining decisions and blocked work in the task or decision record, outside the current contract;
 - acceptance basis and verification boundary;
 - recommended next action: implement, investigate, revise, or no specification change.
+
+For a handoff to another context, update the existing task record with retrievable contract and workspace identities, completed and remaining work, and references to checks actually executed with their results and limits. The recipient verifies relevant current sources before reusing an observation; refresh only evidence or decisions affected by a changed premise. A handoff points to governing obligations rather than redefining them.
 
 Recommend implementation when the bounded scope has no unresolved consequential decision, applicable constraints are retrievable, required outcomes have a credible basis, and a feasible verification path exists.
 

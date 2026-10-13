@@ -1,0 +1,8 @@
+[
+  {"path": "api", "access": "granted", "status": 200, "body": "invoice-42"},
+  {"path": "link", "access": "granted", "status": 200, "body": "invoice-42"},
+  {"path": "api", "access": "denied", "status": 403, "body": null},
+  {"path": "link", "access": "denied", "status": 403, "body": null},
+  {"path": "api", "access": "unavailable", "status": 503, "body": null},
+  {"path": "link", "access": "unavailable", "status": 503, "body": null}
+]

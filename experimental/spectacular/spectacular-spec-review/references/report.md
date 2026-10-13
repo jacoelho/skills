@@ -22,7 +22,7 @@ Faulty-specification response: [no evidence challenging the rule / counterexampl
 
 Severity: [blocker / material / minor].
 Certainty: [demonstrated / plausible interpretation / requires evidence].
-Category: [ambiguity / duplicate authority / contradiction / missing case / unjustified constraint / weak oracle / stale contract / other specific defect].
+Category: [EARS syntax / ambiguity / duplicate authority / contradiction / missing case / unjustified constraint / weak oracle / stale contract / other specific defect].
 Location: [IDs, paths, and revisions].
 Applicability: [case or scope in which the issue matters].
 Witness: [concrete input, timeline, incompatible outputs, or specific missing evidence].

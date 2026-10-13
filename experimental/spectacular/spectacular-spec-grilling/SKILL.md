@@ -2,7 +2,7 @@
 name: spectacular-spec-grilling
 description: Clarify consequential software requirements with concrete, dependency-aware questions and a decision record. Use when a bounded commitment still has unresolved behavioural choices; skip when the contract settles the work or the change is mechanical.
 metadata:
-  version: "1.3.0"
+  version: "2.0.0"
 ---
 
 # Spectacular spec grilling
@@ -10,6 +10,8 @@ metadata:
 Settle the next consequential decision needed for a bounded commitment. Keep clarification evidence-led and proportionate: a settled contract or a mechanical correction can proceed without an interview.
 
 The user's explicit task and decisions take precedence over this workflow. Surface binding constraints when they conflict with a proposed choice.
+
+Read [EARS requirements and terms](references/ears.md) before analysing a requirement or framing a proposed obligation. Use its single syntax to identify configuration, state, trigger, responsible system, and response. Questions and decision records remain working material; the writer owns the maintained EARS requirements.
 
 ## Choose the work
 
@@ -26,11 +28,15 @@ Use grilling for unresolved product decisions that affect the next commitment. A
 
 Return the current scope, settled decisions and their basis, unresolved questions with a disposition, affected requirements or examples, and the next action. Keep unresolved decisions in the existing task or decision record until their basis is settled. The specification writer or maintainer owns normative edits; this skill owns clarification and its record.
 
+When handing work to another context, identify retrievable source and workspace states, completed and remaining work, and executed checks with results and limits where relevant. The recipient compares the record with current sources and reopens only decisions or evidence affected by a changed premise.
+
 ## Start from available evidence
 
 Read only evidence tied to the next decision: the request, relevant current contract and history, shared constraints or consumers, affected code or tests, and accessible governing sources. Inspect retrievable facts directly rather than asking the user to supply them. Classify uncertainty as a missing fact, product choice, or empirical question.
 
 Separate observed behaviour, required behaviour, inference, and proposed change. When an existing contract or authoritative source already answers a question, verify its authority before asking the user. If sources disagree, present the concrete conflict as the question instead of asking the user to rediscover it.
+
+Use the applicable EARS pattern to expose a missing clause or undefined term only when it changes acceptance. Distinguish an event from an ongoing state, and a configured feature from a permitted outcome. Clarify allowed behaviour without turning a permission into a completion guarantee. Syntax defects in an existing source do not erase its binding meaning or require a product interview by themselves.
 
 ## Record only consequential dependencies
 
@@ -61,7 +67,7 @@ Recommendation: <only when evidence supports one; state the trade-off>
 
 Prefer observable questions such as “What should the caller receive after a retry?” over quality adjectives such as “Should retries be robust?”.
 
-After the answer, record its exact conditions, link affected requirements and examples, and recompute the eligible questions. A changed premise reopens only the decisions that depend on it.
+After the answer, record its exact conditions, authority, and affected requirement or example references, then recompute the eligible questions. If a proposed requirement statement helps the handoff, use EARS and label it non-governing until the writer adopts it. Keep unresolved clauses in the question record. A changed premise reopens only the decisions that depend on it.
 
 ## Run a bounded investigation
 

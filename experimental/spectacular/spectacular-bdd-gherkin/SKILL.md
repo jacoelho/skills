@@ -2,7 +2,7 @@
 name: spectacular-bdd-gherkin
 description: Create or review optional Gherkin acceptance examples for a bounded behavioural rule, preserving an independent oracle and an observable boundary.
 metadata:
-  version: "1.2.0"
+  version: "2.0.0"
 ---
 
 # Spectacular BDD with Gherkin
@@ -15,6 +15,8 @@ in Gherkin.
 The user's explicit task and decisions take precedence over this workflow.
 This skill is standalone: it does not require an installed sibling skill,
 Gherkin runner, or particular repository layout.
+
+Read [EARS requirements and terms](references/ears.md) before interpreting the governing rule. EARS is the only requirement syntax. Gherkin expresses acceptance examples linked to those requirements; its `Rule` heading references the governing ID rather than defining another requirement.
 
 ## Choose the smallest mode
 
@@ -41,7 +43,7 @@ force a full discovery or review process.
 2. **Map distinguishing cases.** Prefer a case that separates plausible
    interpretations or exercises a consequential boundary. Label each item:
 
-   - **Rule:** the settled behavioural statement and its source.
+   - **Rule:** the governing EARS requirement's reference and source. Preserve external source wording when quoted as evidence.
    - **Example:** a concrete state and event with an expected result supported
      by the rule and its oracle.
    - **Question:** a concrete case whose expected result is unresolved. Record
@@ -60,9 +62,11 @@ force a full discovery or review process.
 4. **Choose the representation.** If Gherkin helps, express relevant state in
    `Given`, one material event in `When`, and externally meaningful outcomes in
    `Then`. Include success and rejection cases when the contract requires
-   those outcomes for the chosen conditions. Preserve modality: an allowed
-   (`MAY`) outcome is not a required (`MUST`) result. Assert required outcomes
-   or the allowed set; label examples of optional behaviour as illustrative.
+   those outcomes for the chosen conditions. Preserve the EARS requirement's
+   guarantees and constraints on permitted behaviour. A permission alone does
+   not guarantee completion or require every alternative to occur. Assert the
+   required observation or authorised set; label a particular permitted
+   alternative as illustrative rather than mandatory.
    A negative case should observe
    the intended rejection or failure effect, such as no protected data or no
    partial state, rather than merely an internal exception. Add limit,
@@ -88,7 +92,7 @@ and adapt it to the contract. Prefer:
 Feature: <capability>
   # Contract: <version or reference; existing rule ID when one exists>
 
-  Rule: <existing rule ID or short behavioural rule>
+  Rule: <governing EARS requirement ID or source reference>
 
     Scenario: <distinguishing outcome>
       Given <relevant domain state>

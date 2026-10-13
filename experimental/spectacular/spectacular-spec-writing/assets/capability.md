@@ -2,6 +2,8 @@
 
 > Keep unresolved questions, hypotheses, and proposed changes awaiting authority in the task or decision record. This template is for the current contract and its settled obligations.
 
+> Write each requirement and invariant as one EARS sentence using the skill's `references/ears.md`. The placeholders below are layout guidance, not another requirement syntax.
+
 Contract revision: [identifier or recorded workspace state]
 Decision owner: [known authority; otherwise unassigned]
 Effective scope: [target version, deployed state, or workspace boundary when relevant]
@@ -22,11 +24,11 @@ Preserved: [existing promises that the change must retain].
 
 ### REQ-CAP-001 — [One reviewable obligation]
 
-Status: [proposed or accepted, matching the recorded decision]
-Statement: [Boundary, conditions, required result, and relevant failure effect.]
+Status: accepted
+Statement: When [event], the [responsible system] shall [observable response, including coupled effects and relevant bounds or prohibitions].
 Basis: [Authorised decision or binding source and rationale. Do not put unresolved questions here.]
 
-[Add further requirements only when needed. Refer to shared obligations instead of repeating their definitions.]
+[Select the applicable EARS pattern; the event-driven sentence above is a placeholder. Add further requirements only when needed. Refer to shared obligations instead of repeating their definitions. Tables and diagrams are illustrative and reference governing requirements.]
 
 ## Acceptance
 
