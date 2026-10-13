@@ -7,7 +7,7 @@ Feature: <capability>
   # Evidence is optional while drafting; do not create a separate evidence ledger.
   # Include success/rejection cases where required; label permitted outcomes as illustrative.
 
-  Rule: <existing rule ID or rule summary>
+  Rule: <governing EARS requirement ID or source reference>
 
     Scenario: <positive or meaningful negative behaviour>
       Given <domain state>

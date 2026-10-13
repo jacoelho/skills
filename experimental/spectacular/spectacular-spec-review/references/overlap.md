@@ -2,6 +2,8 @@
 
 ## Review the obligations, not their vocabulary
 
+Read [EARS requirements](ears.md) for the single requirement syntax and its terms. The normalisation below is a temporary comparison aid, not another way to author requirements. Carry each EARS clause and its referenced scope into the comparison.
+
 Normalise each consequential rule temporarily as:
 
 ```text
@@ -40,44 +42,44 @@ These are reasoning aids, not a claim that arbitrary prose has been formally pro
 
 ### Duplicate authority
 
-Rule A: a successful cancellation of a pending booking increases available stock by one.
-Rule B in another current document: cancelling a pending booking successfully returns one unit to available stock.
+Rule A: When a pending booking is successfully cancelled, the booking service shall increase available stock by one unit.
+Rule B in another current document: When a pending booking is successfully cancelled, the booking service shall return one unit to available stock.
 
 With the same booking model and event boundary, these are candidate duplicate definitions. Select one maintained home after checking neither document carries an additional condition. The fact that two independent checks verify this guarantee is not itself duplication of normative authority.
 
 ### Contradiction
 
-Rule A: cancelling an already cancelled booking returns success without a state change.
-Rule B: every cancellation of a non-pending booking returns a conflict response.
+Rule A: When cancellation is requested for an already cancelled booking, the booking service shall return success without changing state.
+Rule B: When cancellation is requested for any non-pending booking, the booking service shall return a conflict response.
 
 An already cancelled booking is non-pending. Both rules apply and prescribe incompatible responses. The repair requires an explicit exception or changed rule; averaging the wording cannot resolve it.
 
 ### Valid refinement, not contradiction
 
-A shared service contract bounds each operation at five seconds under workload W.
-A capability adds a two-second bound for operation X under that same workload.
+Shared requirement: While operating under workload W, the service shall complete each operation within five seconds.
+Local requirement: While operating under workload W, the service shall complete each operation X within two seconds.
 
 The promises can hold together. The two-second bound is stronger, so verify its authority and feasibility rather than deleting it as contradictory. If the shared rule guarantees a deliberately exact duration instead of an upper bound, the classification may differ.
 
 ### Shared applicability
 
-One rule defines which cancellation transition may succeed.
-A separate invariant prohibits negative available stock across all operations.
+One requirement defines the permitted cancellation transitions in EARS.
+A separate ubiquitous requirement states: The booking service shall keep available stock non-negative across all operations.
 
 Both may apply to a cancellation. They do not define the same obligation. A shared state does not imply duplicated authority.
 
 ### Misleading similarity
 
-“Release one unit after a pending booking is cancelled” and “do not release stock when cancelling a confirmed booking is rejected” concern different states and outcomes. Merging them into an unconditional release rule would create a defect.
+“When a pending booking is cancelled, the booking service shall release one unit” and “When cancellation of a confirmed booking is rejected, the booking service shall not release stock” concern different states and outcomes. Merging them into an unconditional release rule would create a defect.
 
 ## Pairwise review is insufficient
 
 Three rules can be jointly inconsistent while every pair is satisfiable:
 
 ```text
-R1: exactly one of A or B is enabled.
-R2: exactly one of B or C is enabled.
-R3: exactly one of A or C is enabled.
+R1: The controller shall enable exactly one of A or B.
+R2: The controller shall enable exactly one of B or C.
+R3: The controller shall enable exactly one of A or C.
 ```
 
 For Boolean A, B, and C, each pair has solutions. The three together do not. Treat a pairwise scan as one technique, not a proof of global consistency.

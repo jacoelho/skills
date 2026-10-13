@@ -1,0 +1,75 @@
+{
+  "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "boundary": "local Python download callable; HTTP, storage and production policy service unassessed",
+  "source_sha256": {
+    "README.md": "c9e275a2b9197307b43806f1e3a67d587ec4a25c80d71f7024552884642a37a7",
+    "bad.py": "7cc71daab5cc85b241429db79a8f25fc945d29b9783e70d9adaae4f7cd41b423",
+    "contract.md": "7e065b1a1aeb0ea1adbe7e7f20d6d38ce57fe872fe0a7e1f6e104092da6af5f9",
+    "expected.json": "cced13976367beddc66c812bf2f641121dc359ed509087feee6cb49d49eb236a",
+    "good.py": "7519a1471fa160a02ac6ffc346c860ee03527ecdd1febcceb6906e9b99486ea1",
+    "policy.md": "72961faeba8caaadf1c2666201d8ddf6bd1e71a4faa87eff23acd580cb3efd64",
+    "probe.py": "43ab3f5a31c9d0fe79ac581cfd3d0c48d4a403544e1be9230b5d156232999841",
+    "task.md": "3f0fc9521837a3a25736a626b2e9c14d44eccb4414541921e4e59731f10ec33e"
+  },
+  "checks": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "probe.py",
+        "--implementation",
+        "good"
+      ],
+      "cwd": "/Volumes/External/Projects/skills/experimental/spectacular/examples/invoice-download",
+      "exit_code": 0,
+      "stdout": {
+        "implementation": "good",
+        "cases": 6,
+        "failures": []
+      },
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "probe.py",
+        "--implementation",
+        "bad"
+      ],
+      "cwd": "/Volumes/External/Projects/skills/experimental/spectacular/examples/invoice-download",
+      "exit_code": 1,
+      "stdout": {
+        "implementation": "bad",
+        "cases": 6,
+        "failures": [
+          {
+            "case": {
+              "path": "link",
+              "access": "denied",
+              "status": 403,
+              "body": null
+            },
+            "actual": [
+              200,
+              "invoice-42"
+            ]
+          },
+          {
+            "case": {
+              "path": "link",
+              "access": "unavailable",
+              "status": 503,
+              "body": null
+            },
+            "actual": [
+              200,
+              "invoice-42"
+            ]
+          }
+        ]
+      },
+      "stderr": ""
+    }
+  ]
+}

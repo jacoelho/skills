@@ -4,6 +4,8 @@ Do not treat every disagreement as permission to rewrite the requirement.
 
 ## Diagnose before editing
 
+For a syntax-only correction, translate the settled obligation into [EARS](ears.md) while preserving applicability, response, prohibitions, quantifiers, and authority. A change from permission to guarantee is a semantic change, not formatting. Keep quoted external sources intact and refer to their binding clauses from local EARS statements.
+
 | Finding | Appropriate target |
 | --- | --- |
 | The implementation violates a still-valid obligation. | Implementation and, where needed, its verification. |
@@ -17,7 +19,7 @@ Do not treat every disagreement as permission to rewrite the requirement.
 
 When a contract changes, preserve enough prior wording and decision history for a reviewer to see what changed and why, following repository convention. Keep that history outside the current contract; readers should not have to apply a sequence of contradictory amendments to learn the active rule.
 
-Classify a disagreement before synchronising sources: an implementation defect preserves the valid contract; a specification defect needs an authorised contract correction; a deliberate change updates the contract; undocumented behaviour needs authority; a stale secondary source should be updated; and an unresolved conflict stays out of the current contract.
+Classify a disagreement before synchronising sources: an implementation defect preserves the valid contract; a specification defect needs an authorised contract correction; a deliberate change updates the contract; undocumented behaviour needs authority; and a stale secondary source should be updated. Keep unresolved replacement proposals in the working record. Challenging an existing obligation does not retire it: retain its identified source until an authorised revision or governing source settles what applies, and isolate work that depends on the conflict.
 
 ## Impact envelope
 
@@ -33,4 +35,4 @@ List which earlier results are invalidated and which remain relevant. An unchang
 
 Identify the contract revision in the next handoff. Communicate changed obligations and cancelled work to affected implementers, and point them to the evidence they must refresh. Independent work can continue when it does not depend on the changed decision.
 
-Distinguish recommending a correction from possessing authority to adopt it. Record user-provided decisions directly; do not create unnecessary repeat-approval gates. When authority or evidence is absent, keep the disputed part out of the current contract, record it in the task or decision record, and make the consequence explicit.
+Distinguish recommending a correction from possessing authority to adopt it. Record user-provided decisions directly; do not create unnecessary repeat-approval gates. When authority or evidence for a replacement is absent, preserve the existing contract, record the proposal and affected work in the task or decision record, and make the consequence explicit.

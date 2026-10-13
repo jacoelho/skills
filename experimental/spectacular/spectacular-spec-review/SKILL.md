@@ -1,8 +1,8 @@
 ---
 name: spectacular-spec-review
-description: Review bounded software specifications for ambiguity, contradiction, duplicate authority, missing cases, evidence gaps, and drift. Use for read-only spec audits, change reconciliation, and readiness review.
+description: Review bounded EARS specifications for syntax, ambiguity, contradiction, duplicate authority, missing cases, evidence gaps, and drift. Use for read-only spec audits, change reconciliation, and readiness review.
 metadata:
-  version: "1.2.0"
+  version: "2.0.0"
 ---
 
 # Spectacular spec review
@@ -12,6 +12,8 @@ Review the next bounded commitment, not the whole imagined product. Prefer concr
 The user's explicit task and decisions take precedence over this workflow. Treat binding external constraints as evidence that may require a decision when they conflict with the requested behaviour.
 
 This is a read-only review. Do not edit specifications, code, tests, or decisions to make a finding disappear. If the user explicitly requests a repair, record the finding first, make the smallest scoped edit, and rerun the affected checks as a separate step.
+
+Read [EARS requirements and terms](references/ears.md) before assessing statements. It defines the only local requirement syntax. Review quoted external sources in their original form; a local syntax defect does not retire a binding obligation or prove an implementation defect.
 
 ## Outcome
 
@@ -49,6 +51,8 @@ Inspect accessible sources directly. Label observations by source: normative spe
 
 For each consequential obligation, identify its maintained home, applicability, required outcome, prohibited effects, and basis.
 
+Check that each locally authored requirement or invariant contains one complete EARS sentence using the applicable pattern and defined keywords. Identify missing or misused configuration, state, event, system, or response clauses. Check that definitions and illustrative tables contain no additional behavioural policy. Classify a syntax-only finding separately from ambiguity or changed meaning; recommend a meaning-preserving rewrite when the source already settles the obligation.
+
 Expose ambiguity with a distinguishing case: show two behaviours that fit the wording but produce different observable outcomes. Explicitly delegated discretion is acceptable when its bounds are clear.
 
 ### 2. Overlap and interaction
@@ -63,7 +67,7 @@ Probe only boundaries that can change acceptance for this increment: invalid or 
 
 A gap is blocking when plausible answers would change a promised outcome, violate a shared invariant, break a consumer, or invalidate dependent work. When a case matters only if scope expands, record it as a limit or deferred question, not a finding or readiness blocker for this increment.
 
-Classify permissions separately from guarantees. A `MAY` or otherwise allowed outcome says that the behaviour is permitted; it does not require the system to produce that outcome in every case. Do not turn an allowed path into a new `MUST` obligation or expand the increment because no positive demonstration exists. Check that observed behaviour does not violate required or forbidden outcomes, and record permitted outcomes with their actual bounds.
+Review permissions using the EARS reference's permission rules. A constraint on a returned response or permitted effect does not require execution, completion, or demonstration of every alternative. When reconciling an external or earlier `MAY` statement, preserve its modality; flag a rewrite that invents a closed set or strengthens it into a guarantee. Assess required and forbidden outcomes and the actual bounds of permitted behaviour.
 
 ### 4. Acceptance and evidence
 
@@ -101,7 +105,7 @@ Possible recommendations are: implement the bounded scope, investigate a named u
 
 ## Structural checking
 
-For repositories using the bundled notation, [the linter guide](references/lint-format.md) and `scripts/spec_lint.py` can check identifiers and references. Report the emitted counts for active documents and declarations, skipped documents or entries, symlinks, and rejected unsupported inputs; do not describe skipped or unrun material as inspected. Treat structural cleanliness as supporting evidence only; semantic overlap and correctness require the passes above.
+For repositories using the bundled declaration layout, run `scripts/spec_lint.py` on the affected active specification roots as described in [the linter guide](references/lint-format.md). It enforces declarations, EARS lexical syntax, and identifier references for proposed and accepted requirements; grammar errors fail without `--strict`. Report the emitted counts for active documents and declarations, skipped documents or entries, symlinks, and rejected unsupported inputs; do not describe skipped or unrun material as inspected. A clean run supports syntax and traceability within the recognised scope; meaning, semantic overlap, authority, and conformance require the passes above. Report an unavailable executable check explicitly rather than replacing it with a claim of automated compliance.
 
 ## Output
 

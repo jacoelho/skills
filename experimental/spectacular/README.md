@@ -1,8 +1,8 @@
 # Spectacular skills
 
 Four standalone skills for clarifying, writing, reviewing, and illustrating the
-contract for the next bounded change. Choose the skill that answers the current
-question; the suite does not prescribe a sequence of approvals.
+EARS contract for the next bounded change. Choose the skill that answers the
+current question; the suite does not prescribe a sequence of approvals.
 
 | Skill | Use for | Result |
 | --- | --- | --- |
@@ -24,6 +24,35 @@ cp -R experimental/spectacular/spectacular-* /path/to/project/.agents/skills/
 Each directory includes its own references, templates, and any scripts it needs.
 Keep that directory intact when installing an individual skill. The bundle README
 is for people maintaining or choosing the skills; it is not a runtime dependency.
+
+## One requirement syntax
+
+[EARS requirements and terms](spectacular-spec-writing/references/ears.md) is the
+authoritative grammar and glossary. Every locally authored requirement and
+invariant uses one complete EARS sentence. Its patterns distinguish ubiquitous
+obligations, events, ongoing states, unwanted conditions, configured features,
+and combinations. Repository conventions may change document layout, not the
+requirement syntax.
+
+Grilling identifies unresolved EARS clauses and meanings. Writing records settled
+EARS obligations. Review assesses syntax and meaning separately. Gherkin,
+acceptance tables, and diagrams illustrate requirements by reference; they do not
+define another contract. External governing sources retain their original wording
+and authority. Permissions retain their bounds when translated to EARS.
+
+The writing skill owns `references/ears.md`. The other three skills contain
+generated, byte-identical local copies so each installed directory remains
+self-contained. Edit the writing copy, then synchronise and check from this
+repository's root:
+
+```sh
+python3 experimental/spectacular/scripts/sync_ears.py
+python3 experimental/spectacular/scripts/sync_ears.py --check
+```
+
+Generated copies are distribution artifacts, not independent definitions. A
+required shared sibling would break individual installation and the evaluation
+runner's isolated skill payloads; generated copies preserve those boundaries.
 
 ## Choose the next action
 
@@ -60,9 +89,40 @@ about a particular contract, code state, and environment. Neither agreement amon
 reviewers nor a structurally valid document establishes that a requirement meets
 the underlying need.
 
-The optional [specification linter](spectacular-spec-review/references/lint-format.md)
-checks the bundled identifier and reference notation. It does not establish
-semantic correctness, implementation conformance, or acceptance.
+The [specification linter](spectacular-spec-review/references/lint-format.md)
+enforces EARS lexical syntax, declaration layout, and local references in active
+documents. Syntax violations fail for both proposed and accepted requirements.
+Semantic correctness, implementation conformance, and acceptance remain separate
+assessments. For the worked example, run from this repository's root:
+
+```sh
+python3 experimental/spectacular/spectacular-spec-review/scripts/spec_lint.py experimental/spectacular/examples/invoice-download --strict
+```
+
+## Development and evaluation
+
+The [invoice download example](examples/invoice-download/README.md) connects a
+distinguishing question, an authorised decision, the maintained contract, an
+independent acceptance oracle, executed callable checks, and a fresh-context
+handoff. Its deliberately wrong control demonstrates what the checks reject.
+It is invented development data, not a production policy or an unseen benchmark.
+
+Behavioural evaluation separates actor inputs from assessment criteria, compares
+skill application with a fixed-host baseline, and records failures and unavailable
+evidence. Routing judgments are distinct from native host discovery. Installation
+checks and behavioural results establish different claims; neither a clean
+linter nor reviewer agreement proves the skills effective.
+
+Local evaluation artifacts under `evals/`, when available, record the earlier
+iteration's results, source hashes, and limits. They are excluded from this
+distribution. Those behavioural results precede the EARS rewrite and do not
+validate the revised payloads.
+
+The examples and any local evaluation tools stay outside installed skill payloads.
+The four runtime skills retain their own resources and optional sibling
+fallbacks. Additional runtime delegation needs a concrete review question and
+evidence that its benefit justifies its cost; the development review panel is
+not a required workflow for ordinary invocations.
 
 ## Design sources
 

@@ -2,6 +2,8 @@
 
 Select a question because it removes an important behavioural ambiguity, not because it completes a questionnaire.
 
+Use [EARS terms and patterns](ears.md) to distinguish configuration, ongoing state, activating event, unwanted condition, responsible system, and response. The questions below clarify those meanings; they are not alternative requirement forms.
+
 ## Select the next mode
 
 “What decision could this work prevent, and what evidence is missing?”

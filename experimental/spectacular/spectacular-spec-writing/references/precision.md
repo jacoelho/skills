@@ -21,11 +21,7 @@ Do not copy the unresolved question into the current contract.
 
 ## Write a decidable obligation
 
-A useful sentence shape is:
-
-> Under [conditions], when [event], [system boundary] must [observable outcome], with [relevant bound or prohibited effect].
-
-Do not mechanically force unconditional invariants or declarative constraints into an event sentence. Supporting definitions can carry detail without repeating it in every rule.
+Use the applicable pattern from [EARS requirements](ears.md), the sole requirement syntax. Use the ubiquitous pattern for an unconditional invariant or declarative constraint; configuration and state clauses may scope an invariant, without an activating event or unwanted-condition clause. Supporting definitions give terms precise meanings; behavioural obligations remain in EARS statements.
 
 Keep one independently reviewable obligation per requirement. If changing a clause should not change its neighbour, they probably deserve separate identifiers. If the guarantee is atomicity of a transition, splitting its coupled effects may obscure rather than improve the requirement.
 
