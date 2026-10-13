@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "suite": "programming-go-api-design",
+  "status": "Authored scenarios; agent evaluations have not been executed.",
+  "cases": [
+    {
+      "id": "D01-simple-pure-operation",
+      "mode": "design",
+      "prompt": "Design an internal normalise-code helper: take a string, trim surrounding ASCII whitespace, reject an empty result, and uppercase ASCII letters. No I/O, shared state, customisation, or compatibility obligations are needed.",
+      "must": [
+        "Recommend a plain concrete function with explicit input/error semantics.",
+        "Show a real call and at least one edge-case obligation.",
+        "Keep the effort proportionate."
+      ],
+      "must_not": [
+        "Require a context, builder, option system, registry, generic parameter, or multiple packages.",
+        "Produce a long design ceremony for the helper."
+      ]
+    },
+    {
+      "id": "D02-completion-contract",
+      "mode": "design",
+      "prompt": "A library must read exactly one complete finite document from an io.Reader and reject trailing non-whitespace data. The proposed API is NewDecoder(r).Decode(&v), where Decode currently consumes one value. Design the caller-facing operation.",
+      "must": [
+        "Separate whole-input validity from next-value streaming.",
+        "State that whole-input validation needs a real endpoint such as EOF or framing.",
+        "Provide acceptance cases for a second value and malformed trailing data."
+      ],
+      "must_not": [
+        "Declare a single successful Decode call sufficient.",
+        "Treat reading until EOF as appropriate for every long-lived network stream."
+      ]
+    },
+    {
+      "id": "D03-nested-policy",
+      "mode": "design",
+      "prompt": "Design custom decoder hooks for a parser with a strict-unknown-fields option and a shared work budget. Hooks can recursively decode child values. Show how these contracts cross that boundary.",
+      "must": [
+        "Show a nested caller/handler scenario.",
+        "Distinguish configuration propagation from enforcement by custom code.",
+        "Keep cumulative work accounting from resetting in child calls.",
+        "Specify scope and restoration of local overrides if supported."
+      ],
+      "must_not": [
+        "Add options only to the top-level function and claim propagation is solved.",
+        "Pass a fresh full work budget to every child.",
+        "Require global mutable registration without justification."
+      ]
+    },
+    {
+      "id": "D04-borrowed-results",
+      "mode": "design",
+      "prompt": "A high-throughput scanner reuses its byte buffer. Most consumers inspect records immediately, but some retain selected records after advancing. Design the result API.",
+      "must": [
+        "Compare owned and borrowed choices using both consumers.",
+        "Specify the exact invalidating operations and retention/copy path.",
+        "Define whether callbacks or returned views may mutate storage.",
+        "Treat allocation goals as constraints or hypotheses, not measured facts."
+      ],
+      "must_not": [
+        "Promise all retained slices remain valid without establishing ownership.",
+        "Choose unsafe or pooling purely to appear fast.",
+        "Insist that every use must copy or that every use must borrow regardless of workload."
+      ]
+    },
+    {
+      "id": "D05-persistent-builder-aliases",
+      "mode": "review",
+      "prompt": "A query builder promises value-style branch independence. Its Where method copies the struct and appends to a shared clauses slice. Callers derive two queries from the same base. Review the contract risk; spare slice capacity is possible.",
+      "must": [
+        "Show a base plus two derived builders and explain how aliasing can affect them.",
+        "Probe spare capacity rather than assuming append always reallocates.",
+        "Separate the documented immutability promise from measured behaviour.",
+        "Recommend the smallest fix preserving the promised model or explain an explicit model change."
+      ],
+      "must_not": [
+        "Call a shallow struct copy immutable.",
+        "Redesign the entire query DSL instead of addressing the boundary."
+      ]
+    },
+    {
+      "id": "D06-context-is-not-decoration",
+      "mode": "design",
+      "prompt": "Design two separate boundaries: a pure integer validation function with no request data, and a database lookup that must observe an incoming request deadline. Project guidance prefers avoiding unnecessary context parameters.",
+      "must": [
+        "Keep the pure validation boundary minimal.",
+        "Preserve actual request deadline propagation for the database operation.",
+        "Explain the cancellation mechanism rather than relying on the parameter alone."
+      ],
+      "must_not": [
+        "Add context everywhere as a universal rule.",
+        "Remove context from the database operation by citing the JSON proposal.",
+        "Ask the user to repeat the already stated requirements."
+      ]
+    },
+    {
+      "id": "D07-foreign-type-customisation",
+      "mode": "design",
+      "prompt": "Design a reusable generic ordered collection. Callers need to store built-in integers and types from another module with no comparison methods. Custom ordering varies per collection.",
+      "must": [
+        "Show both built-in and foreign-type usage.",
+        "Consider a caller-supplied comparison function rather than requiring methods on every element type.",
+        "Specify where ordering policy is stored and whether it may change.",
+        "Use generics for a real element-type relationship."
+      ],
+      "must_not": [
+        "Require callers to edit a foreign type.",
+        "Install comparison behaviour globally.",
+        "Claim generics automatically eliminate allocations or dispatch costs."
+      ]
+    },
+    {
+      "id": "D08-function-type-compatibility",
+      "mode": "evolve",
+      "prompt": "A released package exposes func Run(name string). Propose adding opts ...Option while preserving compatibility. One supported caller assigns Run to a variable of type func(string).",
+      "must": [
+        "Identify the function-type compatibility break even though direct calls still compile.",
+        "Offer a compatible extension or an explicit breaking-version path.",
+        "Use the function-value assignment as a compilation probe."
+      ],
+      "must_not": [
+        "Call this change backward-compatible without qualification.",
+        "Ignore the caller source that the prompt supplied."
+      ]
+    },
+    {
+      "id": "D09-performance-feasibility",
+      "mode": "design",
+      "prompt": "A recursively extensible serialiser has a custom hook that returns a complete []byte. Large nested values are common and bounded peak memory matters. Compare an alternative that writes through the active encoder.",
+      "must": [
+        "Identify representation/materialisation constraints at the API boundary.",
+        "Compare error, validation, nesting, and ownership contracts, not only bytes allocated.",
+        "Specify a representative experiment if performance decides the choice.",
+        "Separate structural reasoning from benchmark evidence."
+      ],
+      "must_not": [
+        "Invent a speedup, allocation count, or benchmark result.",
+        "Declare io.Writer alone proof of bounded memory.",
+        "Automatically sacrifice validation for speed."
+      ]
+    },
+    {
+      "id": "D10-no-change-is-valid",
+      "mode": "review",
+      "prompt": "Review a small package API that already has concrete entry points, clear documentation, correct caller examples, explicit ownership and errors, and no reported composition problems. The only proposed changes rename a clear method and replace a simple config struct with functional options.",
+      "must": [
+        "Require a concrete caller benefit before endorsing the changes.",
+        "Allow no API change justified.",
+        "Label stylistic preferences as preferences."
+      ],
+      "must_not": [
+        "Manufacture a defect because a checklist mentions functional options.",
+        "Rename a stable API without accounting for migration costs."
+      ]
+    },
+    {
+      "id": "D11-experimental-version-evidence",
+      "mode": "design",
+      "prompt": "The project go.mod requires Go 1.23 and no experiments. An old design document proposes using a newer experimental standard-library API. Only a Go 1.23 toolchain is installed. Design a compatible path without changing project policy.",
+      "must": [
+        "Distinguish proposal text, installed toolchain, and required support baseline.",
+        "Avoid assuming the proposed API is available.",
+        "Offer a compatible design or document the unsupported dependency.",
+        "Report exactly which verification was possible."
+      ],
+      "must_not": [
+        "Silently upgrade go.mod or enable experiments.",
+        "Claim testing on a newer Go version.",
+        "Claim a prototype stub establishes runtime behaviour."
+      ]
+    },
+    {
+      "id": "D12-design-not-just-review",
+      "mode": "design",
+      "prompt": "There is no implementation yet. Design a reusable Go record-validation package with a compile-once/use-many workload, caller-owned inputs, all validation errors returned, and no reflection. Implementation of a prototype is authorised in the assigned scratch directory.",
+      "must": [
+        "Produce proposed signatures, realistic caller examples, and contracts rather than only a checklist.",
+        "Respect no reflection and aggregate-error requirements.",
+        "Separate setup and per-operation work without inventing session objects unnecessarily.",
+        "Compile an authorised prototype when the environment permits and label its evidentiary limits.",
+        "Attempt a concrete counterexample and simplification."
+      ],
+      "must_not": [
+        "Wait for an implementation before providing useful design work.",
+        "Ask for a mandatory design sign-off despite the granted prototype authority.",
+        "Claim zero allocations without a measurement.",
+        "Implement outside the assigned scope."
+      ]
+    }
+  ]
+}
