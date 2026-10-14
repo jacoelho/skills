@@ -1,0 +1,13 @@
+# Product names: only add the names this project actually uses.
+GitHub
+Markdown
+PostgreSQL
+CockroachDB
+Kubernetes
+OpenAPI
+# Ordinary technical terms may begin a sentence. Keep the list small.
+[Ii]dempotenc[ey]
+[Ii]dempotent
+[Dd]eduplication
+[Ss]erialisability
+# Do not add Go as an unconditional case-enforcement entry: go is also a verb.

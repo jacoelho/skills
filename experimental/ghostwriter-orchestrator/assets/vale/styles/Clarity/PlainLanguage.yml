@@ -1,0 +1,37 @@
+extends: substitution
+message: Consider '%s' instead of '%s' only if meaning, emphasis and sentence grammar survive.
+level: suggestion
+scope: text
+ignorecase: true
+swap:
+  in\s+order\s+to: to
+  at\s+this\s+point\s+in\s+time: now
+  due\s+to\s+the\s+fact\s+that: because
+  with\s+the\s+exception\s+of: except for
+  on\s+a\s+daily\s+basis: daily
+  for\s+the\s+purpose\s+of: for
+tests:
+- name: suggests a shorter purpose phrase
+  input: We retry in order to recover from a dropped connection.
+  contains: Clarity.PlainLanguage
+- name: matches a phrase across a source line break
+  input: 'We retry in order
+
+    to recover from a dropped connection.'
+  contains: Clarity.PlainLanguage
+- name: does not ban technical terms or conditions
+  input: Idempotency may prevent duplicate effects only when the key remains stable.
+  want: ''
+- name: does not treat all uses of order as wordiness
+  input: Process the records in order.
+  want: ''
+- name: ignores inline code
+  input: The label is `in order to`.
+  want: ''
+- name: preserves normative words and useful technical vocabulary
+  input: The service MUST NOT acknowledge a payment unless replication has completed. It MAY retry with
+    the same idempotency key.
+  want: ''
+- name: does not replace a technical term with an inexact synonym
+  input: Use serialisation, not encryption, to encode the value.
+  want: ''

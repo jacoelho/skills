@@ -1,0 +1,8 @@
+extends: spelling
+message: Check '%s' against British spelling and the project vocabulary. Preserve literal identifiers
+  and proper names.
+level: warning
+dictionaries:
+- en_GB
+append: false
+split: false

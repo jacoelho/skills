@@ -1,0 +1,2 @@
+# Add only project-approved deprecated or disallowed terms, one entry per line.
+# Do not use this file to outlaw uncertainty, passive voice or technical words.

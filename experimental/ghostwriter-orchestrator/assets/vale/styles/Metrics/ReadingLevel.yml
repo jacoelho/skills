@@ -1,0 +1,21 @@
+extends: readability
+message: 'ARI estimate: %s. Inspect the explanation for this audience; this is not a quality score or
+  an instruction to shorten it.'
+level: suggestion
+grade: 14
+metrics:
+- Automated Readability
+tests:
+- name: detects deliberately high character and sentence counts
+  input: Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation
+    Institutionalisation Institutionalisation Institutionalisation Institutionalisation Institutionalisation.
+  contains: Metrics.ReadingLevel
+- name: short simple prose does not trip the high threshold
+  input: The cat sat on the mat. It had a nap. The dog ran to the gate.
+  want: ''
