@@ -1,0 +1,50 @@
+extends: existence
+message: 'Possible editing-session residue: ''%s''. Check its purpose against the original notes; retain
+  legitimate discussion or quotations.'
+level: warning
+scope: text
+ignorecase: true
+nonword: true
+vocab: false
+tokens:
+- \bhere(?:\s+is|'s|’s)\s+the\s+(?:revised|rewritten|updated|edited|polished)\s+(?:article|draft|version|text|document|ADR|PRD|RFC|proposal|specification)\b
+- \b(?:based\s+on|in\s+response\s+to)\s+your\s+(?:feedback|editorial\s+notes|revision\s+request)\b
+- \bas\s+you\s+(?:requested|asked)\b
+- '\b(?:editorial\s+note|note\s+to\s+(?:the\s+)?(?:writer|editor))\s*:'
+tests:
+- name: detects a response wrapper
+  input: Here is the revised article.
+  contains: Workflow.ProcessLeakage
+- name: detects a curly apostrophe wrapper
+  input: Here’s the updated draft.
+  contains: Workflow.ProcessLeakage
+- name: detects a reference to revision feedback
+  input: Based on your feedback, this version uses shorter paragraphs.
+  contains: Workflow.ProcessLeakage
+- name: detects an explicit writer instruction
+  input: 'Note to the writer: add an example here.'
+  contains: Workflow.ProcessLeakage
+- name: useful article signposting is not residue
+  input: This article explains how a review queue grows.
+  want: ''
+- name: a heading about editorial work is not residue
+  input: '# Editorial notes
+
+
+    Writers can keep production notes outside the article.'
+  want: ''
+- name: indirect leakage is a documented blind spot
+  input: Although mentoring is beyond this article’s scope, reviews remain important.
+  want: ''
+- name: detects an RFC response wrapper
+  input: Here is the revised RFC.
+  contains: Workflow.ProcessLeakage
+- name: technical non-goals are not process contamination
+  input: '## Non-goals
+
+
+    Cross-region failover is outside the scope of this proposal.'
+  want: ''
+- name: decision rationale may mention a real prior review
+  input: The architecture review identified a single point of failure.
+  want: ''

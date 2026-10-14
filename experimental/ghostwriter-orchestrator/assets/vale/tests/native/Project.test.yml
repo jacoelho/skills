@@ -1,0 +1,78 @@
+- name: British words are accepted by the default profile
+  input: The organisation analyses behaviour, colour, serialisation and authorisation.
+  absent: Technical.Spelling
+- name: an American-only spelling is inspected
+  input: The color is red.
+  contains: Technical.Spelling
+- name: ordinary spelling mistakes are inspected
+  input: The servcie stopped.
+  contains: Technical.Spelling
+- name: accidental repetition is enabled
+  input: The the worker stopped.
+  contains: Vale.Repetition
+- name: project term casing is checked
+  input: The change is on github.
+  contains: Vale.Terms
+- name: computing program remains valid
+  input: The program reads a licence file.
+  absent: Technical.Spelling
+- name: literal American API spelling is protected
+  input: Set `color` and `authorization_status` in the response.
+  absent: Technical.Spelling
+- name: fenced code remains protected
+  input: '```json
+
+    {"color": "Here is the revised RFC. [[TODO]]"}
+
+    ```'
+  want: ''
+- name: requirements in callouts are not silently skipped
+  input: '> The service MUST respond as soon as possible.'
+  contains: Requirements.VagueRequirement
+- name: requirements in tables are not silently skipped
+  input: '| Requirement |
+
+    | --- |
+
+    | The service MUST be scalable. |'
+  contains: Requirements.VagueRequirement
+- name: normative words and conditions survive
+  input: The service MUST NOT acknowledge a message unless replication has completed. Clients MAY retry
+    with the same idempotency key.
+  absent:
+  - Clarity.PlainLanguage
+  - Requirements.VagueRequirement
+- name: process wrappers and explicit placeholders are visible
+  input: 'Here is the revised RFC. We retry in order to recover. [[CITE: study]]'
+  contains:
+  - Workflow.ProcessLeakage
+  - Clarity.PlainLanguage
+  - Workflow.EditorialMarkers
+- name: open questions are legitimate
+  input: '## Open questions
+
+
+    The retention period remains undecided. The platform team owns the decision.'
+  absent:
+  - Workflow.EditorialMarkers
+  - Workflow.ProcessLeakage
+- name: non-goals are legitimate technical content
+  input: '## Non-goals
+
+
+    Multi-region recovery is not included in this proposal.'
+  absent: Workflow.ProcessLeakage
+- name: passive voice can foreground the outcome
+  input: The payment was rejected because the account was closed.
+  absent: Requirements.VagueRequirement
+- name: indirect process leakage requires source comparison
+  input: Although mentoring is beyond this document’s scope, reviews remain important.
+  absent: Workflow.ProcessLeakage
+- name: readability metrics are off by default
+  input: Institutionalisation operationalisation internationalisation characterisation.
+  absent: Metrics.ReadingLevel
+- name: lint cannot verify a short absolute claim
+  input: Retries always prevent duplicate payments.
+  absent:
+  - Requirements.VagueRequirement
+  - Workflow.ProcessLeakage

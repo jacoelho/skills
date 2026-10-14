@@ -1,0 +1,26 @@
+{
+  "repository": "wooorm/dictionaries",
+  "commit": "8cfea406b505e4d7df52d5a19bce525df98c54ab",
+  "retrieved_metadata_on": "2026-10-14",
+  "license": "MIT AND BSD (upstream dictionary and affix licence)",
+  "files": [
+    {
+      "source": "dictionaries/en-GB/index.aff",
+      "target": "en_GB.aff",
+      "bytes": 3086,
+      "git_blob_sha1": "9e7cb1e2f1c2cc3faff5a7ae2d5c041091017bdb"
+    },
+    {
+      "source": "dictionaries/en-GB/index.dic",
+      "target": "en_GB.dic",
+      "bytes": 552106,
+      "git_blob_sha1": "85edde560296b643498da7292eabd09740682dd8"
+    },
+    {
+      "source": "dictionaries/en-GB/license",
+      "target": "en_GB.LICENSE",
+      "bytes": 15739,
+      "git_blob_sha1": "663781aee8593b882e79d01d28e7e54d2ec64947"
+    }
+  ]
+}
