@@ -1,0 +1,1485 @@
+{
+  "version": 1,
+  "title": "Inside visualize-architecture-flow",
+  "summary": "Start with the authoring contract, follow the executable validator, then inspect its data structures and failure boundaries. This atlas explains the pinned reference skill; it does not claim to visualise your application yet.",
+  "root_view": "overview",
+  "source": {
+    "repository": "https://github.com/07130918/Agents",
+    "commit": "2766d4aa35acb1436f09f7a22415038ff75a663f",
+    "scope": "The visualization reference, wrappers, dedicated Python validator and global installation/hygiene context.",
+    "excluded": "Other skills, private user repositories, target applications and production runtime behaviour."
+  },
+  "evidence": [
+    {
+      "id": "ev-wrapper",
+      "kind": "documentation",
+      "label": "Skill entrypoint and global reference dependency",
+      "path": "codex/skills/visualize-architecture-flow/SKILL.md"
+    },
+    {
+      "id": "ev-guide",
+      "kind": "documentation",
+      "label": "Documented evidence-first, state-first workflow and manual browser checks",
+      "path": "shared/references/visualize-architecture-flow.md"
+    },
+    {
+      "id": "ev-install",
+      "kind": "code",
+      "label": "Global installer supplies the shared reference and Codex script",
+      "path": "scripts/apply-to-local.sh"
+    },
+    {
+      "id": "ev-parse",
+      "kind": "code",
+      "label": "CLI input parsing",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 10,
+      "end": 15
+    },
+    {
+      "id": "ev-match",
+      "kind": "code",
+      "label": "Text-wide regular-expression matching",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 18,
+      "end": 19
+    },
+    {
+      "id": "ev-load",
+      "kind": "code",
+      "label": "File checks and UTF-8 decoding",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 22,
+      "end": 31
+    },
+    {
+      "id": "ev-required",
+      "kind": "code",
+      "label": "Required-pattern dictionary and error accumulation",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 33,
+      "end": 43
+    },
+    {
+      "id": "ev-forbidden",
+      "kind": "code",
+      "label": "Forbidden-pattern dictionary and error accumulation",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 45,
+      "end": 57
+    },
+    {
+      "id": "ev-recommended",
+      "kind": "code",
+      "label": "Recommended-pattern dictionary and warning accumulation",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 59,
+      "end": 67
+    },
+    {
+      "id": "ev-result",
+      "kind": "code",
+      "label": "Return value: errors and warnings",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 22,
+      "end": 69
+    },
+    {
+      "id": "ev-exit",
+      "kind": "code",
+      "label": "Reporting and exit-code policy",
+      "path": "codex/skills/visualize-architecture-flow/scripts/validate_standalone_html.py",
+      "start": 72,
+      "end": 90
+    }
+  ],
+  "entities": [
+    {
+      "id": "request",
+      "label": "Feature explanation request",
+      "kind": "actor",
+      "summary": "The developer selects a feature, use case or issue and a source branch. The default audience is a developer new to that feature.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "wrapper",
+      "label": "SKILL.md entrypoint",
+      "kind": "document",
+      "summary": "A small routing instruction directs the assistant to read a shared reference before building HTML. It is not an extraction or rendering program.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-wrapper",
+        "ev-install"
+      ],
+      "facts": [
+        "The wrapper expects ~/.agents/references/visualize-architecture-flow.md.",
+        "The repository-wide installer supplies that location. Copying only this wrapper does not create a portable standalone skill."
+      ]
+    },
+    {
+      "id": "guide",
+      "label": "Authoring workflow",
+      "kind": "document",
+      "summary": "A prescribed process for an assistant to investigate one feature and create a state-driven HTML explanation. The procedure is documentation, not an implemented generation pipeline.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "facts": [
+        "Evidence → domain state → scenarios → visual encoding → HTML.",
+        "Normal and evidence-backed failure/recovery paths are expected."
+      ],
+      "invariants": [
+        "An implementation claim needs evidence. Planned paths remain separate from current behavior."
+      ]
+    },
+    {
+      "id": "assistant",
+      "label": "Authoring assistant",
+      "kind": "component",
+      "summary": "The agent performs the investigation, interpretation and HTML authoring described by the reference. No reusable diagram renderer or model extractor is supplied in this skill folder.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "partial",
+      "evidence": [
+        "ev-wrapper",
+        "ev-guide"
+      ],
+      "facts": [
+        "The instructions describe how to work, not a deterministic pipeline implementation.",
+        "The supplied code only lints the generated HTML."
+      ]
+    },
+    {
+      "id": "html",
+      "label": "Standalone HTML output",
+      "kind": "artifact",
+      "summary": "The intended output embeds CSS, JavaScript and SVG. State, steps, controls and source references are authored for the selected feature.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "fields": [
+        {
+          "name": "baseState",
+          "type": "function → object",
+          "meaning": "Produces the initial domain state for replay."
+        },
+        {
+          "name": "scenarios",
+          "type": "array of step sequences",
+          "meaning": "Each step has explanation, evidence, animation metadata and a patch function."
+        }
+      ],
+      "invariants": [
+        "External resources are disallowed by the output contract, except ordinary evidence hyperlinks.",
+        "That contract is stronger than the supplied regex validator can enforce."
+      ]
+    },
+    {
+      "id": "validator",
+      "label": "HTML validator CLI",
+      "kind": "component",
+      "summary": "A Python text-pattern linter checks required, forbidden and recommended strings, then reports errors and warnings. It does not parse a DOM or execute the HTML.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-load",
+        "ev-match",
+        "ev-required",
+        "ev-forbidden",
+        "ev-recommended",
+        "ev-exit"
+      ],
+      "invariants": [
+        "A PASS means no configured error pattern failed. It does not establish architectural truth or offline behavior."
+      ]
+    },
+    {
+      "id": "browser",
+      "label": "Manual browser review",
+      "kind": "stage",
+      "summary": "The reference separately requires real browser checks: viewport layouts, scenarios, seeking, cancellation, reduced motion and console errors. This is prescribed manual/agent work, not implemented by the Python validator.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "evidence-stage",
+      "label": "Collect feature evidence",
+      "kind": "stage",
+      "summary": "Trace entrypoints, use cases, domain logic, adapters, infrastructure, tests, configuration and documented implementation status.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "parent": "guide"
+    },
+    {
+      "id": "state-stage",
+      "label": "Define domain state",
+      "kind": "stage",
+      "summary": "Identify authoritative state, messages, artifacts, leases, invariants and recovery. This is intentionally done before HTML.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "parent": "guide"
+    },
+    {
+      "id": "scenarios-stage",
+      "label": "Describe state transitions",
+      "kind": "stage",
+      "summary": "Build ordered normal and failure/recovery scenarios. Recompute a selected step by replaying patches from a fresh initial state.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "parent": "guide",
+      "invariants": [
+        "Replay is deterministic only if the authored baseState and patch functions are themselves deterministic.",
+        "A linear example is not a concurrency proof."
+      ]
+    },
+    {
+      "id": "visual-stage",
+      "label": "Choose visual semantics",
+      "kind": "stage",
+      "summary": "Use roles, boundaries, meaningful geometry, labelled operations and selective edges. Keep live state consistent with causal order.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-guide"
+      ],
+      "parent": "guide"
+    },
+    {
+      "id": "path",
+      "label": "html argument",
+      "kind": "type",
+      "summary": "argparse converts the argument to pathlib.Path. main expands ~ and resolves it before calling validate.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-parse",
+        "ev-exit"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "html",
+          "type": "pathlib.Path",
+          "meaning": "Input file location; not HTML content. No schema is attached to this value."
+        }
+      ]
+    },
+    {
+      "id": "validate",
+      "label": "validate(path)",
+      "kind": "function",
+      "summary": "Initialises two diagnostic lists; checks the file and extension; reads UTF-8; runs three collections of regex checks; returns the lists.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-load",
+        "ev-result"
+      ],
+      "parent": "validator",
+      "invariants": [
+        "A missing file returns immediately with an error.",
+        "A wrong extension records an error but does not stop later checks.",
+        "Read and decode errors are not caught here."
+      ]
+    },
+    {
+      "id": "text",
+      "label": "Decoded HTML text",
+      "kind": "type",
+      "summary": "The complete UTF-8 file is searched as one string, including comments, script source and prose. There is no distinction between live markup and quoted or commented markup.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-load",
+        "ev-match"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "text",
+          "type": "str",
+          "meaning": "Whole decoded file; no DOM/token tree or resource inventory is constructed."
+        }
+      ],
+      "invariants": [
+        "A pattern hit in a comment is still a hit."
+      ]
+    },
+    {
+      "id": "required",
+      "label": "required patterns",
+      "kind": "type",
+      "summary": "Six regexes search for a doctype, language, charset, viewport, inline CSS and a script tag. Absence adds an error.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-required"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "required",
+          "type": "dict[str, str]",
+          "meaning": "Japanese diagnostic label → regex pattern."
+        }
+      ],
+      "facts": [
+        "The code tests raw textual presence, not live DOM presence."
+      ]
+    },
+    {
+      "id": "forbidden",
+      "label": "forbidden patterns",
+      "kind": "type",
+      "summary": "Eight regexes search for selected dependencies, iframe, TODO literals and full-width parentheses. Presence adds an error.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-forbidden"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "forbidden",
+          "type": "dict[str, str]",
+          "meaning": "Diagnostic label → disallowed text pattern."
+        }
+      ],
+      "facts": [
+        "Patterns differ in coverage: scripts are caught only when src= has no whitespace around =.",
+        "Relative image/CSS URLs, protocol-relative images, SVG images and JavaScript networking are outside these patterns.",
+        "TODO and full-width parentheses are style rules, not self-containment properties."
+      ]
+    },
+    {
+      "id": "recommended",
+      "label": "recommended patterns",
+      "kind": "type",
+      "summary": "Four patterns look for reduced motion, an ARIA live region, SVG and playback-labelled buttons. Their absence adds warnings only.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-recommended"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "recommended",
+          "type": "dict[str, str]",
+          "meaning": "Recommendation label → regex whose absence produces a warning."
+        }
+      ],
+      "invariants": [
+        "Finding these strings does not establish that the controls work."
+      ]
+    },
+    {
+      "id": "matches",
+      "label": "matches(pattern, text)",
+      "kind": "function",
+      "summary": "Calls re.search with IGNORECASE and DOTALL, then returns whether a match exists. Context is irrelevant to this function.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-match"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "pattern",
+          "type": "str",
+          "meaning": "One configured regex."
+        },
+        {
+          "name": "text",
+          "type": "str",
+          "meaning": "Whole source text of the HTML document."
+        },
+        {
+          "name": "return",
+          "type": "bool",
+          "meaning": "True when any substring matches, including text in comments."
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "label": "Diagnostic result",
+      "kind": "type",
+      "summary": "The output is a tuple of error and warning lists, rather than a parsed document, resource graph or architecture model.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-result"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "errors",
+          "type": "list[str]",
+          "meaning": "Missing required pattern, matching forbidden pattern, or file/extension error."
+        },
+        {
+          "name": "warnings",
+          "type": "list[str]",
+          "meaning": "Missing recommended patterns."
+        }
+      ],
+      "invariants": [
+        "Warnings alone never produce the explicit failure return code."
+      ]
+    },
+    {
+      "id": "exit",
+      "label": "CLI report and exit",
+      "kind": "function",
+      "summary": "Prints diagnostics. Returns 1 when errors is non-empty and 0 otherwise. A decoding exception bypasses this explicit report policy.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-exit",
+        "ev-load"
+      ],
+      "parent": "validator",
+      "fields": [
+        {
+          "name": "errors",
+          "type": "list[str]",
+          "meaning": "Truthiness determines explicit return code."
+        },
+        {
+          "name": "warnings",
+          "type": "list[str]",
+          "meaning": "Printed and counted but not part of the fail condition."
+        },
+        {
+          "name": "return",
+          "type": "int",
+          "meaning": "1 for reported validation errors; 0 for no reported errors."
+        }
+      ]
+    },
+    {
+      "id": "comment-fixture",
+      "label": "All markup inside a comment",
+      "kind": "artifact",
+      "summary": "A controlled test wraps an otherwise passing scaffold in an HTML comment. Every configured required/recommended string is present in the source, but not as live document content.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-match",
+        "ev-required",
+        "ev-recommended"
+      ],
+      "facts": [
+        "This fixture was accepted with zero errors and zero warnings in the local probe run.",
+        "The probe results are included in reports/upstream-results.json."
+      ],
+      "invariants": [
+        "Fixture observations are not measurements of real application behavior."
+      ]
+    },
+    {
+      "id": "empty-page",
+      "label": "No live scaffold content",
+      "kind": "artifact",
+      "summary": "The browser treats the outer comment as a comment. The scaffold inside it does not create live SVG, script, style or playback controls. The browser still supplies its normal implicit document structure.",
+      "certainty": "illustrative",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-match"
+      ],
+      "facts": [
+        "This is the explanatory contrast in the fixture, not a general statement about every passing document."
+      ]
+    },
+    {
+      "id": "read-error",
+      "label": "UTF-8 decoding exception",
+      "kind": "boundary",
+      "summary": "Invalid UTF-8 raises UnicodeDecodeError at read_text. The validator does not return diagnostics and main does not catch the exception.",
+      "certainty": "verified",
+      "status": "current",
+      "coverage": "inspected",
+      "evidence": [
+        "ev-load",
+        "ev-exit"
+      ],
+      "parent": "validator"
+    }
+  ],
+  "relations": [
+    {
+      "id": "request-agent",
+      "from": "request",
+      "to": "assistant",
+      "label": "Defines the target",
+      "kind": "requests",
+      "summary": "Defines the target",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "wrapper-guide",
+      "from": "wrapper",
+      "to": "guide",
+      "label": "Loads shared procedure",
+      "kind": "references",
+      "summary": "Loads shared procedure",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-wrapper"
+      ]
+    },
+    {
+      "id": "guide-agent",
+      "from": "guide",
+      "to": "assistant",
+      "label": "Guides the investigation",
+      "kind": "instructs",
+      "summary": "Guides the investigation",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "agent-html",
+      "from": "assistant",
+      "to": "html",
+      "label": "Authors the explanation",
+      "kind": "produces",
+      "summary": "Authors the explanation",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "html-validator",
+      "from": "html",
+      "to": "validator",
+      "label": "Text-pattern lint",
+      "kind": "validated-by",
+      "summary": "Text-pattern lint",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide",
+        "ev-load"
+      ]
+    },
+    {
+      "id": "html-browser",
+      "from": "html",
+      "to": "browser",
+      "label": "Behaviour and layout review",
+      "kind": "reviewed-by",
+      "summary": "Behaviour and layout review",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "evidence-state",
+      "from": "evidence-stage",
+      "to": "state-stage",
+      "label": "Evidence constrains the model",
+      "kind": "precedes",
+      "summary": "Evidence constrains the model",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "state-scenarios",
+      "from": "state-stage",
+      "to": "scenarios-stage",
+      "label": "Define state transitions",
+      "kind": "precedes",
+      "summary": "Define state transitions",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "scenarios-visual",
+      "from": "scenarios-stage",
+      "to": "visual-stage",
+      "label": "Encode cause and effect",
+      "kind": "precedes",
+      "summary": "Encode cause and effect",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "visual-html",
+      "from": "visual-stage",
+      "to": "html",
+      "label": "Render the state model",
+      "kind": "produces",
+      "summary": "Render the state model",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-guide"
+      ]
+    },
+    {
+      "id": "path-validate",
+      "from": "path",
+      "to": "validate",
+      "label": "Pass resolved Path",
+      "kind": "calls",
+      "summary": "Pass resolved Path",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-parse",
+        "ev-exit"
+      ]
+    },
+    {
+      "id": "validate-text",
+      "from": "validate",
+      "to": "text",
+      "label": "Read UTF-8 file",
+      "kind": "reads",
+      "summary": "Read UTF-8 file",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-load"
+      ]
+    },
+    {
+      "id": "text-required",
+      "from": "text",
+      "to": "required",
+      "label": "Search all source text",
+      "kind": "checked-by",
+      "summary": "Search all source text",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-required",
+        "ev-match"
+      ]
+    },
+    {
+      "id": "text-forbidden",
+      "from": "text",
+      "to": "forbidden",
+      "label": "Search all source text",
+      "kind": "checked-by",
+      "summary": "Search all source text",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-forbidden",
+        "ev-match"
+      ]
+    },
+    {
+      "id": "text-recommended",
+      "from": "text",
+      "to": "recommended",
+      "label": "Search all source text",
+      "kind": "checked-by",
+      "summary": "Search all source text",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-recommended",
+        "ev-match"
+      ]
+    },
+    {
+      "id": "required-result",
+      "from": "required",
+      "to": "result",
+      "label": "Missing pattern → error",
+      "kind": "writes",
+      "summary": "Missing pattern → error",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-required"
+      ]
+    },
+    {
+      "id": "forbidden-result",
+      "from": "forbidden",
+      "to": "result",
+      "label": "Present pattern → error",
+      "kind": "writes",
+      "summary": "Present pattern → error",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-forbidden"
+      ]
+    },
+    {
+      "id": "recommended-result",
+      "from": "recommended",
+      "to": "result",
+      "label": "Missing pattern → warning",
+      "kind": "writes",
+      "summary": "Missing pattern → warning",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-recommended"
+      ]
+    },
+    {
+      "id": "result-exit",
+      "from": "result",
+      "to": "exit",
+      "label": "Return tuple; inspect errors",
+      "kind": "returns",
+      "summary": "Return tuple; inspect errors",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-result",
+        "ev-exit"
+      ]
+    },
+    {
+      "id": "text-matches",
+      "from": "text",
+      "to": "matches",
+      "label": "Whole document str",
+      "kind": "input",
+      "summary": "Whole document str",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-match"
+      ]
+    },
+    {
+      "id": "required-matches",
+      "from": "required",
+      "to": "matches",
+      "label": "One regex at a time",
+      "kind": "input",
+      "summary": "One regex at a time",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-required"
+      ]
+    },
+    {
+      "id": "forbidden-matches",
+      "from": "forbidden",
+      "to": "matches",
+      "label": "One regex at a time",
+      "kind": "input",
+      "summary": "One regex at a time",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-forbidden"
+      ]
+    },
+    {
+      "id": "recommended-matches",
+      "from": "recommended",
+      "to": "matches",
+      "label": "One regex at a time",
+      "kind": "input",
+      "summary": "One regex at a time",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-recommended"
+      ]
+    },
+    {
+      "id": "matches-result",
+      "from": "matches",
+      "to": "result",
+      "label": "Caller interprets bool",
+      "kind": "feeds",
+      "summary": "The helper returns a bool; each caller decides whether true or false adds an error or warning. The helper itself does not modify the diagnostic lists.",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-match",
+        "ev-required",
+        "ev-forbidden",
+        "ev-recommended"
+      ]
+    },
+    {
+      "id": "fixture-text",
+      "from": "comment-fixture",
+      "to": "text",
+      "label": "Decode the commented scaffold",
+      "kind": "transforms",
+      "summary": "Decode the commented scaffold",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-load"
+      ]
+    },
+    {
+      "id": "fixture-browser",
+      "from": "comment-fixture",
+      "to": "empty-page",
+      "label": "Interpret as HTML comment",
+      "kind": "contrasts-with",
+      "summary": "Explanatory contrast: browser parsing does not instantiate the elements enclosed in the comment; the regex helper still sees their text.",
+      "certainty": "illustrative",
+      "status": "current",
+      "evidence": [
+        "ev-match"
+      ]
+    },
+    {
+      "id": "validate-exception",
+      "from": "validate",
+      "to": "read-error",
+      "label": "read_text raises",
+      "kind": "raises",
+      "summary": "read_text raises",
+      "certainty": "verified",
+      "status": "current",
+      "evidence": [
+        "ev-load"
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "title": "Overview: instructions, artifact and checks",
+      "level": 0,
+      "lens": "structure",
+      "entities": [
+        "request",
+        "wrapper",
+        "guide",
+        "assistant",
+        "html",
+        "validator",
+        "browser"
+      ],
+      "relations": [
+        "request-agent",
+        "wrapper-guide",
+        "guide-agent",
+        "agent-html",
+        "html-validator",
+        "html-browser"
+      ],
+      "question": "What does the existing skill actually provide?",
+      "summary": "The architecture is a documented authoring procedure plus a small executable linter. The assistant supplies the interpretation and bespoke HTML. The browser checks are a separate required activity.",
+      "takeaways": [
+        "The strongest idea is state-before-animation, not animation itself.",
+        "This package is a feature explainer, not an implemented multi-level architecture explorer.",
+        "Drill into the authoring workflow or the executable validator; both retain links to the pinned source."
+      ],
+      "direction": "TB",
+      "focus": "guide"
+    },
+    {
+      "id": "workflow",
+      "title": "Documented authoring workflow",
+      "level": 1,
+      "lens": "flow",
+      "entities": [
+        "evidence-stage",
+        "state-stage",
+        "scenarios-stage",
+        "visual-stage",
+        "html",
+        "validator",
+        "browser"
+      ],
+      "relations": [
+        "evidence-state",
+        "state-scenarios",
+        "scenarios-visual",
+        "visual-html",
+        "html-validator",
+        "html-browser"
+      ],
+      "question": "How should an assistant build the explanation?",
+      "summary": "These nodes are prescribed activities, not callable functions. The reference deliberately puts domain state and scenarios before visual design and HTML.",
+      "takeaways": [
+        "Collect operational evidence, including failure and recovery.",
+        "Use a fresh initial state when seeking through a scenario.",
+        "Do not confuse a requirement in a document with an implemented automation."
+      ],
+      "direction": "TB",
+      "parent": "overview",
+      "focus": "guide",
+      "links": [
+        "validator-flow"
+      ]
+    },
+    {
+      "id": "validator-flow",
+      "title": "Executable validator: control and data flow",
+      "level": 2,
+      "lens": "flow",
+      "entities": [
+        "path",
+        "validate",
+        "text",
+        "required",
+        "forbidden",
+        "recommended",
+        "result",
+        "exit"
+      ],
+      "relations": [
+        "path-validate",
+        "validate-text",
+        "text-required",
+        "text-forbidden",
+        "text-recommended",
+        "required-result",
+        "forbidden-result",
+        "recommended-result",
+        "result-exit"
+      ],
+      "question": "What happens to the HTML file when the script runs?",
+      "summary": "Three dictionaries are checked sequentially in the code. Their parallel placement here exposes their different effects, not concurrent execution. Select a scenario to inspect those checks in order.",
+      "takeaways": [
+        "Whole-file text is the input, not an HTML syntax tree.",
+        "Required/forbidden checks add errors; recommended checks add warnings.",
+        "Only a non-empty errors list controls the explicit failure code."
+      ],
+      "direction": "TB",
+      "parent": "overview",
+      "focus": "validator",
+      "links": [
+        "validator-data",
+        "comment-case",
+        "read-failure"
+      ]
+    },
+    {
+      "id": "validator-data",
+      "title": "Validator data structures and ownership",
+      "level": 3,
+      "lens": "data",
+      "entities": [
+        "text",
+        "required",
+        "forbidden",
+        "recommended",
+        "matches",
+        "result",
+        "exit"
+      ],
+      "relations": [
+        "text-matches",
+        "required-matches",
+        "forbidden-matches",
+        "recommended-matches",
+        "matches-result",
+        "result-exit"
+      ],
+      "question": "Which values are produced, consumed and mutated?",
+      "summary": "The matcher is a pure bool-returning helper. validate owns and mutates the diagnostic lists. main consumes the returned tuple. Select any type for its fields and meaning.",
+      "takeaways": [
+        "The boolean alone has no failure meaning; its caller decides the policy.",
+        "errors and warnings have the same representation but different operational consequences.",
+        "A regex dictionary is not a resource-dependency inventory."
+      ],
+      "direction": "TB",
+      "parent": "validator-flow",
+      "focus": "result",
+      "links": [
+        "comment-case"
+      ]
+    },
+    {
+      "id": "comment-case",
+      "title": "A passing lint result can describe an empty page",
+      "level": 4,
+      "lens": "failure",
+      "entities": [
+        "comment-fixture",
+        "text",
+        "matches",
+        "result",
+        "exit",
+        "empty-page"
+      ],
+      "relations": [
+        "fixture-text",
+        "text-matches",
+        "matches-result",
+        "result-exit",
+        "fixture-browser"
+      ],
+      "question": "How can the linter accept a document with no live controls?",
+      "summary": "A controlled fixture places all required and recommended strings inside one comment. The unchanged script accepts it with zero diagnostics. The browser/regex contrast is deliberately marked illustrative.",
+      "takeaways": [
+        "A text hit does not establish a live element.",
+        "The original reference still requires browser validation; its Python helper is not a replacement.",
+        "The defect belongs to the validator, not to regex matching itself: it applies the wrong representation to the claim."
+      ],
+      "direction": "TB",
+      "parent": "validator-flow",
+      "focus": "comment-fixture",
+      "links": [
+        "validator-data"
+      ]
+    },
+    {
+      "id": "read-failure",
+      "title": "Failure before diagnostic checks",
+      "level": 3,
+      "lens": "failure",
+      "entities": [
+        "path",
+        "validate",
+        "read-error"
+      ],
+      "relations": [
+        "path-validate",
+        "validate-exception"
+      ],
+      "question": "What survives an input decoding failure?",
+      "summary": "There is no error-to-diagnostic conversion around read_text. Invalid UTF-8 raises before the regex dictionaries are evaluated. The local probe confirmed UnicodeDecodeError.",
+      "takeaways": [
+        "A function that usually returns diagnostics can still raise.",
+        "Draw this as an exception path, not a normal validation error.",
+        "Source links show both the unguarded read and the absence of a catch in main."
+      ],
+      "direction": "TB",
+      "parent": "validator-flow",
+      "focus": "read-error"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "baseline",
+      "label": "Passing scaffold",
+      "view": "validator-flow",
+      "status": "current",
+      "basis": "Controlled fixture: baseline.",
+      "description": "Final diagnostics were checked locally against the byte-verified upstream script; intermediate snapshots are explanatory reconstructions from the code, not instrumented traces.",
+      "initial": {
+        "input": "Valid scaffold",
+        "decoded": false,
+        "required_misses": null,
+        "forbidden_hits": null,
+        "recommended_misses": null,
+        "errors": [],
+        "warnings": [],
+        "exit_code": null
+      },
+      "steps": [
+        {
+          "title": "Decode the fixture",
+          "description": "A valid UTF-8 HTML file is read into the text string.",
+          "entities": [
+            "validate",
+            "text"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-load"
+          ],
+          "certainty": "verified",
+          "set": {
+            "decoded": true
+          }
+        },
+        {
+          "title": "Check required patterns",
+          "description": "The fixture contains all six configured required strings. No error is added.",
+          "entities": [
+            "required"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-required",
+            "ev-match"
+          ],
+          "certainty": "verified",
+          "set": {
+            "required_misses": 0
+          }
+        },
+        {
+          "title": "Check forbidden patterns",
+          "description": "None of the configured forbidden patterns matches this fixture.",
+          "entities": [
+            "forbidden"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-forbidden"
+          ],
+          "certainty": "verified",
+          "set": {
+            "forbidden_hits": 0,
+            "errors": []
+          }
+        },
+        {
+          "title": "Check recommendations",
+          "description": "All four recommendation patterns match. This checks textual presence only.",
+          "entities": [
+            "recommended"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-recommended",
+            "ev-match"
+          ],
+          "certainty": "verified",
+          "set": {
+            "recommended_misses": 0
+          }
+        },
+        {
+          "title": "Return diagnostics",
+          "description": "validate returns the error and warning lists to main.",
+          "entities": [
+            "result"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-result"
+          ],
+          "certainty": "verified",
+          "set": {
+            "warnings": []
+          }
+        },
+        {
+          "title": "Choose explicit exit code",
+          "description": "There are no recorded errors, so main returns 0. This says nothing about live controls.",
+          "entities": [
+            "exit"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-exit"
+          ],
+          "certainty": "verified",
+          "set": {
+            "exit_code": 0
+          },
+          "expect": {
+            "exit_code": 0,
+            "errors": [],
+            "warnings": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "external-script",
+      "label": "Detected external JavaScript",
+      "view": "validator-flow",
+      "status": "current",
+      "basis": "Controlled fixture: external script.",
+      "description": "Final diagnostics were checked locally against the byte-verified upstream script; intermediate snapshots are explanatory reconstructions from the code, not instrumented traces.",
+      "initial": {
+        "input": "Scaffold plus <script src=\"https://example.invalid/app.js\">",
+        "decoded": false,
+        "required_misses": null,
+        "forbidden_hits": null,
+        "recommended_misses": null,
+        "errors": [],
+        "warnings": [],
+        "exit_code": null
+      },
+      "steps": [
+        {
+          "title": "Decode the fixture",
+          "description": "A valid UTF-8 HTML file is read into the text string.",
+          "entities": [
+            "validate",
+            "text"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-load"
+          ],
+          "certainty": "verified",
+          "set": {
+            "decoded": true
+          }
+        },
+        {
+          "title": "Check required patterns",
+          "description": "The fixture contains all six configured required strings. No error is added.",
+          "entities": [
+            "required"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-required",
+            "ev-match"
+          ],
+          "certainty": "verified",
+          "set": {
+            "required_misses": 0
+          }
+        },
+        {
+          "title": "Check forbidden patterns",
+          "description": "A configured external-script pattern adds an error.",
+          "entities": [
+            "forbidden"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-forbidden"
+          ],
+          "certainty": "verified",
+          "set": {
+            "forbidden_hits": 1,
+            "errors": [
+              "禁止要素を検出しました: 外部JavaScript"
+            ]
+          }
+        },
+        {
+          "title": "Check recommendations",
+          "description": "All four recommendation patterns match. This checks textual presence only.",
+          "entities": [
+            "recommended"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-recommended",
+            "ev-match"
+          ],
+          "certainty": "verified",
+          "set": {
+            "recommended_misses": 0
+          }
+        },
+        {
+          "title": "Return diagnostics",
+          "description": "validate returns the error and warning lists to main.",
+          "entities": [
+            "result"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-result"
+          ],
+          "certainty": "verified",
+          "set": {
+            "warnings": []
+          }
+        },
+        {
+          "title": "Choose explicit exit code",
+          "description": "The error list is non-empty, so main returns 1.",
+          "entities": [
+            "exit"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-exit"
+          ],
+          "certainty": "verified",
+          "set": {
+            "exit_code": 1
+          },
+          "expect": {
+            "exit_code": 1,
+            "errors": [
+              "禁止要素を検出しました: 外部JavaScript"
+            ],
+            "warnings": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "comment-pass",
+      "label": "All markup inside a comment",
+      "view": "validator-flow",
+      "status": "current",
+      "basis": "Controlled fixture: comment-only document.",
+      "description": "Final diagnostics were checked locally against the byte-verified upstream script; intermediate snapshots are explanatory reconstructions from the code, not instrumented traces.",
+      "initial": {
+        "input": "Entire scaffold enclosed by <!-- ... -->",
+        "decoded": false,
+        "required_misses": null,
+        "forbidden_hits": null,
+        "recommended_misses": null,
+        "errors": [],
+        "warnings": [],
+        "exit_code": null
+      },
+      "steps": [
+        {
+          "title": "Decode the fixture",
+          "description": "A valid UTF-8 HTML file is read into the text string.",
+          "entities": [
+            "validate",
+            "text"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-load"
+          ],
+          "certainty": "verified",
+          "set": {
+            "decoded": true
+          }
+        },
+        {
+          "title": "Check required patterns",
+          "description": "The fixture contains all six configured required strings. No error is added.",
+          "entities": [
+            "required"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-required",
+            "ev-match"
+          ],
+          "certainty": "verified",
+          "set": {
+            "required_misses": 0
+          }
+        },
+        {
+          "title": "Check forbidden patterns",
+          "description": "None of the configured forbidden patterns matches this fixture.",
+          "entities": [
+            "forbidden"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-forbidden"
+          ],
+          "certainty": "verified",
+          "set": {
+            "forbidden_hits": 0,
+            "errors": []
+          }
+        },
+        {
+          "title": "Check recommendations",
+          "description": "All four recommendation patterns match. This checks textual presence only.",
+          "entities": [
+            "recommended"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-recommended",
+            "ev-match"
+          ],
+          "certainty": "verified",
+          "set": {
+            "recommended_misses": 0
+          }
+        },
+        {
+          "title": "Return diagnostics",
+          "description": "validate returns the error and warning lists to main.",
+          "entities": [
+            "result"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-result"
+          ],
+          "certainty": "verified",
+          "set": {
+            "warnings": []
+          }
+        },
+        {
+          "title": "Choose explicit exit code",
+          "description": "There are no recorded errors, so main returns 0. This says nothing about live controls.",
+          "entities": [
+            "exit"
+          ],
+          "relations": [],
+          "evidence": [
+            "ev-exit"
+          ],
+          "certainty": "verified",
+          "set": {
+            "exit_code": 0
+          },
+          "expect": {
+            "exit_code": 0,
+            "errors": [],
+            "warnings": []
+          }
+        }
+      ]
+    }
+  ]
+}

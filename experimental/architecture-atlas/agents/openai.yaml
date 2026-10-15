@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Atlas"
+  short_description: "Explore code from overview to flows, data and source"
+  default_prompt: "Use $architecture-atlas to build or update a navigable atlas of this repository, connecting its overview to one operation, its data ownership and source evidence."
