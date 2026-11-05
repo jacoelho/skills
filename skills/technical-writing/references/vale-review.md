@@ -6,7 +6,7 @@ Vale checks mechanics after substantive repairs. It cannot judge organisation, p
 
 Use an existing project configuration when there is one, and pass it explicitly. Do not change its files or replace it with the bundled profile. Run `vale sync` only if its declared packages need it.
 
-Otherwise use the bundled profile: British spelling, repetition, plain-language phrases, long sentences, unsupported quality words, vague requirements and production residue, and phrasing typical of generated text (`Register`, suggestions only). If the user or project uses another English variant, pass `--config` with a suitable profile, or disregard `Technical.Spelling` findings for that document.
+Otherwise use the bundled profile: British spelling, repetition, plain-language phrases, long sentences and paragraphs, unsupported quality words, vague requirements and production residue, and phrasing typical of generated text (`Register`, suggestions only). If the user or project uses another English variant, pass `--config` with a suitable profile, or disregard `Technical.Spelling` findings for that document.
 
 ## Run
 
@@ -36,6 +36,7 @@ If Vale is missing, or exit 2 persists, carry on with manual checks and report t
 Accept a finding only when it identifies a defect in this text.
 
 - Treat a long-sentence alert as a cue to inspect structure. It doesn't require a split.
+- Treat a long-paragraph alert as a cue to look for a turn in the argument. Break there; if there is none, leave the paragraph whole.
 - Keep deliberate repetition, precise terms and useful qualifications.
 - Never change meaning, certainty, normative words such as `must` or `should`, quotations or exact identifiers to clear an alert.
 - Never invent a target or mechanism to clear `Requirements.VagueRequirement` or `Clarity.UnsupportedQuality`. Report the gap or cut the adjective.
