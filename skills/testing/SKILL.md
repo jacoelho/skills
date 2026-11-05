@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Test-quality criteria used by the `jacoelho:qa` subagent to design tests before they are written and to review existing ones - defect detection, independent expected values, boundaries, doubles, isolation, flakiness and cost. In the main session, consult `jacoelho:qa` rather than applying this directly. Not a test-first workflow (see `mattpocock-skills:tdd`).
+description: Test-quality criteria for designing tests before they are written and reviewing existing ones - defect detection, independent expected values, boundaries, doubles, isolation, flakiness and cost. Not a test-first workflow (see `mattpocock-skills:tdd`).
 ---
 
 # Testing
@@ -26,7 +26,7 @@ File each finding under one criterion, its main cause, so one issue is not repor
 
 **Coverage.** Value a test by the defects it catches, how faithfully it reproduces real behaviour, and how clear its failures are. Before claiming a gap, say what existing assertions leave unprotected. Unit and integration tests of one behaviour can catch different defects. Redundancy needs proof that deleting the test loses nothing; similar setup or covered lines are not proof. Line coverage shows what ran, not what was checked. Mutation testing, where available, is direct evidence. Choose tests by risk and cost, not pyramid ratios. Cost includes feedback time: a slow test runs less often and catches defects later.
 
-**Oracle.** Expected values come from a source independent of the code: worked examples, the contract, properties, or a reference model checked against known examples. Trace expected and actual values to their sources. Flag tests that assert their own setup, compute expected from actual, or copy production logic, and name a wrong implementation they would accept. Returning an input unchanged may be the contract. Shared helpers or literals alone are not tautology. Characterisation tests record current behaviour; they do not show it is correct. Prefer properties (round-trips, invariants, equivalence with a simpler model) over examples when the input space is large or edge cases are hard to enumerate.
+**Oracle.** Expected values come from a source independent of the code: worked examples, the contract, properties, or a reference model checked against known examples. Trace expected and actual values to their sources. Flag tests that assert their own setup, compute expected from actual, or copy production logic, and name a wrong implementation they would accept. Returning an input unchanged may be the contract. Shared helpers or literals alone are not tautology. Characterisation tests record current behaviour; they do not show it is correct. Add properties (round-trips, invariants, equivalence with a simpler model) alongside worked examples when the input space is large or edge cases are hard to enumerate.
 
 **Boundary.** Prefer the boundary consumers use. Public does not mean contract; internal functions can own real invariants. A claim about application behaviour needs at least one test through the production entry point (HTTP handler, CLI, queue consumer). To show coupling, name a behaviour-preserving refactor that breaks the test. Exact bytes, stored formats, counts, destinations and ordering are valid assertions when contractual.
 
