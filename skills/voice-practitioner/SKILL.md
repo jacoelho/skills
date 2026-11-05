@@ -1,6 +1,7 @@
 ---
 name: voice-practitioner
 description: Practitioner voice. Use only when the user names it, as in "use the practitioner voice" or "voice-practitioner". For an article or blog post, load `jacoelho:technical-writing` first; its article profile loads this voice. Writes, rewrites, edits or reviews prose so that claims, qualifications and consequences connect. Never use by default, and never attribute generated text to another author.
+argument-hint: "[text | file path]"
 ---
 
 # Practitioner voice

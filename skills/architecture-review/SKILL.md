@@ -1,6 +1,7 @@
 ---
 name: architecture-review
-description: Architecture, design or maintainability review of code: a diff, branch, refactor, module or subsystem. Use for coupling, change at a distance, where logic should live, ownership and boundaries. Judges design rather than hunting line-level defects.
+description: "Architecture, design or maintainability review of code: a diff, branch, refactor, module or subsystem. Use for coupling, change at a distance, where logic should live, ownership and boundaries. Judges design rather than hunting line-level defects."
+argument-hint: "[diff | branch | module path]"
 ---
 
 # Architecture review

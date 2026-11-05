@@ -1,6 +1,7 @@
 ---
 name: spectacular-bdd-gherkin
 description: Write or review Gherkin acceptance examples (Given/When/Then scenarios, .feature files, example mapping) for a bounded behavioural rule, each traced to its governing EARS requirement with an independent oracle and an observable boundary. Use when asked for BDD scenarios, acceptance examples, a feature file, or example mapping, or to review existing scenarios against a spec.
+argument-hint: "[rule | spec | .feature file]"
 ---
 
 # Spectacular BDD with Gherkin

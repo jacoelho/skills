@@ -1,6 +1,7 @@
 ---
 name: app-screen-design
 description: Design and build application screens that people work in, such as dashboards, admin and back office, analytics, reports, settings, billing, inboxes, queues, list and table screens, wallets, builders and object detail pages. Use when creating or restyling any of these, in any stack, or when reviewing whether one reads as a generated template. Not for landing pages or marketing sites (use frontend-design:frontend-design). General chart construction stays with dataviz; KPI rows, dashboard layout and chart hue on app screens follow this skill.
+argument-hint: "[screen to build, restyle or review]"
 ---
 
 # App screen design

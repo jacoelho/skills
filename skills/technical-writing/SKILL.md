@@ -1,6 +1,7 @@
 ---
 name: technical-writing
 description: Write, improve, reorganise, review or lint READMEs, guides, tutorials, runbooks, articles, blog posts and PR descriptions, from notes, a diff or existing text. Use when asked to draft, edit or restructure one of these documents, or to check it with Vale. Not for requirements or acceptance criteria (use jacoelho:spectacular-spec-writing), API reference, or commit messages.
+argument-hint: "[document path | notes | diff]"
 ---
 
 # Technical writing

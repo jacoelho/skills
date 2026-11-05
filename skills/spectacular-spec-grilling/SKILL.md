@@ -1,6 +1,7 @@
 ---
 name: spectacular-spec-grilling
 description: Interview the user about unresolved behavioural choices in software requirements, one concrete distinguishing case at a time, and keep a dependency-aware decision record that feeds an EARS contract. Use when a spec, requirement, or acceptance outcome is ambiguous, when asked to clarify, grill, or pin down requirements, or before writing a contract with open product decisions. Not for general plan or design critique, settled contracts, or mechanical changes.
+argument-hint: "[spec | requirement]"
 ---
 
 # Spectacular spec grilling
