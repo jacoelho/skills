@@ -1,0 +1,31 @@
+extends: existence
+message: Unresolved production marker '%s'. In a draft, resolve it or turn it into an explicit open question.
+  Do not invent the missing answer.
+level: warning
+scope: text
+nonword: true
+vocab: false
+tokens:
+- \[\[(?:TODO|TBD|FIXME|CITE|SOURCE|VERIFY)(?:\s*:[^\]\r\n]+)?\]\]
+tests:
+- name: detects an explicit citation placeholder
+  input: 'The result needs evidence. [[CITE: original study]]'
+  contains: Workflow.EditorialMarkers
+- name: detects a bare production marker
+  input: '[[TODO]]'
+  contains: Workflow.EditorialMarkers
+- name: ordinary subject matter is not a placeholder
+  input: The editor added a TODO item to the task list.
+  want: ''
+- name: code examples are not production markers
+  input: Use `[[TODO]]` as the marker in this example.
+  want: ''
+- name: open questions are legitimate document content
+  input: '## Open questions
+
+
+    The retention period is undecided. The owner is the platform team.'
+  want: ''
+- name: ordinary status TBD is not the reserved production syntax
+  input: 'Status: draft. Capacity target: TBD.'
+  want: ''

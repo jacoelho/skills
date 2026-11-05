@@ -1,0 +1,40 @@
+extends: existence
+message: "'%s' frames a point against a claim nobody made. State the point directly."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+nonword: true
+# The plain distinction "X, not Y" is left alone: precise writing needs it.
+# So are "not only/just ... but also" and imperatives ("do not just restart it but drain it").
+tokens:
+- '(?<!\bdo\s)(?<!\bdon[''’]t\s)\bnot\s+(?:just|merely|simply)\s+(?![^,.;:]*\bbut\s+also\b)[^,.;:]{1,60}?[,;]?\s+(?:but|it[''’]s)\b'
+- '\bit[''’]s\s+not\s+(?:about\s+)?[^,.;:]{1,40}[,;]\s+it[''’]s\b'
+- '\bthis\s+isn[''’]t\s+(?:about\s+)?[^,.;:]{1,40}[,;]\s+it[''’]s\b'
+tests:
+- name: flags a not-just pattern
+  input: Logging is not just a debugging aid but a contract.
+  contains: Register.Contrast
+- name: flags an it-is-not pattern with a curly apostrophe
+  input: It’s not a cache, it’s a queue.
+  contains: Register.Contrast
+- name: flags a this-isn't pattern
+  input: This isn't about speed; it's about safety.
+  contains: Register.Contrast
+- name: a plain distinction is required voice
+  input: Use a literal, not a regex.
+  want: ''
+- name: an imperative is an instruction
+  input: Do not just restart the pod but drain it first.
+  want: ''
+- name: a causal clause is not a contrast
+  input: The step is not simply skipped because it is idempotent.
+  want: ''
+- name: not only but also is ordinary
+  input: It is not only faster but also safer.
+  want: ''
+- name: but also stays excluded when a later clause follows
+  input: The service is not just fast but also it's safe.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nnot just x but y\n```"
+  want: ''

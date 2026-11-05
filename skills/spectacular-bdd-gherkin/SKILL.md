@@ -1,0 +1,129 @@
+---
+name: spectacular-bdd-gherkin
+description: Write or review Gherkin acceptance examples (Given/When/Then scenarios, .feature files, example mapping) for a bounded behavioural rule, each traced to its governing EARS requirement with an independent oracle and an observable boundary. Use when asked for BDD scenarios, acceptance examples, a feature file, or example mapping, or to review existing scenarios against a spec.
+metadata:
+  version: "2.1.0"
+---
+
+# Spectacular BDD with Gherkin
+
+Use concrete examples to sharpen or verify a bounded behavioural rule. Keep the
+normative rule in its specification. A scenario illustrates an acceptance
+expectation; it does not become a second authority merely because it is written
+in Gherkin.
+
+The user's explicit task and decisions take precedence over this workflow.
+This skill is standalone: it does not require an installed sibling skill,
+Gherkin runner, or particular repository layout.
+
+Before interpreting the governing rule, read the Keywords and Patterns sections of [EARS requirements and terms](references/ears.md); consult its Terms table for exact meanings. EARS is the only requirement syntax. Gherkin expresses acceptance examples linked to those requirements; its `Rule` heading references the governing ID rather than defining another requirement.
+
+## Choose the smallest mode
+
+- **Scenario mode:** For a settled rule, write the smallest useful set of
+  examples and trace each expected result to its rule, oracle, and boundary.
+- **Discovery mode:** When an example exposes an unresolved outcome, use an
+  example map to preserve the question and its competing outcomes without
+  turning it into a scenario.
+- **Review mode:** When reviewing existing scenarios, read [the review
+  lenses](references/review.md) and classify material findings.
+
+Gherkin is optional. Use it when shared Given/When/Then language improves the
+decision or acceptance discussion; use a table or plain examples when that is
+clearer. For a simple settled request, stop after the smallest output that
+names the rule, expected result, oracle, boundary, and evidence status. Do not
+force a full discovery or review process.
+
+## Work the example
+
+1. **Name the rule and boundary.** Identify the governing contract version or
+   source, rule ID when one exists, applicable actor/state/event, and the
+   boundary at which a caller can observe the result. Do not infer a required
+   outcome from code behaviour alone.
+2. **Map distinguishing cases.** Prefer a case that separates plausible
+   interpretations or exercises a consequential boundary. Label each item:
+
+   - **Rule:** the governing EARS requirement's reference and source. Preserve external source wording when quoted as evidence.
+   - **Example:** a concrete state and event with an expected result supported
+     by the rule and its oracle.
+   - **Question:** a concrete case whose expected result is unresolved. Record
+     the competing outcomes, deciding authority, and dependent work; do not
+     write a `Then` that silently chooses one.
+   - **Deferred:** independent behaviour outside this increment. It is neither
+     an acceptance case nor evidence of coverage.
+
+3. **Establish the oracle.** For every expected result, record an independent
+   basis: a domain-reviewed decision or example, a binding external contract,
+   or a separately justified property. Name its source, version, or owner when
+   available. An implementation result, the same production query/helper used
+   by the system, a fixture that repeats that logic, or agreement from another
+   agent is not an independent oracle. A property derived only from a disputed
+   rule can assess conformance to it, not justify the rule.
+4. **Choose the representation.** If Gherkin helps, express relevant state in
+   `Given`, one material event in `When`, and externally meaningful outcomes in
+   `Then`. Include success and rejection cases when the contract requires
+   those outcomes for the chosen conditions. Preserve the EARS requirement's
+   guarantees and constraints on permitted behaviour. A permission alone does
+   not guarantee completion or require every alternative to occur. Assert the
+   required observation or authorised set; label a particular permitted
+   alternative as illustrative rather than mandatory.
+   A negative case should observe
+   the intended rejection or failure effect, such as no protected data or no
+   partial state, rather than merely an internal exception. Add limit,
+   permission, retry, ordering, concurrency, or time cases only when the
+   contract gives them distinct meaning.
+5. **State evidence status.** Mark each item as a proposed acceptance example
+   or link an existing executed-evidence record. Do not create a separate
+   evidence ledger just to draft scenarios. Gherkin text by itself is not
+   executed evidence. When an existing record is available, it should identify
+   the command or check, code/configuration state, input state, observed
+   result, and limits, with setup reaching the relevant boundary and assertions
+   against independently established expected values. Keep fixtures and
+   environment needs separate from the scenario text.
+6. **Handle open decisions.** Preserve unresolved cases and route them to
+   `spectacular-spec-grilling` only when that skill is available and an
+   interactive handoff is useful or requested. Otherwise return the decision
+   record directly; standalone use must remain complete.
+
+When generating a `.feature` file, start from the [feature template](assets/feature.template)
+and adapt it to the contract. Prefer:
+
+```gherkin
+Feature: <capability>
+  # Contract: <version or reference; existing rule ID when one exists>
+
+  Rule: <governing EARS requirement ID or source reference>
+
+    @<requirement-ID>
+    Scenario: <distinguishing outcome>
+      Given <relevant domain state>
+      When <one material event occurs>
+      Then <observable outcome>
+      And <observable invariant when relevant>
+```
+
+Tag each scenario with the REQ or INV IDs it illustrates, such as `@REQ-BOOK-001`, so a
+runner can select scenarios by rule and traceability survives renames. `Rule:`
+needs Gherkin 6 or later; with an older runner, omit it and keep the tags.
+
+When the contract uses the bundled spec-lint declaration layout, link each
+scenario back from the contract with a pointer AC: `Covers:` names the rule and
+`Expected:` names the scenario. The linter does not read `.feature` files, so
+the pointer AC is what records the coverage. `spectacular-spec-writing` ships a
+worked example in `examples/`; lint that directory as one root, because the
+booking contract references an invariant owned by the stock contract.
+
+Use domain language. `Scenario Outline` suits cases where only data varies
+under the same rule. `Background` suits genuinely shared domain state that
+remains clear when hidden from individual scenarios. Do not use either to hide
+the oracle, the boundary, or a material state transition.
+
+## Review mode
+
+For existing scenarios, read the detailed [review lenses](references/review.md)
+and apply only those relevant to the rule. The main workflow still requires an
+independent oracle, an observable boundary, explicit unresolved cases, and a
+clear proposed-versus-executed evidence status. A broader contract review is
+optional and does not make this skill depend on `spectacular-spec-review`.
+
+When reviewing existing scenarios, classify each mismatch with the governing contract using [the source mismatch classes](references/mismatch.md) before changing either side. A stale secondary source, implementation defect, deliberate change, and specification defect require different repairs.

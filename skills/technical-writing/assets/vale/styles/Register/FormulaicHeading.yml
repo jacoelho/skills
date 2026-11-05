@@ -1,0 +1,32 @@
+extends: existence
+message: "'%s' is a stock heading. Name what the section says."
+level: suggestion
+scope: heading
+ignorecase: true
+nonword: true
+# 'Conclusion' and 'Final thoughts' are allowed: human articles use them.
+# Bold pseudo-headings (**Key takeaways**) are paragraph text and out of scope.
+tokens:
+- '^(?:key\s+takeaways?|the\s+bottom\s+line|why\s+(?:this|it)\s+matters|what\s+you[''’]ll\s+learn|wrapping\s+up|future\s+outlook|challenges\s+and\s+(?:legacy|opportunities))\b'
+tests:
+- name: flags a level-one stock heading
+  input: '# Key takeaways'
+  contains: Register.FormulaicHeading
+- name: flags a level-three stock heading with a colon
+  input: '### Why this matters:'
+  contains: Register.FormulaicHeading
+- name: flags a curly apostrophe
+  input: '## What you’ll learn'
+  contains: Register.FormulaicHeading
+- name: a conclusion heading is allowed
+  input: '## Conclusion'
+  want: ''
+- name: final thoughts is allowed
+  input: '## Final thoughts'
+  want: ''
+- name: the phrase in body text is not a heading
+  input: The bottom line of the table shows totals.
+  want: ''
+- name: a bold pseudo-heading is a documented blind spot
+  input: '**Key takeaways**'
+  want: ''

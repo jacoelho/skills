@@ -1,0 +1,27 @@
+extends: existence
+message: "'%s' is a rhetorical flourish. Give the fact it introduces."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+nonword: true
+tokens:
+- '\band\s+that[''’]s\s+the\s+(?:beauty|magic|point)\b'
+- '\bhere[''’]s\s+the\s+(?:thing|kicker|catch|twist)\b'
+- '\bthe\s+(?:answer|result|truth|best\s+part|catch)\?'
+- '\bspoiler(?:\s+alert)?:'
+tests:
+- name: flags a reveal
+  input: And that's the beauty of it.
+  contains: Register.Flourish
+- name: flags a curly apostrophe
+  input: Here’s the thing about retries.
+  contains: Register.Flourish
+- name: flags a staged question
+  input: The result? A faster build.
+  contains: Register.Flourish
+- name: a real question is fine
+  input: What is the result when the queue is full?
+  want: ''
+- name: ignores fenced code
+  input: "```text\nhere's the thing\n```"
+  want: ''

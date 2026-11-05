@@ -1,0 +1,29 @@
+extends: existence
+message: "'%s' restates instead of concluding. End with the decision, consequence or next step."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+nonword: true
+# Sentence-initial only. 'Overall' and 'Ultimately' are left out: human writing uses them neutrally.
+tokens:
+- '^(?:in\s+conclusion|in\s+summary|to\s+sum\s+up|to\s+summari[sz]e|all\s+in\s+all),'
+- '^despite\s+(?:these|its|the)\s+challenges\b'
+tests:
+- name: flags a summing opener
+  input: In conclusion, the cache helps.
+  contains: Register.Summary
+- name: flags British spelling
+  input: To summarise, the cache helps.
+  contains: Register.Summary
+- name: flags a challenges formula
+  input: Despite these challenges, the project thrives.
+  contains: Register.Summary
+- name: mid-sentence use is not an opener
+  input: Results appear in summary, then in detail.
+  want: ''
+- name: ultimately is not flagged
+  input: Ultimately, the owner decides.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nIn conclusion, x\n```"
+  want: ''

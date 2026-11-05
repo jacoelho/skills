@@ -1,0 +1,65 @@
+extends: existence
+message: "State the mechanism or consequence instead of '%s', or cut it. Do not invent one."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+# 'simple' stays a review rule: in a smoke test of 50 real documents most uses were neutral.
+tokens:
+- robust(?:ly)?
+- seamless(?:ly)?
+- scalable
+- blazing(?:ly)?[\s-]+fast
+- powerful
+- lightweight
+- effortless(?:ly)?
+- best[\s-]+in[\s-]+class
+- world[\s-]+class
+- cutting[\s-]+edge
+- state[\s-]+of[\s-]+the[\s-]+art
+- groundbreaking
+- game[\s-]+changing
+- revolutionary
+- unparalleled
+- unrivall?ed
+- next-generation
+tests:
+- name: flags an unsupported quality claim
+  input: The design is robust.
+  contains: Clarity.UnsupportedQuality
+- name: flags a capitalised sentence opener
+  input: Scalable storage is included.
+  contains: Clarity.UnsupportedQuality
+- name: flags an inflected form
+  input: Retries work seamlessly.
+  contains: Clarity.UnsupportedQuality
+- name: flags a hyphenated claim
+  input: The parser is blazing-fast.
+  contains: Clarity.UnsupportedQuality
+- name: flags a claim across a line break
+  input: "The parser is blazing\nfast."
+  contains: Clarity.UnsupportedQuality
+- name: flags British and American spellings
+  input: Its unrivalled and unrivaled speed.
+  contains: Clarity.UnsupportedQuality
+- name: flags state of the art
+  input: A state-of-the-art index.
+  contains: Clarity.UnsupportedQuality
+- name: a garbage-collector generation is literal
+  input: The object is promoted to the next generation.
+  want: ''
+- name: leaves stated mechanisms alone
+  input: A retry reuses the idempotency key, so the service recognises it.
+  want: ''
+- name: does not flag simple
+  input: Use a simple literal path for exact matches.
+  want: ''
+- name: ignores inline code
+  input: The flag is `--robust`.
+  want: ''
+- name: ignores fenced code
+  input: '```text
+
+    robust
+
+    ```'
+  want: ''

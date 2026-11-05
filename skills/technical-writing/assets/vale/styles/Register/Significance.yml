@@ -1,0 +1,50 @@
+extends: existence
+message: "'%s' asserts importance without showing it. State the effect, or cut the sentence. Do not invent one."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+tokens:
+- (?:stands|serves)\s+as\s+an?\s+(?:testament|reminder)
+- plays?\s+an?\s+(?:\w+\s+)?(?:crucial|pivotal|vital|key|critical|central|important)\s+role
+- (?:a\s+)?(?:pivotal|defining|watershed)\s+moment
+- (?:leaves?|left)\s+an\s+indelible\s+mark
+- deeply\s+rooted
+- sets?\s+the\s+stage\s+for
+- (?:marks|represents)\s+a\s+(?:significant|fundamental|paradigm)\s+shift
+- reflects?\s+(?:a\s+)?broader
+- in\s+today['’]s\s+(?:fast-paced|digital|ever-changing|rapidly\s+evolving)
+- (?:ever-|rapidly\s+)?evolving\s+landscape
+- navigat(?:e|es|ing)\s+the\s+complexit(?:y|ies)
+- game[\s-]+changer
+- paradigm\s+shift
+tests:
+- name: flags a significance formula
+  input: The library plays a crucial role in the platform.
+  contains: Register.Significance
+- name: flags a testament formula across a line break
+  input: "The uptime stands as a\ntestament to the design."
+  contains: Register.Significance
+- name: flags a curly apostrophe
+  input: In today’s fast-paced world, teams ship daily.
+  contains: Register.Significance
+- name: flags a hyphenated variant
+  input: The cache was a game-changer.
+  contains: Register.Significance
+- name: a stated role is not a formula
+  input: The proxy terminates TLS and forwards the request.
+  want: ''
+- name: a bit shift is literal
+  input: The operation represents a shift of two bits.
+  want: ''
+- name: flags an evolving landscape across a line break
+  input: "The evolving\nlandscape of tooling."
+  contains: Register.Significance
+- name: a navigation menu is not a complexity
+  input: Navigate the menu to the settings page.
+  want: ''
+- name: ignores inline code
+  input: The flag is `sets the stage for`.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nplays a key role\n```"
+  want: ''

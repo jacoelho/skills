@@ -1,0 +1,55 @@
+extends: existence
+message: "'%s' is common in generated prose. One use can be fine; if several cluster, say the plain thing instead."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+# A single hit is weak evidence; the signal is density.
+# Words with a literal technical sense are anchored to their figurative use only
+# (Delve is the Go debugger; underscores and showcase apps are literal).
+# Significance owns testament, pivotal and evolving landscape. "Let's delve into" is owned here, not by Signposting.
+tokens:
+- delv(?:e|es|ed|ing)\s+(?:into|deeper)
+- tapestr(?:y|ies)
+- multifaceted
+- interplay
+- intricac(?:y|ies)
+- meticulous(?:ly)?
+- bolster(?:s|ed|ing)?
+- garner(?:s|ed|ing)?
+- showcas(?:es|ed|ing)
+- underscor(?:es|ed|ing)\s+(?:the|its|their|our|a|an|how|that|this)
+- vibrant
+- boasts
+- embark(?:s|ed|ing)?\s+on
+- the\s+realm\s+of
+tests:
+- name: flags a stock word
+  input: We delve into the cache design.
+  contains: Register.StockVocabulary
+- name: flags a capitalised inflected form
+  input: Underscoring this, the queue drains.
+  contains: Register.StockVocabulary
+- name: flags a figurative phrase across a line break
+  input: "We delve\ninto the cache design."
+  contains: Register.StockVocabulary
+- name: a literal realm is not figurative
+  input: Add the host to the Kerberos realm.
+  want: ''
+- name: the Go debugger is literal
+  input: Attach Delve to the running process.
+  want: ''
+- name: underscores are literal
+  input: Separate words with underscores in double-underscored names.
+  want: ''
+- name: a showcase app is literal
+  input: The showcase app lists every widget.
+  want: ''
+- name: ignores headings
+  input: '# Delve into caching'
+  want: ''
+- name: ignores inline code
+  input: Call `delve into` to debug.
+  want: ''
+- name: ignores fenced code
+  input: "```text\ndelve into\n```"
+  want: ''

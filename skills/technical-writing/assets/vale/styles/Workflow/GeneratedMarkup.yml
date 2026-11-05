@@ -1,0 +1,31 @@
+extends: existence
+message: "'%s' is chat-tool citation or tracking markup. Replace it with the real source link, or remove it."
+level: warning
+# raw: these artefacts usually sit in link targets, which text scope does not see.
+# Consequence: a fenced example of the markup is also flagged; that is a documented blind spot.
+scope: raw
+nonword: true
+vocab: false
+tokens:
+- \bcontentReference\[oaicite:\d+\]
+- \boaicite:\d+
+- (?:\bcite)?turn\d+(?:search|news|view)\d+
+- \x{3010}\d+\x{2020}[^\x{3011}\n]*\x{3011}
+- \butm_source=(?:chatgpt(?:\.com)?|openai|copilot\.com)\b
+- \breferrer=grok\.com\b
+tests:
+- name: detects an oaicite artefact
+  input: The API is stable. :contentReference[oaicite:1]{index=1}
+  contains: Workflow.GeneratedMarkup
+- name: detects a tracking parameter in a link target
+  input: '[docs](https://go.dev/doc?utm_source=chatgpt.com)'
+  contains: Workflow.GeneratedMarkup
+- name: detects a search-result marker
+  input: The limit is 10 MB citeturn0search3.
+  contains: Workflow.GeneratedMarkup
+- name: ordinary tracking parameters are not chat markup
+  input: '[docs](https://go.dev/doc?utm_source=newsletter)'
+  want: ''
+- name: fenced examples are a documented blind spot
+  input: "```text\noaicite:1\n```"
+  contains: Workflow.GeneratedMarkup

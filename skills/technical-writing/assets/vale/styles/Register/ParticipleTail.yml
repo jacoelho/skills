@@ -1,0 +1,35 @@
+extends: existence
+message: "The trailing '%s' clause adds commentary, not a fact. State what changes and for whom, or cut it."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+nonword: true
+# 'ensuring' and 'reflecting' are excluded: they state real consequences in technical text.
+# StockVocabulary owns underscoring and showcasing.
+tokens:
+- ',\s+(?:highlighting|emphasi[sz]ing|symboli[sz]ing|fostering|cultivating|solidifying|cementing|reinforcing|paving\s+the\s+way)\b'
+tests:
+- name: flags a trailing commentary participle
+  input: The team rewrote the parser, highlighting its commitment to quality.
+  contains: Register.ParticipleTail
+- name: flags British and American spellings
+  input: Latency fell, emphasising the value of caching.
+  contains: Register.ParticipleTail
+- name: flags the American spelling
+  input: Latency fell, emphasizing the value of caching.
+  contains: Register.ParticipleTail
+- name: a technical consequence is not commentary
+  input: Retry with the same key, ensuring idempotency.
+  want: ''
+- name: a reflected state change is a fact
+  input: The dashboard refreshes, reflecting the new values.
+  want: ''
+- name: a participle without a comma is not a tail
+  input: Syntax highlighting rules live in the theme.
+  want: ''
+- name: ignores inline code
+  input: Set `a, highlighting` in the config.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nx, highlighting y\n```"
+  want: ''

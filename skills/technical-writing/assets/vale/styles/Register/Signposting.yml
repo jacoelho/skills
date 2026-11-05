@@ -1,0 +1,34 @@
+extends: existence
+message: "'%s' announces content instead of delivering it. Start with the point."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+tokens:
+- let['’]s\s+(?:dive|jump)\s+(?:in|into)
+- let['’]s\s+(?:explore|unpack|break\s+(?:it|this|that)\s+down)
+- without\s+further\s+ado
+- buckle\s+up
+- here['’]s\s+(?:what|everything)\s+you\s+need\s+to\s+know
+- (?:below\s+is|here\s+is)\s+an?\s+(?:detailed|comprehensive)\s+(?:overview|breakdown|guide)
+tests:
+- name: flags an opener
+  input: Let's dive in.
+  contains: Register.Signposting
+- name: flags a curly apostrophe and a line break
+  input: "Let’s break\nit down."
+  contains: Register.Signposting
+- name: flags an overview wrapper
+  input: Below is a detailed overview of the changes.
+  contains: Register.Signposting
+- name: a scope statement is not an announcement
+  input: This article explains how a review queue grows.
+  want: ''
+- name: a reading plan is left alone, as human articles use it
+  input: In this post, I will explore three retry policies.
+  want: ''
+- name: ignores inline code
+  input: Run `lets dive in`.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nLet's dive in\n```"
+  want: ''

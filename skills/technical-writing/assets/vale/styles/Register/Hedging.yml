@@ -1,0 +1,43 @@
+extends: existence
+message: "'%s' hedges or pads. State the claim at the certainty the evidence supports; keep a qualification only if it carries information."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+tokens:
+- it\s+is\s+(?:important|crucial|essential)\s+to\s+(?:note|mention|remember|highlight)\s+that
+- it\s+is\s+worth\s+(?:noting|mentioning)\s+that
+- it['’]s\s+(?:worth\s+(?:noting|mentioning)|(?:important|crucial)\s+to\s+(?:note|mention|remember))\s+that
+- (?:needless\s+to\s+say|it\s+goes\s+without\s+saying)
+- (?:may|might|could)\s+(?:potentially|possibly|perhaps)
+- it\s+could\s+be\s+argued\s+that
+- based\s+on\s+(?:the\s+)?available\s+information
+- (?:is|are)\s+not\s+widely\s+(?:documented|disclosed)
+- while\s+specific\s+details\s+are\s+(?:limited|scarce)
+tests:
+- name: flags a padding preamble
+  input: It is important to note that the cache is local.
+  contains: Register.Hedging
+- name: flags a curly contraction
+  input: It’s worth noting that retries are capped.
+  contains: Register.Hedging
+- name: flags a stacked hedge across a line break
+  input: "This may\npotentially reduce latency."
+  contains: Register.Hedging
+- name: flags a source disclaimer
+  input: Based on available information, the API is stable.
+  contains: Register.Hedging
+- name: flags the uncontracted worth-noting form
+  input: It is worth noting that the cache is local.
+  contains: Register.Hedging
+- name: limited availability is a plain fact
+  input: IPv6 is not widely available on our hosts.
+  want: ''
+- name: a single modal is a legitimate qualification
+  input: The job may fail when the disk is full.
+  want: ''
+- name: ignores inline code
+  input: The key is `may potentially`.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nit is important to note that\n```"
+  want: ''
