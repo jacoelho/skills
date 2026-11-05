@@ -3,7 +3,7 @@
 Each lens has **Rules** and **Look for**. A rule states the target design and,
 where the line is not obvious, what counts as a breach; cite it by its bold name.
 **Look for** lists signals where breaches tend to hide; it focuses attention and
-is not a checklist to answer. A rule applies only where its subject exists — a
+is not a checklist to answer. A rule applies only where its subject exists: a
 system with no network boundary has no distribution semantics to judge. A lens
 yields a finding when its candidate passes the skill's **Confirm each candidate**
 step, as confirmed or conditional, or is a breach the reviewed change introduces.
@@ -39,14 +39,14 @@ Rules:
   breach this rule unless they derive from one definition. Where a process or
   language boundary prevents one definition, they are coordination, and lens 7
   expects a test spanning both sides. Places that change together but encode
-  different decisions — a producer and its consumer, a schema and its migration —
+  different decisions (a producer and its consumer, a schema and its migration)
   are coordination, judged by **Localise change**. Places that merely look alike
   are similar code; leave them separate, since small duplication costs less than
   false coupling.
 - **Explicit dependencies.** A module receives its dependencies as parameters or
   constructor arguments, and the module graph is acyclic. Breaches: globals,
   service locators, hidden registries, initialisation by import or load order,
-  and reach-through — using a module's dependency by navigating through the
+  and reach-through: using a module's dependency by navigating through the
   module.
 - **Local decisions.** Mutable state is partitioned so each partition has one
   owner that decides locally. Breach: shared mutable state, a central lock or a
@@ -75,7 +75,7 @@ plausible:
 5. change configuration, limits or concurrency.
 
 State each concretely, preferring the form the project's documents, history or
-provisional values point to — a limit marked provisional, a planned variant —
+provisional values point to (a limit marked provisional, a planned variant)
 over a generic one. For each scenario, name
 where the change belongs and what else must change. Report it only when the
 coordination it requires is avoidable under **Localise change**.
@@ -84,11 +84,11 @@ coordination it requires is avoidable under **Localise change**.
 
 Rules:
 
-- **Capability modules.** Code is organised by capability — the user-visible
+- **Capability modules.** Code is organised by capability: the user-visible
   behaviour it delivers, which for a tool or library is its features. Each
   capability module owns its vocabulary, state, invariants, behaviour, contracts
-  and tests. Infrastructure serving several capabilities — a storage adapter, a
-  logger — is a legitimate module. Breach: one capability's rules split across
+  and tests. Infrastructure serving several capabilities, such as a storage adapter or a
+  logger, is a legitimate module. Breach: one capability's rules split across
   technical layers that must be read together to understand it.
 - **Deep modules.** A module hides a decision behind a surface simpler than its
   implementation. Breach: a *shallow wrapper* that forwards, renames or
@@ -104,7 +104,7 @@ Look for:
 - competing writers to one piece of state, or duplicate state machines for one
   lifecycle (**Single owner**);
 - a capability whose tests live apart from its rules;
-- several small modules that are always read and changed together — a larger
+- several small modules that are always read and changed together; a larger
   cohesive module serves better.
 
 ## 3. Interfaces and information hiding
@@ -115,7 +115,7 @@ Rules:
   invariants are enforced when values are created and when state transitions
   occur. A closed set of values, or a value with format or range rules, is a type
   rather than a bare string or number. Each meaning has a field or type of its
-  own; a sentinel — nil versus empty, zero, a magic string — that carries a
+  own; a sentinel (nil versus empty, zero, a magic string) that carries a
   meaning is a breach, as is a surface that accepts argument combinations invalid
   together. Subject to **Where practical**.
 - **Pure domain.** Domain logic is deterministic and side-effect-free; it
@@ -136,8 +136,8 @@ Rules:
 
 **Where practical.** **Illegal states unrepresentable** and **Pure domain** bind
 unless the review names the
-machinery enforcement would need — new types, conversions, runtime checks at
-each use — and the breaches it would prevent, and the machinery clearly
+machinery enforcement would need (new types, conversions, runtime checks at
+each use) and the breaches it would prevent, and the machinery clearly
 outweighs them. When the comparison is close, the rule binds.
 
 Look for:
@@ -145,13 +145,13 @@ Look for:
 - callers coordinating steps the module should own;
 - internal representation visible through the surface, so an internal change
   reaches callers (*information leakage*);
-- a surface that hides essential semantics — ownership, lifetimes, ordering,
-  concurrency guarantees — to look simple;
+- a surface that hides essential semantics (ownership, lifetimes, ordering,
+  concurrency guarantees) to look simple;
 - an exported surface larger than its consumers use.
 
-**Surface usability** — whether the common case is direct, with predictable
+**Surface usability**, whether the common case is direct, with predictable
 names, arguments, defaults and errors, and usable without knowing the
-implementation — is judged by a specialist when your instructions assign public
+implementation, is judged by a specialist when your instructions assign public
 API shape to one; otherwise judge it here, reading the surface as its consumer.
 
 ## 4. Correctness and failure semantics
@@ -196,7 +196,7 @@ Rules:
   fewest such elements. Each wrapper, adaptor, interface or helper hides a
   decision, owns a contract, or isolates a policy that changes independently;
   otherwise it is a breach. A name, a mocking seam, a single call site or
-  hypothetical reuse justifies nothing either way — name the concrete burden it
+  hypothetical reuse justifies nothing either way; name the concrete burden it
   adds or removes.
 - **Delete obsolete paths.** Replaced behaviour is deleted. A compatibility
   path, shim or parallel implementation stays only when a requirement, persisted
@@ -226,11 +226,11 @@ Rules:
 Look for, owned by this review because a surface or representation fixes them:
 
 - materialisation where stated limits require streaming;
-- **buffer and allocation ownership** on a hot path — a surface that forces an
+- **buffer and allocation ownership** on a hot path: a surface that forces an
   allocation per call or per item where callers could reuse or borrow memory. A
   surface that returns owned collections cannot become zero-copy later without
   breaking its callers;
-- **data layout on a hot path** — a representation that scatters data accessed
+- **data layout on a hot path**: a representation that scatters data accessed
   together, such as pointer-heavy structures or maps where a dense array would
   serve, or dynamic dispatch (interfaces, trait objects) inside per-item loops.
 
@@ -253,7 +253,7 @@ Rules:
   with expected values taken from the requirement, and survive
   behaviour-preserving refactors. They exercise invariants, failure,
   cancellation, retries and concurrency, and are deterministic, using explicit
-  fakes at edges. Breach: a change-detector test — one that mirrors production
+  fakes at edges. Breach: a change-detector test, one that mirrors production
   logic, asserts its own setup, or pins non-contractual interactions such as
   which internal functions were called.
 - **No tautological tests.** Breach: a test that cannot fail while the code
@@ -264,7 +264,7 @@ Rules:
 Look for:
 
 - important behaviour or invariants testable only through internals;
-- a cross-boundary contract — including one shared across languages — with no
+- a cross-boundary contract, including one shared across languages, with no
   test spanning both sides;
 - test setup disproportionately heavy for the behaviour tested, pointing at a
   boundary in the wrong place.

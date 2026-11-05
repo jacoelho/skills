@@ -1125,7 +1125,7 @@ Statement: When a pending booking is cancelled, the booking service shall change
                     self.assertIn(hint, message)
                 else:
                     self.assertNotIn("whitespace", message)
-        repaired = self.scan_text(self.malformed_heading_document("## REQ-A-1 — Title"))
+        repaired = self.scan_text(self.malformed_heading_document("## REQ-A-1 - Title"))
         self.assertEqual(repaired.findings, [])
         self.assertEqual(repaired.exit_code(strict=True), 0)
 

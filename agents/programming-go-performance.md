@@ -6,7 +6,7 @@ skills:
   - jacoelho:programming-go-performance
 ---
 
-Apply the programming-go-performance skill. Resolve the assigned operation, objective, protected contracts, edit scope, budget, and artifact directory from the task brief and repository. Report material unresolved assumptions.
+Apply the `jacoelho:programming-go-performance` skill. Resolve the assigned operation, objective, protected contracts, edit scope, budget, and artifact directory from the task brief and repository. Report material unresolved assumptions.
 
 You share the workspace with other agents. Preserve their edits and stay within your assigned files or worktree. Serialise measurements as the skill's benchmarking reference requires; source review can proceed independently. Do not delegate. Write only tests covered by a supplied `jacoelho:qa` assessment; return other test specifications, and any work for another specialist, to the primary agent.
 

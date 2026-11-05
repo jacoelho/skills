@@ -4,14 +4,14 @@ The linter is a small, standard-library-only Python tool. It enforces the declar
 
 ## Run
 
-From any working directory, resolve the script from the directory that contains this skill's `SKILL.md`:
+Set `skill_dir` to the directory that contains this skill's `SKILL.md`, the parent of this file's `references/` directory. The commands then work from any working directory:
 
 ```sh
-skill_dir=/absolute/path/to/installed/spectacular-spec-review
+skill_dir=<absolute path of the spectacular-spec-review skill>
 python3 "$skill_dir/scripts/spec_lint.py" ./specs
 ```
 
-Replace the placeholder with the absolute installed directory containing `SKILL.md`; do not assume a particular user or repository install path. The spec roots are arguments to the command and are resolved from the process current working directory; use absolute paths when that directory is not the repository root. Pass the relevant active spec roots, including the canonical homes of locally referenced identifiers. The program does not fetch external sources. It accepts Python 3.10 or later. Only regular Markdown files are read.
+The spec roots are arguments to the command and are resolved from the process current working directory; use absolute paths when that directory is not the repository root. Pass the relevant active spec roots, including the canonical homes of locally referenced identifiers. The program does not fetch external sources. It accepts Python 3.10 or later. Only regular Markdown files are read.
 
 A supplied path states intent, so symbolic links in it, including in its ancestors, are followed, and the resolved target decides eligibility: `notes.md -> notes.txt` is rejected. Findings in a followed file name its resolved path; a rejected input is named as supplied. Symbolic links met during directory traversal are never followed, and each is counted. A `skipped-symlink` warning names a link only when its target may hold Markdown this run did not check: the target is dangling or loops, is neither a regular file nor a directory, is a Markdown file that was not scanned, or is a directory that was not traversed. A link to a scanned file or a traversed directory, such as `CLAUDE.md -> AGENTS.md`, or to a regular non-Markdown file, is counted without a warning. Coverage is decided after all inputs are collected, so input order does not matter; it compares resolved path spellings, as the deduplication note under Output and exit codes describes. Under `--strict` a warning fails the run until its target is passed explicitly or the link is removed. A dangling or looping input link is an input error. Explicit non-Markdown files and unsupported input types are rejected; regular non-Markdown files encountered under a directory are skipped and counted. Special files, such as named pipes, are rejected and counted even during traversal. Hidden files and directories are skipped only when encountered during directory traversal, and the hidden check comes first, so a hidden link counts as hidden, not as a symlink. An explicitly supplied hidden Markdown file is eligible for scanning.
 
@@ -30,18 +30,18 @@ Unmarked Markdown is skipped and counted. Historical documents should not use th
 Outside fenced code, use an ATX heading at level 2 through 6, with whitespace between the identifier and its title. This example is complete: with the active marker prepended it lints clean under `--strict`.
 
 ```markdown spec-lint
-### INV-BOOK-001 — Stock stays non-negative
+### INV-BOOK-001 - Stock stays non-negative
 Status: accepted
 Statement: The booking service shall keep available stock non-negative.
 Basis: DEC-BOOK-001, adopted by the designated product owner.
 
-### REQ-BOOK-001 — Cancel a pending booking
+### REQ-BOOK-001 - Cancel a pending booking
 Status: accepted
 Statement: When a pending booking is cancelled, the booking service shall atomically mark the booking cancelled and release its reserved unit.
 Basis: DEC-BOOK-001, adopted by the designated product owner.
 References: INV-BOOK-001
 
-### AC-BOOK-001 — Pending booking
+### AC-BOOK-001 - Pending booking
 Covers: REQ-BOOK-001, INV-BOOK-001
 Situation: Booking B is pending and holds one reserved unit of stock S.
 Expected: B is cancelled and the available stock of S rises by exactly one.
@@ -98,7 +98,7 @@ Text output includes counts for active documents and declarations, unmarked docu
 
 Overlapping input paths are deduplicated by resolved path spelling. On a case-insensitive filesystem a differently cased spelling counts as a different path, so a covered link may still warn and a file supplied twice may be scanned twice and report duplicate IDs; spell inputs and link targets in their on-disk case. Counts for active documents, skipped entries, symlinks, and rejected inputs refer to unique absolute path entries across the supplied roots. Traversal skips directory and file symlinks and counts each once; the counts say what was skipped, and the warnings say which skipped targets went unchecked. A hidden directory counts as one skipped entry; its descendants are not traversed or counted individually. Review the reported counts rather than assuming every repository document was included. A rejected input or a skipped document is not evidence that its contents were reviewed.
 
-When changing the linter, run its bundled regression tests from any working directory, using the same installed `skill_dir` as above:
+When changing the linter, run its bundled regression tests from any working directory, using the same `skill_dir` as above:
 
 ```sh
 python3 -B -m unittest discover -s "$skill_dir/scripts" -p 'test_*.py' -q

@@ -1,6 +1,6 @@
 ---
 name: app-screen-design
-description: Design and build application screens that people work in, such as dashboards, admin and back office, analytics, reports, settings, billing, inboxes, queues, list and table screens, wallets, builders and object detail pages. Use when creating or restyling any of these, in any stack, or when reviewing whether one reads as a generated template. Not for landing pages or marketing sites (use frontend-design). General chart construction stays with dataviz; KPI rows, dashboard layout and chart hue on app screens follow this skill.
+description: Design and build application screens that people work in, such as dashboards, admin and back office, analytics, reports, settings, billing, inboxes, queues, list and table screens, wallets, builders and object detail pages. Use when creating or restyling any of these, in any stack, or when reviewing whether one reads as a generated template. Not for landing pages or marketing sites (use frontend-design:frontend-design). General chart construction stays with dataviz; KPI rows, dashboard layout and chart hue on app screens follow this skill.
 ---
 
 # App screen design
@@ -18,8 +18,8 @@ This skill ships specifications only. Build in the project's own stack and compo
 
 ## Boundaries with other skills
 
-- **`frontend-design`** owns landing pages and marketing sites. On app screens, this skill's defaults win where they
-  differ. A product page showing interface fragments follows `frontend-design` for the page and this skill for the
+- **`frontend-design:frontend-design`** owns landing pages and marketing sites. On app screens, this skill's defaults win where they
+  differ. A product page showing interface fragments follows `frontend-design:frontend-design` for the page and this skill for the
   insides of the fragments.
 - **`dataviz`** owns chart construction: form choice, marks, axes, hover, legends, palette validation and accessibility.
   Use it for every chart. This skill owns KPI rows, dashboard layout, the chart hue (`chart-1` of the style), and the

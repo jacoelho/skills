@@ -1,8 +1,6 @@
 ---
 name: spectacular-spec-writing
-description: Write or revise a bounded capability contract of EARS requirements, invariants, and acceptance criteria. Use when asked to write, draft, or update a spec, requirements, or acceptance criteria, to turn settled decisions into a contract, to consolidate duplicate or overlapping rules, or to hand settled requirements to an implementer. Not for open product questions (use spectacular-spec-grilling) or status-only handoffs.
-metadata:
-  version: "2.1.0"
+description: Write or revise a bounded capability contract of EARS requirements, invariants, and acceptance criteria. Use when asked to write, draft, or update a spec, requirements, or acceptance criteria, to turn settled decisions into a contract, to consolidate duplicate or overlapping rules, or to hand settled requirements to an implementer. Not for open product questions (use jacoelho:spectacular-spec-grilling) or status-only handoffs.
 ---
 
 # Spectacular spec writing
@@ -33,7 +31,7 @@ Use implementation and tests as evidence of current behaviour. Use an authorised
 
 ## 3. Resolve consequential ambiguity
 
-Find cases where two competent implementations could satisfy the wording yet produce different results a user or dependent component would notice. Use [the precision checks](references/precision.md) to expose each fork. For an interactive product decision, use `spectacular-spec-grilling` when available; otherwise use that reference's working-question form.
+Find cases where two competent implementations could satisfy the wording yet produce different results a user or dependent component would notice. Use [the precision checks](references/precision.md) to expose each fork. For an interactive product decision, use `jacoelho:spectacular-spec-grilling`; otherwise use that reference's working-question form.
 
 Keep the question in the working record and exclude dependent behaviour from the ready-to-implement slice until it is resolved or explicitly delegated.
 
@@ -61,19 +59,19 @@ Compare applicability before merging similar statements. Differences in actor, s
 
 For each consequential obligation, choose evidence appropriate to the claim: example, property, contract check, integration test, fault injection, model, benchmark, inspection, or user/operational validation. State the expected outcome, its independent basis, and the boundary to exercise. Mark planned evidence separately from evidence already executed against a named revision and environment.
 
-Use `spectacular-bdd-gherkin` when it is available and Gherkin improves shared understanding; otherwise write the smallest equivalent examples directly. Scenarios illustrate rules; they are not a second authority for the rule.
+Use `jacoelho:spectacular-bdd-gherkin` when Gherkin improves shared understanding; otherwise write the smallest equivalent examples directly. Scenarios illustrate rules; they are not a second authority for the rule.
 
 ## 7. Reconcile only affected behaviour
 
-When writing a new contract or changing an existing promise, perform a focused comparison against sources that could conflict: active contracts, binding constraints, affected code paths, and relevant tests. Use [the source mismatch classes](references/mismatch.md) to classify each disagreement and [change handling](references/changes.md) for impact and version transitions. An ordinary local writing change or repair under an unchanged valid contract does not require a full repository review or migration analysis. Use `spectacular-spec-review` when available; otherwise follow those references and record only affected sources. Preserve a valid contract when code is wrong, and add migration or compatibility work only where a binding constraint requires it.
+When writing a new contract or changing an existing promise, perform a focused comparison against sources that could conflict: active contracts, binding constraints, affected code paths, and relevant tests. Use [the source mismatch classes](references/mismatch.md) to classify each disagreement and [change handling](references/changes.md) for impact and version transitions. An ordinary local writing change or repair under an unchanged valid contract does not require a full repository review or migration analysis. Use `jacoelho:spectacular-spec-review` for that comparison and record only affected sources. Preserve a valid contract when code is wrong, and add migration or compatibility work only where a binding constraint requires it.
 
 For the bundled declaration layout, mark maintained specification documents active with `<!-- spec-lint: active -->` and run the review skill's linter, including the referenced canonical roots:
 
 ```sh
-python3 "<this skill's directory>/../spectacular-spec-review/scripts/spec_lint.py" <spec roots>
+python3 "${CLAUDE_SKILL_DIR}/../spectacular-spec-review/scripts/spec_lint.py" <spec roots>
 ```
 
-The script exists only when `spectacular-spec-review` is installed beside this skill. Resolve syntax errors before claiming automated compliance. If the executable is unavailable or the repository uses another declaration layout, report that enforcement limit; manual review does not count as an executed check.
+Resolve syntax errors before claiming automated compliance. If the executable is unavailable or the repository uses another declaration layout, report that enforcement limit; manual review does not count as an executed check.
 
 ## 8. Return the bounded result
 

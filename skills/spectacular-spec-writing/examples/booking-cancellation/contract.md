@@ -21,21 +21,21 @@ The boundary is the booking service's cancellation request, observed through the
 
 ## Contract
 
-### REQ-BOOK-001 — Cancel a pending booking
+### REQ-BOOK-001 - Cancel a pending booking
 
 Status: accepted
 Statement: When the owner of a pending booking requests its cancellation, the booking service shall atomically mark the booking cancelled and release its reserved unit.
 Basis: Q-BOOK-001, resolved by the booking product owner.
 References: INV-STOCK-001
 
-### REQ-BOOK-002 — Repeated cancellation changes nothing
+### REQ-BOOK-002 - Repeated cancellation changes nothing
 
 Status: accepted
 Statement: When the owner of a cancelled booking requests its cancellation, the booking service shall report success without changing the booking or stock.
 Basis: Q-BOOK-002, resolved by the booking product owner so that client retries are safe.
 References: INV-STOCK-001
 
-### REQ-BOOK-003 — Confirmed bookings cannot be cancelled
+### REQ-BOOK-003 - Confirmed bookings cannot be cancelled
 
 Status: accepted
 Statement: If the owner of a confirmed booking requests its cancellation, then the booking service shall reject the request as a conflict without changing the booking or stock.
@@ -45,19 +45,19 @@ Basis: Q-BOOK-001, resolved by the booking product owner; refunds are outside th
 
 Each AC points to the scenario that owns its expected values rather than repeating them.
 
-### AC-BOOK-001 — Pending booking is cancelled and its unit released
+### AC-BOOK-001 - Pending booking is cancelled and its unit released
 
 Covers: REQ-BOOK-001, INV-STOCK-001
 Expected: Scenario "Cancelling a pending booking releases its unit" in cancellation.feature passes.
 Verification: Planned at the booking service API; not executed.
 
-### AC-BOOK-002 — Repeated cancellation succeeds without change
+### AC-BOOK-002 - Repeated cancellation succeeds without change
 
 Covers: REQ-BOOK-002, INV-STOCK-001
 Expected: Scenario "Cancelling an already cancelled booking succeeds without change" in cancellation.feature passes.
 Verification: Planned at the booking service API; not executed. A second release here would breach INV-STOCK-001.
 
-### AC-BOOK-003 — Confirmed booking is rejected
+### AC-BOOK-003 - Confirmed booking is rejected
 
 Covers: REQ-BOOK-003
 Expected: Scenario "Cancelling a confirmed booking is rejected as a conflict" in cancellation.feature passes.

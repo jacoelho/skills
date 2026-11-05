@@ -1,8 +1,6 @@
 ---
 name: spectacular-spec-grilling
 description: Interview the user about unresolved behavioural choices in software requirements, one concrete distinguishing case at a time, and keep a dependency-aware decision record that feeds an EARS contract. Use when a spec, requirement, or acceptance outcome is ambiguous, when asked to clarify, grill, or pin down requirements, or before writing a contract with open product decisions. Not for general plan or design critique, settled contracts, or mechanical changes.
-metadata:
-  version: "2.1.0"
 ---
 
 # Spectacular spec grilling
@@ -84,7 +82,7 @@ Use the actual boundary and an independently agreed expected result where practi
 
 ## Reconcile answers with current sources
 
-When an answer changes existing behaviour, compare it with active specifications, shared contracts, relevant code paths, and tests. Present the concrete conflicting case and classify it with [the source mismatch classes](references/mismatch.md), typically deliberate change, specification or implementation defect, or unresolved conflict. Hand full reconciliation to `spectacular-spec-review` when available. If it is unavailable, perform that comparison directly and record the conflict, authorities, affected requirements or examples, proposed disposition, and unresolved owner in the existing task or decision record.
+When an answer changes existing behaviour, compare it with active specifications, shared contracts, relevant code paths, and tests. Present the concrete conflicting case and classify it with [the source mismatch classes](references/mismatch.md), typically deliberate change, specification or implementation defect, or unresolved conflict. Hand full reconciliation to `jacoelho:spectacular-spec-review`, and record the conflict, authorities, affected requirements or examples, proposed disposition, and unresolved owner in the existing task or decision record.
 
 ## Stopping condition
 

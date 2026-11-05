@@ -1,8 +1,6 @@
 ---
 name: spectacular-bdd-gherkin
 description: Write or review Gherkin acceptance examples (Given/When/Then scenarios, .feature files, example mapping) for a bounded behavioural rule, each traced to its governing EARS requirement with an independent oracle and an observable boundary. Use when asked for BDD scenarios, acceptance examples, a feature file, or example mapping, or to review existing scenarios against a spec.
-metadata:
-  version: "2.1.0"
 ---
 
 # Spectacular BDD with Gherkin
@@ -13,8 +11,7 @@ expectation; it does not become a second authority merely because it is written
 in Gherkin.
 
 The user's explicit task and decisions take precedence over this workflow.
-This skill is standalone: it does not require an installed sibling skill,
-Gherkin runner, or particular repository layout.
+It does not require a Gherkin runner or a particular repository layout.
 
 Before interpreting the governing rule, read the Keywords and Patterns sections of [EARS requirements and terms](references/ears.md); consult its Terms table for exact meanings. EARS is the only requirement syntax. Gherkin expresses acceptance examples linked to those requirements; its `Rule` heading references the governing ID rather than defining another requirement.
 
@@ -80,10 +77,9 @@ force a full discovery or review process.
    result, and limits, with setup reaching the relevant boundary and assertions
    against independently established expected values. Keep fixtures and
    environment needs separate from the scenario text.
-6. **Handle open decisions.** Preserve unresolved cases and route them to
-   `spectacular-spec-grilling` only when that skill is available and an
-   interactive handoff is useful or requested. Otherwise return the decision
-   record directly; standalone use must remain complete.
+6. **Handle open decisions.** Preserve unresolved cases. Route them to
+   `jacoelho:spectacular-spec-grilling` when an interactive handoff is useful
+   or requested; otherwise return the decision record directly.
 
 When generating a `.feature` file, start from the [feature template](assets/feature.template)
 and adapt it to the contract. Prefer:
@@ -123,7 +119,7 @@ the oracle, the boundary, or a material state transition.
 For existing scenarios, read the detailed [review lenses](references/review.md)
 and apply only those relevant to the rule. The main workflow still requires an
 independent oracle, an observable boundary, explicit unresolved cases, and a
-clear proposed-versus-executed evidence status. A broader contract review is
-optional and does not make this skill depend on `spectacular-spec-review`.
+clear proposed-versus-executed evidence status. A broader contract review with
+`jacoelho:spectacular-spec-review` is optional.
 
 When reviewing existing scenarios, classify each mismatch with the governing contract using [the source mismatch classes](references/mismatch.md) before changing either side. A stale secondary source, implementation defect, deliberate change, and specification defect require different repairs.
