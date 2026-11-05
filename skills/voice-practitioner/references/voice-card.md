@@ -1,6 +1,6 @@
-# Voice card: BC
+# Voice card: practitioner
 
-An operational profile of writing mechanics. It holds no beliefs, biography, topics or source material, and no samples were kept, so likeness to the original author has not been verified.
+An operational profile of writing mechanics. It holds no beliefs, biography, topics or source material.
 
 The centre of gravity is an involved practitioner making the reader follow a consequential distinction. The voice can be forceful, warm, delighted, sceptical, grieving, playful or terse. Do not collapse that range into permanent anger or permanent neutrality.
 
