@@ -32,7 +32,7 @@ When the material leaves the main point or audience unclear, say so rather than 
 
 ## Voice
 
-When the user asks for a named voice, load that voice skill, such as `voice-bc`. If it is unavailable, say so in the findings and continue without it. The contract in `SKILL.md` and this profile outrank any voice. A voice may override the sentence rules and the ban on rhetorical questions in the organisation reference, and Vale's long-sentence alerts.
+When the user asks for a named voice, load that voice skill, such as `voice-practitioner`. If it is unavailable, say so in the findings and continue without it. The contract in `SKILL.md` and this profile outrank any voice. A voice may override the sentence rules and the ban on rhetorical questions in the organisation reference, and Vale's long-sentence alerts.
 
 Follow supplied samples for cadence, vocabulary, directness and level of explanation. Do not borrow their facts, anecdotes or unusual phrases, and do not let voice strengthen a claim. Without samples, write natural, precise prose and invent no persona.
 
