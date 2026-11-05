@@ -19,8 +19,13 @@ Read for every draft, improvement, reorganisation and review. The contract in `S
 
 ## Paragraphs
 
+A paragraph break is a claim: the blank line tells the reader one unit of thought ended. Make it true.
+
 - Give each paragraph one job, not necessarily one idea or one sentence shape.
-- Start a new paragraph when the actor, time, alternative, certainty or normative status changes.
+- Start a new paragraph when the paragraph's job, actor, time, alternative, certainty or normative status changes. Break only at such a turn, never just to shorten a block; a break inside one argument tells the reader it ended.
+- Let length follow weight. The paragraph carrying the decision or the risk may be the longest.
+- Put a warning or decision the reader must not miss at the start of a paragraph or in its own paragraph, never buried mid-paragraph. Keep its condition in the same sentence.
+- In Markdown files a single newline joins lines, so separate paragraphs with a blank line. GitHub PR and issue bodies render a single newline as a line break, so do not hard-wrap prose there.
 - Keep evidence next to its claim and each qualifier next to what it limits.
 - Do not merge similar statements whose scope, certainty or evidence differ.
 - Make a condition visible before or alongside the consequence it limits.
