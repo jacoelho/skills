@@ -1,6 +1,7 @@
 ---
 name: testing
 description: Test-quality criteria for designing tests before they are written and reviewing existing ones - defect detection, independent expected values, boundaries, doubles, isolation, flakiness and cost. Not a test-first workflow (see `mattpocock-skills:tdd`).
+argument-hint: "[design | review] [code or test path]"
 ---
 
 # Testing

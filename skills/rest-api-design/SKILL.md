@@ -1,6 +1,7 @@
 ---
 name: rest-api-design
 description: "Designs or reviews framework-agnostic REST/HTTP API contracts and OpenAPI descriptions: resource naming and relationships, methods and actions, payloads, filters and sorting, cursor or keyset pagination, errors, idempotent retries, concurrency, and evolution. Not for framework setup or runtime tuning alone."
+argument-hint: "[requirements | OpenAPI file]"
 ---
 
 # REST API design

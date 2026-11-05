@@ -1,6 +1,7 @@
 ---
 name: spectacular-spec-writing
 description: Write or revise a bounded capability contract of EARS requirements, invariants, and acceptance criteria. Use when asked to write, draft, or update a spec, requirements, or acceptance criteria, to turn settled decisions into a contract, to consolidate duplicate or overlapping rules, or to hand settled requirements to an implementer. Not for open product questions (use jacoelho:spectacular-spec-grilling) or status-only handoffs.
+argument-hint: "[capability | decision record]"
 ---
 
 # Spectacular spec writing

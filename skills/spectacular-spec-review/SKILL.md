@@ -1,6 +1,7 @@
 ---
 name: spectacular-spec-review
 description: Read-only review of EARS specifications, requirements, invariants, and acceptance criteria for syntax, ambiguity, contradiction, duplicate authority, consequential gaps, evidence gaps, and drift from decisions, code, or tests; runs the bundled spec linter. Use when asked to review, audit, lint, or check a spec or requirements, to reconcile a proposed change with existing specs and code, or to judge whether a spec is ready to implement.
+argument-hint: "[spec path | proposed change]"
 ---
 
 # Spectacular spec review

@@ -1,6 +1,7 @@
 ---
 name: programming-simplicity
 description: Decides whether code structure earns its keep and removes what does not without changing behaviour. Use when judging whether an abstraction, wrapper, adaptor, helper, duplicate model or defensive branch should exist; when removing indirection or dead code; when a complexity metric or lint warning motivates a refactor or extraction; or when reviewing a simplification proposal. Unlike the `simplify` skill and the code-simplifier agent, which polish recently changed code for clarity, this skill applies to any code or design, rejects metric-only or cosmetic changes, checks semantic preconditions for each removal, and verifies preserved behaviour proportionately to risk.
+argument-hint: "[code path | simplification proposal]"
 ---
 
 # Programming Simplicity
