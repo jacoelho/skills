@@ -399,7 +399,7 @@ def malformed_id_message(token: str, level: int) -> str:
             return f"Declare {identifier} in a level 2–6 heading."
         if rest:
             return (f"Separate {identifier} from the title with whitespace, "
-                    f"for example '{'#' * level} {identifier} — Title'.")
+                    f"for example '{'#' * level} {identifier} - Title'.")
     return "Use a level 2–6 heading with a supported uppercase identifier."
 
 

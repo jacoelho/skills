@@ -1,8 +1,6 @@
 ---
 name: spectacular-spec-review
 description: Read-only review of EARS specifications, requirements, invariants, and acceptance criteria for syntax, ambiguity, contradiction, duplicate authority, consequential gaps, evidence gaps, and drift from decisions, code, or tests; runs the bundled spec linter. Use when asked to review, audit, lint, or check a spec or requirements, to reconcile a proposed change with existing specs and code, or to judge whether a spec is ready to implement.
-metadata:
-  version: "2.1.0"
 ---
 
 # Spectacular spec review
@@ -96,10 +94,10 @@ Possible recommendations are: implement the bounded scope, investigate a named u
 
 ## Structural checking
 
-List candidate opted-in documents with `grep -rlF --include='*.md' -- '<!-- spec-lint: active -->' .`; it also matches the marker inside fenced examples, so the linter's counts, not the grep, are authoritative. When any candidates exist, run the linter on the affected active specification roots, resolving the script from this skill's directory:
+List candidate opted-in documents with `grep -rlF --include='*.md' -- '<!-- spec-lint: active -->' .`; it also matches the marker inside fenced examples, so the linter's counts, not the grep, are authoritative. When any candidates exist, run the linter on the affected active specification roots:
 
 ```sh
-python3 "<this skill's directory>/scripts/spec_lint.py" <spec roots>
+python3 "${CLAUDE_SKILL_DIR}/scripts/spec_lint.py" <spec roots>
 ```
 
 [The linter guide](references/lint-format.md) defines the layout, checks, and exit codes. The linter enforces declarations, EARS lexical syntax, and identifier references for proposed and accepted requirements; grammar errors fail without `--strict`. Report the emitted counts for active documents and declarations, skipped documents or entries, symlinks, and rejected unsupported inputs, and any `skipped-symlink` warnings; do not describe skipped or unrun material as inspected. A clean run supports syntax and traceability within the recognised scope; meaning, semantic overlap, authority, and conformance require the passes above. Report an unavailable executable check explicitly rather than replacing it with a claim of automated compliance.

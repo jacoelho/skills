@@ -21,7 +21,7 @@ Total units are the units the inventory owner records for a stock. Available uni
 
 ## Contract
 
-### INV-STOCK-001 — Available units stay within total units
+### INV-STOCK-001 - Available units stay within total units
 
 Status: accepted
 Statement: The booking service shall keep the available units of each stock between zero and its total units.
@@ -29,7 +29,7 @@ Basis: Stock policy adopted by the inventory product owner.
 
 ## Acceptance
 
-### AC-STOCK-001 — Any request sequence keeps units in bounds
+### AC-STOCK-001 - Any request sequence keeps units in bounds
 
 Covers: INV-STOCK-001
 Situation: Stock S has 2 total units; any generated sequence of booking, cancellation, and repeated cancellation requests for S is sent to the booking service API.

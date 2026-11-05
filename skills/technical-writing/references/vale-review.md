@@ -10,7 +10,7 @@ Otherwise use the bundled profile: British spelling, repetition, plain-language 
 
 ## Run
 
-Tested with Vale 3.24.0. `SKILL_DIR` is this skill's installed directory.
+Tested with Vale 3.24.0. `SKILL_DIR` is the directory that contains this skill's `SKILL.md`, the parent of this file's `references/` directory.
 
 ```sh
 python3 "$SKILL_DIR/assets/vale/scripts/lint.py" document.md

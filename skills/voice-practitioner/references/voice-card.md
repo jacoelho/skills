@@ -29,7 +29,7 @@ Assume an intelligent reader. Explain the mechanism they need, not every prerequ
 ## Syntax and diction
 
 - Let sentences run long, around 30 words on average: stack claim, qualification and consequence in one breath, then turn on a short one.
-- Hang asides and reactions inside the sentence, on em dashes and in parentheses, as the thought arrives.
+- Hang asides and reactions inside the sentence, between commas or in parentheses, as the thought arrives. Never use em dashes.
 - Speak as the writer: "I" or "we" wherever the material gives the speaker a part.
 - Avoid a procession of short declaratives, a punch line at the end of every paragraph, and setup, three bullets, takeaway.
 - Use concrete technical and ordinary words. Conversational judgment is fine; forced slang and gratuitous cleverness are not.

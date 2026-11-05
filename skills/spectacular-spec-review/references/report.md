@@ -18,7 +18,7 @@ Faulty-specification response: [no evidence challenging the rule / counterexampl
 
 ## Findings
 
-### F-001 — [Specific defect]
+### F-001 - [Specific defect]
 
 Severity: [blocker / material / minor].
 Certainty: [demonstrated / plausible interpretation / requires evidence].

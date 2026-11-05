@@ -1,6 +1,6 @@
 ---
 name: programming-go-api-design
-description: Criteria used by the jacoelho:programming-go-api-design subagent to design, review, or evolve exported or cross-package Go API surfaces from the caller's perspective - package boundaries, exported signatures, constructors, configuration, extension points, errors, ownership, streaming, and compatibility. Use when a change adds or alters what importing packages see; not for internal helpers, implementation simplification (programming-simplicity), formatting, or micro-optimisation. In the main session, delegate to the jacoelho:programming-go-api-design subagent rather than running this directly.
+description: Criteria used by the jacoelho:programming-go-api-design subagent to design, review, or evolve exported or cross-package Go API surfaces from the caller's perspective - package boundaries, exported signatures, constructors, configuration, extension points, errors, ownership, streaming, and compatibility. Use when a change adds or alters what importing packages see; not for internal helpers, implementation simplification (jacoelho:programming-simplicity), formatting, or micro-optimisation. In the main session, delegate to the jacoelho:programming-go-api-design subagent rather than running this directly.
 ---
 
 # Go API Design

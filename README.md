@@ -2,11 +2,7 @@
 
 A Claude Code plugin with my personal skills and subagents. This repository is both the plugin and its marketplace.
 
-| Skills | Agents |
-| --- | --- |
-| app-screen-design, architecture-review, programming-go-api-design, programming-go-performance, programming-simplicity, rest-api-design, spectacular-bdd-gherkin, spectacular-spec-grilling, spectacular-spec-review, spectacular-spec-writing, technical-writing, testing, voice-practitioner | command-runner, critic, programming-go-api-design, programming-go-performance, qa |
-
-Everything is namespaced by the plugin name: skills run as `/jacoelho:<skill>` and agents are `jacoelho:<agent>`.
+Skills live in `skills/`, agents in `agents/`. Everything is namespaced by the plugin name: skills run as `/jacoelho:<skill>` and agents are `jacoelho:<agent>`.
 
 ## Install
 

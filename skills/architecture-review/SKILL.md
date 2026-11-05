@@ -1,12 +1,12 @@
 ---
 name: architecture-review
-description: Architecture, design or maintainability review of code — a diff, branch, refactor, module or subsystem. Use for coupling, change at a distance, where logic should live, ownership and boundaries. Judges design rather than hunting line-level defects.
+description: Architecture, design or maintainability review of code: a diff, branch, refactor, module or subsystem. Use for coupling, change at a distance, where logic should live, ownership and boundaries. Judges design rather than hunting line-level defects.
 ---
 
 # Architecture review
 
 Central question: does this design reduce the knowledge needed to understand, use,
-change, verify and operate the system while preserving its guarantees — or does it
+change, verify and operate the system while preserving its guarantees, or does it
 only move complexity elsewhere?
 
 The review is read-only. The design standard is the rules in
@@ -29,11 +29,11 @@ callers.
 
 A *module* is the smallest unit that groups several types or functions behind
 a visibility boundary, set by the language or by a convention the project
-states — a package, crate, namespace or library; a single class counts only when
+states: a package, crate, namespace or library; a single class counts only when
 the language offers nothing larger. A
 *boundary* is either a module's exported surface together with all its
-consumers, or one point where external input — user data, files, another
-process, the network — enters a module. A library's public API is a boundary
+consumers, or one point where external input (user data, files, another
+process, the network) enters a module. A library's public API is a boundary
 whose consumers are unknown: judge it by what callers can depend on, not by the
 callers in the repository. Reviewing a boundary includes the code on both sides. A boundary
 is *changed* when the scope modifies its surface, or code on either side that
@@ -66,12 +66,12 @@ hidden knowledge. Done when every selected boundary has passed through each lens
 that applies to it.
 
 This review owns judgements of ownership, coupling and boundary placement. When
-your instructions assign a judgement to a specialist — such as public API shape or
-a performance investigation — hand off only that judgement, or report it as
+your instructions assign a judgement to a specialist, such as public API shape or
+a performance investigation, hand off only that judgement, or report it as
 unassessed when handoff is unavailable.
 
-**4. Confirm each candidate.** Before reporting, demonstrate a concrete scenario —
-inputs, a future change, a failure — that produces the consequence, and check for
+**4. Confirm each candidate.** Before reporting, demonstrate a concrete scenario
+(inputs, a future change, a failure) that produces the consequence, and check for
 existing safeguards that prevent it. Classify a finding as *confirmed* when the
 code already exhibits the consequence (for an ambiguity, when the code already
 relies on both readings) or when it is an introduced breach (below), and
@@ -79,12 +79,12 @@ relies on both readings) or when it is an introduced breach (below), and
 
 A breach with no demonstrable consequence yet is a Low finding only when the
 reviewed change introduces it. The change introduces a breach when it creates or
-extends it — a new copy of duplicated policy, a new caller of a global — but not
+extends it (a new copy of duplicated policy, a new caller of a global), but not
 when it moves or reformats code that already breached; in a rewrite, compare
 against the code it replaces. Let such a finding's Impact name the risk the rule
 guards against, and omit Change scenario and Regression test. List other breaches,
 and all of them in a module review, one line each at the end of Improvements. Report a style
-preference — naming, layout, formatting that breaches no rule — only when the user
+preference (naming, layout, formatting that breaches no rule) only when the user
 asked for one. Consolidate findings sharing a root
 cause.
 
@@ -107,8 +107,8 @@ and note the reduced budget under Coverage.
    the standard from step 1. It runs steps 2–5 on its group, may follow a
    dependency into any other boundary, cites only lines it read, and returns
    five parts: findings in the report's finding format; one-line breaches for
-   Improvements; coordination items for Change at a distance; Coverage items —
-   uninspected, unassessed and to verify; and its step-2 ownership map — each
+   Improvements; coordination items for Change at a distance; Coverage items
+   (uninspected, unassessed and to verify); and its step-2 ownership map: each
    fact, invariant and resource, its owner, and its dependents.
 4. Merge each part. Findings with the same root cause are one finding: keep the
    strongest evidence, and re-read the code to settle disagreements on severity
@@ -124,14 +124,14 @@ and note the reduced budget under Coverage.
 Grade by consequence, whichever lens found it; report most severe first. A
 resource bound that breaks a stated operating limit is at least High.
 
-- **Critical** — data loss, a broken essential guarantee, or likely severe
+- **Critical:** data loss, a broken essential guarantee, or likely severe
   correctness failure.
-- **High** — significant correctness risk, or coupling likely to cause defects or
+- **High:** significant correctness risk, or coupling likely to cause defects or
   substantial change amplification on a plausible change; for example, a likely
   future change that breaks a distant module without any test or compile error.
-- **Medium** — a concrete weakness likely to cause misuse, divergence or costly
+- **Medium:** a concrete weakness likely to cause misuse, divergence or costly
   change: unclear ownership, leaking abstraction, fragmented invariant.
-- **Low** — a demonstrable improvement with limited consequence, or a breach the
+- **Low:** a demonstrable improvement with limited consequence, or a breach the
   change introduces with no consequence yet (step 4).
 
 ## Recommendations
@@ -149,8 +149,8 @@ surface, with expectations derived from the requirement rather than from the
 code, and passes **Contract tests** and **No tautological tests** (lens 7). For
 each confirmed finding with a demonstrated consequence, describe a regression
 test: the observable input or action, and the expected result taken from the
-requirement, through the public surface — existing, or defined by the
-recommendation — depending on no internal structure. When no such test exists,
+requirement, through the public surface (existing, or defined by the
+recommendation), depending on no internal structure. When no such test exists,
 say so and why.
 
 When a recommendation moves a boundary, ownership or contract, name the project
@@ -158,33 +158,33 @@ document that records it and must change with it (lens 8).
 
 ## Report
 
-1. **Assessment** — three to five sentences: design properties any fix must
+1. **Assessment:** three to five sentences: design properties any fix must
    preserve, the dominant weaknesses, the main source of coupling or complexity,
-   and — when reviewing a change — whether it improves or worsens maintainability.
+   and, when reviewing a change, whether it improves or worsens maintainability.
 2. **Findings**, most severe first:
 
-   **[Severity] Title** — confirmed | conditional
-   - **Location:** files, symbols, lines — only lines read in this review.
+   **[Severity] Title**: confirmed | conditional
+   - **Location:** files, symbols, lines; only lines read in this review.
    - **Evidence:** the code or dependency relationship, and the rule breached when
      there is one.
    - **Impact:** the concrete consequence and the scenario that triggers it; for a
      breach with no consequence yet (step 4), the risk the rule guards against.
-   - **Change scenario:** a realistic modification that exposes the weakness —
+   - **Change scenario:** a realistic modification that exposes the weakness,
      required for lens 1 findings with a demonstrated consequence.
    - **Recommendation:** the change, and which concepts, dependencies, states or
      coordination steps disappear.
    - **Regression test:** as in Recommendations, or "none possible" with the
      reason; required for confirmed findings with a demonstrated consequence.
    - **Trade-off:** included when the recommendation has a real cost.
-3. **Change at a distance** — synchronised updates, hidden dependencies, and
+3. **Change at a distance:** synchronised updates, hidden dependencies, and
    duplicated knowledge that could diverge; mark each as necessary coordination or
    avoidable coupling, and name the best opportunity to localise change. Refer to
    findings by title rather than restating them. When there is nothing, say so in
    one line.
-4. **Improvements** — a short prioritised list favouring changes that remove
+4. **Improvements:** a short prioritised list favouring changes that remove
    concepts, shorten dependency chains, and reduce the places a future change must
    touch; then the breaches step 4 routes here.
-5. **Coverage** — what was left uninspected, specialist judgements left
+5. **Coverage:** what was left uninspected, specialist judgements left
    unassessed, and what would need to be verified.
 
 When the review finds nothing material, say so and list what was inspected.

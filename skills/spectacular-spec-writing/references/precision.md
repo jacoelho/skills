@@ -8,7 +8,7 @@ Take an important sentence and construct two implementations that interpret it d
 
 “Keep the latest record” is unresolved until the relevant clock, comparison, tie, missing value, and scope of identity are known. It need not specify a sorting algorithm.
 
-When the clarification skill is unavailable, record the fork in the working record:
+When the decision is not settled interactively, record the fork in the working record:
 
 ```text
 Question: <one concrete choice>

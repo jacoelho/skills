@@ -23,7 +23,7 @@ Preserved: [existing promises that the change must retain].
 
 ## Contract
 
-### REQ-CAP-001 — [One reviewable obligation]
+### REQ-CAP-001 - [One reviewable obligation]
 
 Status: proposed
 Statement: [When <event>, the <responsible system> shall <observable response, including coupled effects and relevant bounds or prohibitions>.]
@@ -33,7 +33,7 @@ Basis: [Authorised decision or binding source and rationale. Do not put unresolv
 
 ## Acceptance
 
-### AC-CAP-001 — [Distinguishing case or property]
+### AC-CAP-001 - [Distinguishing case or property]
 
 Covers: REQ-CAP-001
 Situation: [Input, relevant state, and triggering event.]
