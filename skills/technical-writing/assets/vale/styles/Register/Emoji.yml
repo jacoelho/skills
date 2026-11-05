@@ -1,0 +1,24 @@
+extends: existence
+message: "Decorative emoji '%s' in a heading or list item. Use words; reserve symbols for status a reader needs."
+level: suggestion
+scope: [heading, list]
+nonword: true
+# Pictographs only. Technical glyphs such as check mark U+2713 and arrows are not matched.
+tokens:
+- '[\x{1F300}-\x{1FAFF}\x{2705}\x{274C}\x{2728}\x{26A0}\x{26A1}\x{2B50}]'
+tests:
+- name: flags an emoji in a heading
+  input: '## 🚀 Launch'
+  contains: Register.Emoji
+- name: flags an emoji in a list item
+  input: '- ✅ Tests pass'
+  contains: Register.Emoji
+- name: flags a variation-selector form
+  input: '- ⚠️ Breaking change'
+  contains: Register.Emoji
+- name: technical glyphs are not emoji
+  input: '- ✓ passed → next ≥ 2 °C'
+  want: ''
+- name: ignores inline code in a list
+  input: '- Print `🚀`'
+  want: ''

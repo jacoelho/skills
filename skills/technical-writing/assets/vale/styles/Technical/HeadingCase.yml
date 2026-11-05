@@ -1,0 +1,74 @@
+extends: capitalization
+message: "Use sentence case for '%s'."
+level: suggestion
+# H1 is usually a project or document name, so it is left alone.
+scope:
+- heading.h2
+- heading.h3
+- heading.h4
+match: $sentence
+vocab: true
+indicators:
+- ':'
+# Literals only: in Vale 3.24.0 a regex here flags sentence-case headings containing hyphens or commas.
+exceptions:
+- AI
+- API
+- APIs
+- AWS
+- CD
+- CI
+- CLI
+- CSS
+- DNS
+- gRPC
+- HTML
+- HTTP
+- HTTPS
+- IDE
+- JSON
+- JWT
+- MCP
+- npm
+- OAuth
+- PR
+- README
+- REPL
+- REST
+- RFC
+- S3
+- SDK
+- SQL
+- SSH
+- TLS
+- UI
+- URL
+- YAML
+tests:
+- name: flags title case
+  input: '## Installing The Tool'
+  contains: Technical.HeadingCase
+- name: flags title case below h2
+  input: '#### Running The Worker'
+  contains: Technical.HeadingCase
+- name: accepts sentence case
+  input: '## Installing the tool'
+  want: ''
+- name: leaves a document title alone
+  input: '# Installing The Tool'
+  want: ''
+- name: accepts acronyms
+  input: '## Deploy to AWS'
+  want: ''
+- name: accepts mixed-case product names
+  input: '## Using gRPC with OAuth and npm'
+  want: ''
+- name: accepts hyphens and commas in sentence case
+  input: '## Non-negotiable constraints, limits and go-live steps'
+  want: ''
+- name: ignores inline code
+  input: '## The `Vale.Ini` reference'
+  want: ''
+- name: ignores body text
+  input: 'Docker Compose Is Fine.'
+  want: ''

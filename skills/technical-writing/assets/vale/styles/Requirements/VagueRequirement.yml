@@ -1,0 +1,41 @@
+extends: existence
+message: 'Potentially underspecified requirement: ''%s''. Check whether its condition or acceptance criterion
+  is defined here or by reference. Do not invent a target.'
+level: warning
+scope: sentence & ~heading
+ignorecase: true
+nonword: true
+vocab: false
+tokens:
+- \b(?:must|shall|should|will)\b[^.!?]*\b(?:as\s+soon\s+as\s+possible|within\s+a\s+reasonable\s+time|as\s+appropriate|where\s+possible|if\s+necessary)\b
+- \b(?:must|shall|should)\s+(?:be|remain)\s+(?:fast|scalable|robust|secure|reliable|user-friendly)\b
+tests:
+- name: inspects vague timing attached to an obligation
+  input: The worker MUST respond as soon as possible.
+  contains: Requirements.VagueRequirement
+- name: inspects an unmeasured quality adjective
+  input: The system shall be scalable.
+  contains: Requirements.VagueRequirement
+- name: preserves an explicit latency criterion
+  input: At 500 requests per second, the service MUST respond within 200 ms at the 99th percentile.
+  want: ''
+- name: does not treat a discussion of scalability as a requirement
+  input: Scalable systems can be expensive to operate.
+  want: ''
+- name: does not treat optionality as an error
+  input: Clients MAY omit the trace header.
+  want: ''
+- name: does not rewrite a condition on a guarantee
+  input: The worker MUST NOT acknowledge the message unless replication has completed.
+  want: ''
+- name: code examples are protected
+  input: The field description is `The worker MUST respond as soon as possible`.
+  want: ''
+- name: defined by reference can still produce a review prompt
+  input: The service MUST be reliable as defined by requirement R-12.
+  contains: Requirements.VagueRequirement
+  about: 'Known false positive: the reviewer can follow the reference and retain the text.'
+- name: an implicit vague goal is outside this narrow detector
+  input: Keep latency low.
+  want: ''
+  about: 'Known false negative: semantic review must inspect goals without obligation words.'

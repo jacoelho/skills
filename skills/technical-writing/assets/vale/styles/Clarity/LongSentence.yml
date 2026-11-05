@@ -1,0 +1,46 @@
+extends: occurrence
+message: 'More than 40 whitespace-separated tokens: inspect the structure, not just the length. Preserve
+  actors, conditions and requirement strength.'
+level: suggestion
+scope: sentence & ~heading & ~table
+max: 40
+token: \S+
+tests:
+- name: flags more than the initial review threshold
+  input: word word word word word word word word word word word word word word word word word word word
+    word word word word word word word word word word word word word word word word word word word word
+    word word.
+  contains: Clarity.LongSentence
+- name: does not flag the threshold itself
+  input: word word word word word word word word word word word word word word word word word word word
+    word word word word word word word word word word word word word word word word word word word word
+    word.
+  want: ''
+- name: does not aggregate several short sentences
+  input: The worker reads the message and checks the key. The worker reads the message and checks the
+    key. The worker reads the message and checks the key. The worker reads the message and checks the
+    key. The worker reads the message and checks the key.
+  want: ''
+- name: ignores long fenced code
+  input: '```text
+
+    word word word word word word word word word word word word word word word word word word word word
+    word word word word word word word word word word word word word word word word word word word word
+    word word word word word
+
+    ```'
+  want: ''
+- name: does not treat a long table cell as a long prose sentence
+  input: '| Requirement |
+
+    | --- |
+
+    | word word word word word word word word word word word word word word word word word word word word
+    word word word word word word word word word word word word word word word word word word word word
+    word word word word word. |'
+  want: ''
+- name: does not count a heading as a prose sentence
+  input: '# word word word word word word word word word word word word word word word word word word
+    word word word word word word word word word word word word word word word word word word word word
+    word word word word word word word'
+  want: ''

@@ -1,0 +1,31 @@
+extends: existence
+message: "'%s' attributes a claim to unnamed sources. Name and cite the source, or state the claim as your own."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+# A citation in the same sentence does not exempt the claim: Vale cannot check that it supports it.
+tokens:
+- (?:experts|observers|critics|analysts)\s+(?:say|agree|argue|believe|suggest|note)
+- (?:studies|research)\s+(?:shows?|suggests?|has\s+shown|have\s+shown)
+- many\s+(?:developers|engineers|experts|people|teams|users)\s+(?:believe|agree|say|feel|argue)
+- it\s+is\s+(?:widely|generally|commonly)\s+(?:believed|accepted|agreed|known)
+- industry\s+reports
+tests:
+- name: flags an unnamed authority
+  input: Experts agree that monorepos scale.
+  contains: Register.VagueAttribution
+- name: flags a general belief across a line break
+  input: "It is widely\naccepted that tests help."
+  contains: Register.VagueAttribution
+- name: a nearby citation is a documented blind spot
+  input: Studies show a 4% gain (Smith 2021).
+  contains: Register.VagueAttribution
+- name: a named source is fine
+  input: The 2021 Smith study measured a 4% gain.
+  want: ''
+- name: ignores inline code
+  input: See `studies show`.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nexperts say\n```"
+  want: ''

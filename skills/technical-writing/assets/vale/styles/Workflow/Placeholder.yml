@@ -1,0 +1,49 @@
+extends: existence
+message: "Unfilled template slot '%s'. Fill it, or, if the reader must substitute a value, show it in inline code and say so."
+level: warning
+scope: text
+nonword: true
+vocab: false
+# Upper-case slots only, so ordinary bracketed prose and link text are left alone.
+# A bare [ADD] or [FIX] is a commit-title prefix convention, not a slot.
+# Unbracketed names such as YOUR_API_KEY or INSERT_BATCH_SIZE read as identifiers and are left alone.
+tokens:
+- \[(?:INSERT|YOUR|PASTE)(?:[\s_][^\]\r\n]*)?\](?!\()
+- \[ADD\s[^\]\r\n]+\](?!\()
+- \b20\d\d-(?:XX|xx)-(?:XX|xx)\b
+- \b(?:INSERT|PASTE)_[A-Z0-9_]*(?:URL|HERE)(?:_\d+)?\b
+- \bexample\.com/source\d+\b
+tests:
+- name: detects an unfilled slot
+  input: Written by [YOUR NAME].
+  contains: Workflow.Placeholder
+- name: detects an insert slot with detail
+  input: '[INSERT link to the dashboard] shows the error rate.'
+  contains: Workflow.Placeholder
+- name: detects a date placeholder
+  input: Accessed 2026-XX-XX.
+  contains: Workflow.Placeholder
+- name: detects a URL placeholder
+  input: See INSERT_SOURCE_URL_HERE for details.
+  contains: Workflow.Placeholder
+- name: detects an underscored slot in prose
+  input: Replace [YOUR_API_KEY] with the key.
+  contains: Workflow.Placeholder
+- name: link text is not a slot
+  input: '[YOUR ACCOUNT](https://example.com) holds the keys.'
+  want: ''
+- name: a substitution shown in code is fine
+  input: Replace `[YOUR TOKEN]` with your token.
+  want: ''
+- name: detects a bare slot
+  input: Paste the link here [INSERT].
+  contains: Workflow.Placeholder
+- name: an identifier is not a slot
+  input: Set INSERT_BATCH_SIZE to 10.
+  want: ''
+- name: a title prefix is not a slot
+  input: '[ADD] support for retries'
+  want: ''
+- name: production markers belong to EditorialMarkers
+  input: '[[TODO]]'
+  want: ''

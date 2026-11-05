@@ -1,0 +1,30 @@
+extends: existence
+message: "An em dash often joins clauses that read better as two sentences, a comma or brackets. Keep it if it is the clearest choice."
+level: suggestion
+scope: sentence & ~heading
+nonword: true
+# U+2014 only. A spaced en dash is British usage, and en-dash ranges are correct.
+tokens:
+- '\x{2014}'
+tests:
+- name: flags an em dash
+  input: The cache — when warm — is fast.
+  contains: Register.EmDash
+- name: flags an unspaced em dash
+  input: The cache—when warm—is fast.
+  contains: Register.EmDash
+- name: an en dash range is correct
+  input: See pages 10–12 for 2019–2023.
+  want: ''
+- name: a spaced en dash is British usage
+  input: The cache – when warm – is fast.
+  want: ''
+- name: a double hyphen is not flagged
+  input: Pass --verbose -- the rest.
+  want: ''
+- name: ignores inline code
+  input: The separator is `—`.
+  want: ''
+- name: ignores fenced code
+  input: "```text\na — b\n```"
+  want: ''
