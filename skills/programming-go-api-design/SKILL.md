@@ -1,6 +1,6 @@
 ---
 name: programming-go-api-design
-description: Criteria used by the jacoelho:programming-go-api-design subagent to design, review, or evolve exported or cross-package Go API surfaces from the caller's perspective - package boundaries, exported signatures, constructors, configuration, extension points, errors, ownership, streaming, and compatibility. Use when a change adds or alters what importing packages see; not for internal helpers, implementation simplification (jacoelho:programming-simplicity), formatting, or micro-optimisation. In the main session, delegate to the jacoelho:programming-go-api-design subagent rather than running this directly.
+description: Design, review, or evolve exported or cross-package Go API surfaces from the caller's perspective - package boundaries, exported signatures, constructors, configuration, extension points, errors, ownership, streaming, and compatibility. Use when a change adds or alters what importing packages see; not for internal helpers, implementation simplification (jacoelho:programming-simplicity), formatting, or micro-optimisation.
 ---
 
 # Go API Design
@@ -14,9 +14,6 @@ It applies to exported and cross-package surfaces: reusable libraries, internal
 package APIs consumed by other packages, and component contracts. Do not impose a
 public-library process on every local helper.
 
-In the main session, delegate to the `jacoelho:programming-go-api-design` subagent, which
-preloads this skill.
-
 ## Modes and authority
 
 - **Design:** create or change an API before or during implementation. This is the
@@ -24,6 +21,8 @@ preloads this skill.
 - **Review:** assess an existing API against actual caller tasks and contracts.
 - **Evolve:** design a change with explicit compatibility and migration obligations.
 
+Challenge every proposal with concrete evidence, including the user's; do not approve an
+API because it is familiar or suggested, and do not churn a design that holds up.
 Designing does not authorise an unrelated repository rewrite. An implementation
 request already authorises the necessary design work: do not add an approval stage.
 
@@ -162,9 +161,9 @@ they were. Never install a toolchain, update dependencies, or change build polic
 silently just to make the design compile.
 
 Separate structural cost claims from measurements. If optimisation decides between
-otherwise suitable APIs, specify a representative benchmark and return it to the
-primary agent, which owns delegation to `jacoelho:programming-go-performance`. Do not
-claim a measurement or handoff that did not occur.
+otherwise suitable APIs, specify a representative benchmark and measure it with the
+`jacoelho:programming-go-performance` skill. Do not claim a measurement that did
+not occur.
 
 ### 8. Challenge and deliver the design
 
@@ -178,8 +177,7 @@ Lead the deliverable with the decision and example caller code. Include:
 - Decisive trade-offs, including a rejected alternative when one mattered.
 - Source locations, commands and results, and unverified assumptions.
 - Compatibility and migration implications, and what may be deferred.
-- Implementation and test obligations, including any benchmark specification, for
-  the primary agent to route.
+- Implementation and test obligations, including any benchmark specification.
 
 A small task may need only a few paragraphs; review findings use the format below.
 Do not claim a handful of examples proves the whole design. Mark

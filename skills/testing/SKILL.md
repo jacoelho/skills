@@ -17,9 +17,13 @@ A finding or recommended test must name one of: a defect that would go undetecte
 
 ## Describable defects need a failing test
 
-If you can state "given this input and action, the contract says A, the code does B", specify a test that fails on current code: setup, action, expected value with its contract source, actual result. If you can run code, run it and report the failure; otherwise mark it "not run". Never replace it with prose: if the contract states the right result, the test pins it, however obvious the defect.
+If you can state "given this input and action, the contract says A, the code does B", specify a test that fails on current code: setup, action, expected value with its contract source, actual result. If you can run it within the limits in [Running tests](#running-tests), run it and report the failure; otherwise mark it "not run". Never replace it with prose: if the contract states the right result, the test pins it, however obvious the defect.
 
 Exception: the contract does not define the right result. Say so, name the decision and its owner, and describe the test each option implies. This exception is narrow. If every reasonable contract rejects the current behaviour (a duplicated side effect, data loss, a crash), specify the test for that invariant (for example, "the side effect happens at most once") and flag the remaining choice in the same finding.
+
+## Running tests
+
+During design and review, run only targeted existing tests you have read and confirmed hermetic, plus read-only commands. Do not run the whole suite, integration-tagged or environment-gated tests, or update and record modes (snapshots, golden files). Tracked files and external systems stay unchanged. Writing and running new tests belongs to implementation, not review.
 
 ## Criteria
 
@@ -58,7 +62,7 @@ Report P0-P2 by default; P3 when cleanup is in scope. No quotas.
 
 ## Repeat reviews
 
-One finding is one guarantee broken by one cause; group its locations. Rewording or moving an issue does not make it new. The caller supplies earlier findings; a changed conclusion needs changed code, requirements or evidence, or an explained correction. Absence from a later report is not resolution. Write no tracking files.
+One finding is one guarantee broken by one cause; group its locations. Rewording or moving an issue does not make it new. Compare against earlier findings from the conversation or supplied by the user; a changed conclusion needs changed code, requirements or evidence, or an explained correction. Absence from a later report is not resolution. Write no tracking files.
 
 ## Output
 

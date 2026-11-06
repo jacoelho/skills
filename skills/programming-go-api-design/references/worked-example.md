@@ -20,7 +20,7 @@ The name and signature leave several decisions unresolved. Does it read one valu
 or consume the full input? Can it retain the reader? Is the result owned? Does it
 close the reader? Can a failure return a partial document? Is memory bounded?
 
-The design agent should settle those questions rather than begin by requesting an
+The design should settle those questions rather than begin by requesting an
 interface, a builder, or a configurable decoder object.
 
 ## Candidates
