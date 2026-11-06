@@ -1,6 +1,6 @@
 ---
 name: critic
-description: Reviews a diff or plan for concrete failure modes before the primary agent calls the task done. Must be consulted before declaring any task that produces a diff or plan complete. Supply the requirements, the final diff or plan, and verification evidence.
+description: Independent review of a diff or plan for concrete failure modes before calling the task done. Use when a defect would be costly or reach other code - exported or cross-package APIs, wire or storage formats, schemas and migrations, concurrency, security or auth, changes spanning several modules, irreversible or multi-step plans - or when the user asks. Skip local, mechanical, docs-only or test-only changes. Supply the requirements, the final diff or plan, and verification evidence.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---

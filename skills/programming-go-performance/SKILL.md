@@ -1,13 +1,14 @@
 ---
 name: programming-go-performance
-description: Owns the method for Go performance work - investigating regressions, reviewing hot paths, designing benchmarks, and accepting or rejecting optimisations on measured evidence. Use for explicit Go performance concerns, including unmeasured optimisation proposals to evaluate. Covers pprof profile capture and interpretation. In the main session, delegate to the jacoelho:programming-go-performance subagent rather than running this directly.
+description: Owns the method for Go performance work - investigating regressions, reviewing hot paths, designing benchmarks, and accepting or rejecting optimisations on measured evidence. Use for explicit Go performance concerns, including unmeasured optimisation proposals to evaluate. Covers pprof profile capture and interpretation. For long benchmark or profiling runs, consider delegating to the jacoelho:programming-go-performance subagent.
 ---
 
 # Programming Go Performance
 
-In the main session, do not run the investigation directly: brief the
-`jacoelho:programming-go-performance` subagent using the [task brief](assets/task-brief.md).
-The subagent preloads this skill.
+Run small reviews and single experiments in the main session. Delegate to the
+`jacoelho:programming-go-performance` subagent, briefed with the
+[task brief](assets/task-brief.md), when repeated benchmark runs or profile output
+would flood the main context. The subagent preloads this skill.
 
 This skill owns the investigation method, benchmark design, optimisation
 decisions, and profile capture and interpretation. For investigations, reviews, and

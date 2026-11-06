@@ -50,7 +50,7 @@ That install is a copy in `~/.claude/plugins/cache`, versioned by the HEAD commi
 ## Authoring rules
 
 - Agent `skills:` preloads must use the prefixed name (`jacoelho:testing`). A bare name loads a personal skill of the same name from `~/.claude/skills` instead.
-- Refer to agents by their prefixed name (`jacoelho:qa`) in skills, agents and `CLAUDE.md`.
+- Refer to agents by their prefixed name (`jacoelho:critic`) in skills, agents and `CLAUDE.md`.
 - In skill bodies, reference bundled files with relative links, `${CLAUDE_SKILL_DIR}` or `${CLAUDE_PLUGIN_ROOT}`. These variables are not expanded in agent descriptions.
 - Keep all referenced files inside the repository. The installed copy holds nothing else.
 

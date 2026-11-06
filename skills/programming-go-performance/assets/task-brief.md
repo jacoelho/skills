@@ -17,7 +17,7 @@ Correctness tests / reference behaviour:
 Supported Go versions and target platforms:
 Dependency, reflection, unsafe, assembly, or public-API restrictions:
 Previous rejected experiments and available evidence:
-QA assessment covering permitted test changes:
+Permitted test changes:
 
 ## Objective and workload
 
