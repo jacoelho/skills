@@ -1,5 +1,5 @@
 import type { On } from 'claude-code'
-import { type Engine, describe, expect, test } from 'claude-code/testing'
+import { type Engine, describe, expect, mock, test } from 'claude-code/testing'
 
 import { AnalysisError, decide, parseAnalysis, render } from '../hooks/prompt-intake/intake'
 
@@ -31,7 +31,8 @@ type Opts = {
   // Model replies by call; past the end, every call answers `last`.
   last?: unknown
   fillRefusal?: 'dialog'
-  draft?: string
+  // What the box holds at each read; past the end, the last entry.
+  draft?: string | string[]
 }
 
 // Stands in for the engine beneath the mod; records what it was asked.
@@ -42,6 +43,8 @@ function engine(on: On, replies: unknown[], opts: Opts = {}) {
     filled: [] as string[],
     entered: [] as string[],
     status: [] as (string | undefined)[],
+    // Timers fire only when a test advances this clock.
+    clock: mock.clock(on),
   }
   on('prompt.submit', (_, e) => {
     seen.entered.push(e.text)
@@ -58,12 +61,13 @@ function engine(on: On, replies: unknown[], opts: Opts = {}) {
     if (!opts.answer) throw new Error('dismissed')
     return { result: { questions: [], answers: { [q]: opts.answer(q) } } } as never
   })
-  on('prompt.read', () => ({ value: { text: opts.draft ?? '', cursor: 0 } }) as never)
+  const drafts = Array.isArray(opts.draft) ? opts.draft : [opts.draft ?? '']
+  let reads = 0
+  on('prompt.read', () => ({ value: { text: drafts[Math.min(reads++, drafts.length - 1)], cursor: 0 } }) as never)
   on('prompt.fill', (_, e) => {
     seen.filled.push(e.text)
     return opts.fillRefusal ? { isFilled: false, refusal: opts.fillRefusal } : { isFilled: true }
   })
-  on('clock.after', () => ({ value: undefined }) as never)
   on('ui.status', (_, e) => {
     seen.status.push((e as { text?: string }).text)
     return { value: undefined } as never
@@ -117,9 +121,13 @@ describe('raw: bypass', () => {
   test('sends the text after the prefix without intake, whatever its length', async ($, on) => {
     const seen = engine(on, [])
     await submit($, `raw: ${LONG}`)
-    await submit($, `  RAW:\n${SHORT}`)
+    await submit($, `  raw:\n${SHORT}`)
     expect(seen.entered).toEqual([LONG, SHORT])
     expect(seen.prompts.length).toBe(0)
+  })
+
+  test('only the lowercase prefix counts, so a sentence starting "Raw:" is kept whole', () => {
+    expect(decide('Raw: the numbers look off')).toEqual({ kind: 'pass' })
   })
 
   test('a bare prefix sends nothing', async ($, on) => {
@@ -184,6 +192,36 @@ describe('handing back the clean version', () => {
     await submit($, LONG)
     expect(seen.filled[0]).toContain('Deploy it to staging')
     expect(seen.filled[0]).toContain('also check the logs')
+  })
+
+  test('a question the model could not give options for ends up flagged, keeping earlier answers', async ($, on) => {
+    const unaskable = reply({ ambiguities: [{ question: 'Which port?', options: [] }], goal: 'Deploy.', asks: ['Deploy it to staging'] })
+    const seen = engine(on, [ambiguous('Where?'), unaskable], { answer: () => 'One' })
+    await submit($, LONG)
+    expect(seen.questions).toEqual(['Where?'])
+    expect(seen.filled[0]).toContain('[unresolved] Which port?')
+    expect(seen.filled[0]).toContain('Deploy it to staging')
+  })
+
+  test('the submitted text still showing in the box is not kept as a draft', async ($, on) => {
+    const seen = engine(on, [RESOLVED], { draft: LONG })
+    await submit($, LONG)
+    expect(seen.filled[0]).not.toContain(LONG)
+  })
+
+  test('if the drop puts the original back in the box, the clean version is filled again', async ($, on) => {
+    const seen = engine(on, [RESOLVED], { draft: ['', LONG] })
+    await submit($, LONG)
+    await seen.clock.advance(1000)
+    expect(seen.filled.length).toBe(2)
+    expect(seen.filled[1]).toBe(seen.filled[0])
+  })
+
+  test('an edit made after the fill is not overwritten by the refill check', async ($, on) => {
+    const seen = engine(on, [RESOLVED], { draft: ['', 'my own edit'] })
+    await submit($, LONG)
+    await seen.clock.advance(1000)
+    expect(seen.filled.length).toBe(1)
   })
 
   test('the next submission is sent as is, once', async ($, on) => {
@@ -261,7 +299,7 @@ describe('parsing the model reply', () => {
   })
 
   test('missing lists mean none', () => {
-    expect(parseAnalysis('{"goal":"g"}')).toEqual({ ambiguities: [], sorted: { goal: 'g', facts: [], asks: [], unsorted: [] } })
+    expect(parseAnalysis('{"goal":"g"}')).toEqual({ ambiguities: [], unaskable: [], sorted: { goal: 'g', facts: [], asks: [], unsorted: [] } })
   })
 
   test('refuses any shape that would silently lose content', () => {
@@ -271,11 +309,16 @@ describe('parsing the model reply', () => {
       '{"goal":"  "}',
       '{"goal":"g","facts":"Uses Postgres 14"}',
       '{"goal":"g","unsorted":[{"text":"lunch"}]}',
-      '{"goal":"g","ambiguities":[{"question":"Which?","options":["only one"]}]}',
       '{"goal":"g","ambiguities":[{"question":" ","options":["a","b"]}]}',
     ]) {
       expect(() => parseAnalysis(bad)).toThrow(AnalysisError)
     }
+  })
+
+  test('a question with fewer than 2 options is kept to flag, not asked', () => {
+    const a = parseAnalysis('{"goal":"g","ambiguities":[{"question":"Which DB?","options":["only one"]},{"question":"Port?"}]}')
+    expect(a.ambiguities).toEqual([])
+    expect(a.unaskable).toEqual(['Which DB?', 'Port?'])
   })
 
   test('caps options at 4 and headers at 12 characters, defaulting a missing header', () => {
@@ -292,6 +335,6 @@ describe('parsing the model reply', () => {
 test('render puts flagged items under Facts and marks empty sections', () => {
   expect(render({ goal: 'g', facts: [], asks: [], unsorted: [] }, [])).toBe('Goal\ng\n\nFacts\n- none\n\nAsks\n- none')
   expect(
-    render({ goal: 'g', facts: ['f1'], asks: ['a1', 'a2'], unsorted: ['u'] }, [{ question: 'q?', header: 'h', options: ['x', 'y'] }]),
+    render({ goal: 'g', facts: ['f1'], asks: ['a1', 'a2'], unsorted: ['u'] }, ['q?']),
   ).toBe('Goal\ng\n\nFacts\n- f1\n- [unsorted] u\n- [unresolved] q?\n\nAsks\n1. a1\n2. a2')
 })

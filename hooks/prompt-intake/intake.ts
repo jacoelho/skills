@@ -24,7 +24,12 @@ export type Sorted = {
   unsorted: string[]
 }
 
-export type Analysis = { ambiguities: Ambiguity[]; sorted: Sorted }
+export type Analysis = {
+  ambiguities: Ambiguity[]
+  // Questions the model gave fewer than 2 options for: kept, never asked.
+  unaskable: string[]
+  sorted: Sorted
+}
 
 export type Decision =
   | { kind: 'pass' }
@@ -39,7 +44,7 @@ export function wordCount(text: string): number {
 
 export function decide(text: string): Decision {
   const trimmed = text.trimStart()
-  if (trimmed.toLowerCase().startsWith(RAW_PREFIX)) {
+  if (trimmed.startsWith(RAW_PREFIX)) {
     return { kind: 'raw', text: trimmed.slice(RAW_PREFIX.length).trimStart() }
   }
   return wordCount(text) > WORD_THRESHOLD ? { kind: 'intercept' } : { kind: 'pass' }
@@ -107,20 +112,27 @@ export function parseAnalysis(reply: string): Analysis {
   if (o.ambiguities !== undefined && !Array.isArray(o.ambiguities)) {
     throw new AnalysisError('reply field "ambiguities" was not a list')
   }
-  const ambiguities: Ambiguity[] = (o.ambiguities ?? []).map((a: unknown, i: number) => {
+  const ambiguities: Ambiguity[] = []
+  const unaskable: string[] = []
+  for (const [i, a] of (o.ambiguities ?? []).entries()) {
     if (typeof a !== 'object' || a === null) throw new AnalysisError(`ambiguity ${i + 1} was not an object`)
     const r = a as Record<string, unknown>
-    const question = typeof r.question === 'string' ? r.question.trim() : ''
-    if (question === '') throw new AnalysisError(`ambiguity ${i + 1} had no question`)
+    if (typeof r.question !== 'string' || r.question.trim() === '') {
+      throw new AnalysisError(`ambiguity ${i + 1} had no question`)
+    }
+    const question = r.question.trim()
     const options = strings(r, 'options')
-    // An unanswerable question is never silently skipped: fail to the original.
-    if (options.length < 2) throw new AnalysisError(`ambiguity ${i + 1} had fewer than 2 options`)
+    if (options.length < 2) {
+      unaskable.push(question)
+      continue
+    }
     const header = (typeof r.header === 'string' && r.header.trim() !== '' ? r.header.trim() : 'Clarify').slice(0, 12)
-    return { question, header, options: options.slice(0, 4) }
-  })
+    ambiguities.push({ question, header, options: options.slice(0, 4) })
+  }
 
   return {
     ambiguities,
+    unaskable,
     sorted: {
       goal: o.goal.trim(),
       facts: strings(o, 'facts'),
@@ -130,11 +142,11 @@ export function parseAnalysis(reply: string): Analysis {
   }
 }
 
-export function render(sorted: Sorted, unresolved: readonly Ambiguity[]): string {
+export function render(sorted: Sorted, unresolved: readonly string[]): string {
   const facts = [
     ...sorted.facts,
     ...sorted.unsorted.map(u => `[unsorted] ${u}`),
-    ...unresolved.map(a => `[unresolved] ${a.question}`),
+    ...unresolved.map(q => `[unresolved] ${q}`),
   ]
   const lines = ['Goal', sorted.goal, '', 'Facts', ...(facts.length ? facts.map(f => `- ${f}`) : ['- none']), '', 'Asks']
   lines.push(...(sorted.asks.length ? sorted.asks.map((a, i) => `${i + 1}. ${a}`) : ['- none']))

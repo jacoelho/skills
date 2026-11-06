@@ -46,6 +46,7 @@ async function intake($: EngineInterface, message: string, signal: AbortSignal):
   const answers: Answer[] = []
   let sorted: Sorted | undefined
   let open: Ambiguity[] = []
+  let unaskable: string[] = []
 
   // One analysis per question round, plus the one that reads the last answers.
   for (let round = 0; round <= MAX_QUESTION_ROUNDS; round++) {
@@ -54,6 +55,7 @@ async function intake($: EngineInterface, message: string, signal: AbortSignal):
       const analysis = await analyse($, message, answers)
       sorted = analysis.sorted
       open = analysis.ambiguities
+      unaskable = analysis.unaskable
     } catch (err) {
       return { kind: 'failed', reason: (err as Error).message }
     } finally {
@@ -63,6 +65,7 @@ async function intake($: EngineInterface, message: string, signal: AbortSignal):
     if (open.length === 0 || round === MAX_QUESTION_ROUNDS) break
 
     for (const a of open.slice(0, QUESTIONS_PER_ROUND)) {
+      if (signal.aborted) return { kind: 'cancelled' }
       try {
         const answer = await $.ui.ask(a.question, { options: a.options, header: a.header })
         answers.push({ question: a.question, answer })
@@ -74,7 +77,8 @@ async function intake($: EngineInterface, message: string, signal: AbortSignal):
   }
 
   // sorted is set: the loop runs at least once and returns on every failure.
-  return { kind: 'clean', text: render(sorted as Sorted, open) }
+  const unresolved = [...open.map(a => a.question), ...unaskable]
+  return { kind: 'clean', text: render(sorted as Sorted, unresolved) }
 }
 
 export const register: Register = on => {
@@ -113,13 +117,16 @@ export const register: Register = on => {
     } finally {
       isBusy = false
     }
-    // Interrupted: the dispatch already went on without this hook.
-    if (next.signal.aborted) return { drop: 'prompt-intake: interrupted.' }
+    // Abandoned (Esc, or a hook above settled first): the original was not
+    // sent, so it goes back in the box like any other cancel.
+    if (next.signal.aborted) outcome = { kind: 'cancelled' }
 
     const boxText = outcome.kind === 'clean' ? outcome.text : e.text
-    // Keep anything typed while intake ran.
+    // Keep anything typed while intake ran; the submitted text itself, if the
+    // box still shows it, is not a draft.
     const draft = (await $.prompt.read()).text
-    const fillText = draft.trim() === '' ? boxText : `${boxText}\n\n${draft}`
+    const isDraft = draft.trim() !== '' && draft.trim() !== e.text.trim()
+    const fillText = isDraft ? `${boxText}\n\n${draft}` : boxText
     const filled = await $.prompt.fill({ text: fillText, cursor: 0 })
 
     if (!filled.isFilled) {
@@ -128,9 +135,13 @@ export const register: Register = on => {
       return next(e)
     }
 
+    // If the drop cleared the box or put the original back, fill again; any
+    // other text is the person's own edit and stays.
     $.clock.after(REFILL_CHECK_MS, async () => {
       const box = await $.prompt.read()
-      if (box.text === '') await $.prompt.fill({ text: fillText, cursor: 0 })
+      if (box.text.trim() === '' || box.text.trim() === e.text.trim()) {
+        await $.prompt.fill({ text: fillText, cursor: 0 })
+      }
     })
 
     switch (outcome.kind) {
