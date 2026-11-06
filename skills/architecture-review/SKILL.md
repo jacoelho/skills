@@ -83,11 +83,20 @@ reviewed change introduces it. The change introduces a breach when it creates or
 extends it (a new copy of duplicated policy, a new caller of a global), but not
 when it moves or reformats code that already breached; in a rewrite, compare
 against the code it replaces. Let such a finding's Impact name the risk the rule
-guards against, and omit Change scenario and Regression test. List other breaches,
-and all of them in a module review, one line each at the end of Improvements. Report a style
+guards against, and omit Change scenario and Regression test. List every other
+breach without a demonstrable consequence one line each at the end of
+Improvements; a module review introduces nothing, so all of its such breaches go
+there. Report a style
 preference (naming, layout, formatting that breaches no rule) only when the user
 asked for one. Consolidate findings sharing a root
-cause.
+cause. A root cause can be a missing concept rather than shared code: when
+several confirmed or conditional candidates each exist because the model lacks
+the same named concept, report one finding whose Recommendation adds that
+concept and whose Location lists every candidate. It takes the highest severity
+among them, and is confirmed when any of them is. For
+example, a dialog that sleeps 100 ms before refocusing the input and a
+settings screen that sets a global flag to suppress that refocus are one
+finding: dialogs do not restore focus to whatever held it before they opened.
 
 **5. Stop** when steps 3–4 cover the selected boundaries, or when missing evidence
 blocks an assessment; then name what would need to be verified.
@@ -140,19 +149,15 @@ resource bound that breaks a stated operating limit is at least High.
 Recommend the clean target state that removes the root cause, at the smallest
 scope that achieves it. When the defect exposes ambiguous ownership, invalid
 state, duplicated policy or unsafe sequencing, change the model or boundary so the
-class of defect cannot recur; fix an isolated mistake locally. Prefer deleting the
-obsolete path over adding a compatibility wrapper, shim or parallel
-implementation, unless compatibility, persisted data or an operational constraint
-requires it.
+class of defect cannot recur; fix an isolated mistake locally. Recommend deleting
+the obsolete path, not a compatibility wrapper, shim or parallel implementation,
+except where **Delete obsolete paths** (lens 5) keeps one.
 
-A recommended test asserts observable behaviour or a contract, through the public
-surface, with expectations derived from the requirement rather than from the
-code, and passes **Contract tests** and **No tautological tests** (lens 7). For
-each confirmed finding with a demonstrated consequence, describe a regression
-test: the observable input or action, and the expected result taken from the
-requirement, through the public surface (existing, or defined by the
-recommendation), depending on no internal structure. When no such test exists,
-say so and why.
+A recommended test passes **Contract tests** and **No tautological tests** (lens
+7) and runs through the public surface, existing or defined by the
+recommendation. For each confirmed finding with a demonstrated consequence,
+describe a regression test: the observable input or action, and the expected
+result taken from the requirement. When no such test exists, say so and why.
 
 When a recommendation moves a boundary, ownership or contract, name the project
 document that records it and must change with it (lens 8).
@@ -168,14 +173,13 @@ document that records it and must change with it (lens 8).
    - **Location:** files, symbols, lines; only lines read in this review.
    - **Evidence:** the code or dependency relationship, and the rule breached when
      there is one.
-   - **Impact:** the concrete consequence and the scenario that triggers it; for a
-     breach with no consequence yet (step 4), the risk the rule guards against.
+   - **Impact:** the concrete consequence and the scenario that triggers it, or,
+     for a breach with no consequence yet, as in step 4.
    - **Change scenario:** a realistic modification that exposes the weakness,
      required for lens 1 findings with a demonstrated consequence.
    - **Recommendation:** the change, and which concepts, dependencies, states or
      coordination steps disappear.
-   - **Regression test:** as in Recommendations, or "none possible" with the
-     reason; required for confirmed findings with a demonstrated consequence.
+   - **Regression test:** as in Recommendations.
    - **Trade-off:** included when the recommendation has a real cost.
 3. **Change at a distance:** synchronised updates, hidden dependencies, and
    duplicated knowledge that could diverge; mark each as necessary coordination or
