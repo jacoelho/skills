@@ -24,7 +24,10 @@ Pass a scope, and optionally `instructions`, free text every stage that judges o
 /jacoelho:architecture-remediate internal/billing
 /jacoelho:architecture-remediate {"scope": "internal/billing", "instructions": "keep the v1 wire format"}
 /jacoelho:architecture-remediate help
+/jacoelho:architecture-remediate {"scope": "internal/billing", "reviewOnly": true}
 ```
+
+`reviewOnly` runs one review split across agents and edits nothing: the way to review a scope too large for a single `/jacoelho:architecture-review`. The skill owns the review method and the roles each agent takes (Scope, Group review, Merge); the workflow decides how many agents run and which boundaries each gets.
 
 The scope is required, because a run edits the working tree: a bare call, `help` or an unknown option starts no agents and returns the option list instead. The run never commits. It returns `tree` (`untouched`, `verified`, `failing`, or `unverified` when it stopped mid-round) and `next`, which says what to do about that state, plus any critic findings it could not resolve. Asking in plain language works too; Claude builds the arguments. The defaults assume a Go repository.
 

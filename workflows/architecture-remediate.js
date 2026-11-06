@@ -1,7 +1,7 @@
 export const meta = {
   name: 'architecture-remediate',
   description: 'Loop: /jacoelho:architecture-review -> plan -> risk-sized consultants -> batched implement -> verify -> critic, until only Low findings remain (Go-oriented defaults)',
-  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass "help" for every option with its default. Returns stopReason, next (what the caller should do now) and the findings left.',
+  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. Returns stopReason, next (what the caller should do now) and the findings left.',
   phases: [
     { title: 'Review', detail: 'jacoelho:architecture-review: scoping (reviews alone when one group), parallel group reviews, merge' },
     { title: 'Plan', detail: 'dispositions on the merits; dependency-ordered packets' },
@@ -21,7 +21,8 @@ const OPTIONS = {
   instructions: { default: '', about: 'free text for every stage that judges or edits: focus, constraints, contracts to keep' },
   followUpScope: { default: null, about: 'what later rounds review (default: diff against baseRef plus uncommitted work)' },
   verify: { default: null, about: 'checks to run (default: the repo verification contract, plus gofmt and git diff --check for Go)' },
-  reviewers: { default: 3, about: 'max parallel review groups (--agents for the review skill)' },
+  reviewers: { default: 3, about: 'max parallel review agents; each reviews up to eight boundaries' },
+  reviewOnly: { default: false, about: 'run one review of scope and return its report; plans and edits nothing' },
   consultants: { default: 3, about: 'consultants for a plan touching a contract, hot path or exported API' },
   lowRiskConsultants: { default: 1, about: 'consultants for any other plan' },
   batchSize: { default: 3, about: 'max linked plan items per implementer' },
@@ -48,6 +49,17 @@ if (raw.help) return refuse('help', 'Show the user these options; call again wit
 if (raw.unparsable) return refuse('bad-args', 'The args text looked like JSON but did not parse; call again with an object.', { args: raw.unparsable })
 const unknown = Object.keys(raw).filter((k) => !(k in OPTIONS))
 if (unknown.length) return refuse('unknown-option', `Unknown option(s) ${unknown.join(', ')}; correct the names against usage and call again.`, { unknown })
+// Each option has its default's type. A wrong type is refused rather than read as the default:
+// reviewOnly: "true" read as false would run a full remediation the caller asked to avoid.
+const typeOf = (v) => (v === null ? 'null' : typeof v)
+const badType = Object.keys(raw).filter((k) => {
+  const d = OPTIONS[k].default
+  const v = raw[k]
+  if (typeof d === 'number') return !(Number.isInteger(v) && v >= 0)
+  if (typeof d === 'boolean') return typeof v !== 'boolean'
+  return typeof v !== 'string' // string options, including those whose default is null
+})
+if (badType.length) return refuse('bad-option-type', `Option(s) ${badType.map((k) => `${k} (got ${typeOf(raw[k])} ${JSON.stringify(raw[k])})`).join(', ')} have the wrong type; see usage for each default.`, { invalid: badType })
 // A run edits the working tree, so its target is never a default: a bare invocation starts nothing.
 if (!raw.scope) return refuse('no-scope', 'Ask the user what to remediate (a path, a module, "the branch diff" or "the whole repository") and any instructions, then call again with {scope, instructions?}.')
 // scope, followUpScope and baseRef are quoted inside the review skill's args, so a quote or newline would break that invocation.
@@ -58,6 +70,7 @@ const A = Object.assign(Object.fromEntries(Object.entries(OPTIONS).map(([k, o]) 
 const SCOPE = A.scope
 const BASE = A.baseRef
 const REVIEWERS = A.reviewers
+const REVIEW_ONLY = A.reviewOnly
 const CONSULTANTS = A.consultants
 const LOW_RISK_CONSULTANTS = A.lowRiskConsultants
 const BATCH_SIZE = A.batchSize
@@ -121,7 +134,7 @@ const SCOPING = {
   type: 'object',
   properties: {
     authorityDocs: { type: 'array', items: { type: 'string' } },
-    standard: { type: 'string', description: 'the standard from step 1 to hand to every reviewer' },
+    standard: { type: 'string', description: 'the standard that applies, to hand to every reviewer' },
     allBoundaries: { type: 'array', items: { type: 'string' }, description: 'ranked, each with its consumers' },
     groups: {
       type: 'array',
@@ -230,29 +243,37 @@ const history = []
 const consultMissing = []
 const reviewMissing = []
 
-// ---------- review: the skill owns the method; this script only supplies the fan-out it cannot do itself ----------
-const SKILL_INVOKE = (scope, role) => `Invoke the Skill tool with skill "${SKILL}" and args "${scope} --agents ${REVIEWERS}", then follow it. You cannot start subagents; this workflow performs the skill's "Parallel review" fan-out and gives you one role in it. YOUR ROLE: ${role}`
+// ---------- review ----------
+// The skill owns the method and defines the three roles of a split review (its "Split review roles"
+// section). This script owns the orchestration the skill leaves to it: how many agents, and how the
+// boundaries are partitioned among them.
+const SKILL_INVOKE = (scope, role) => `Invoke the Skill tool with skill "${SKILL}" and args "${scope}", then follow it. This workflow splits the review across agents and gives you one of the skill's split review roles; you cannot start subagents. YOUR ROLE: ${role}`
 const IDS = 'Give each finding a stable kebab-case id, reusing ledger ids for the same root cause.'
+// Eight boundaries per agent is the skill's single-reviewer budget, so the selection budget is eight
+// per agent: left at the skill's default of eight, every review would collapse to one group. The
+// partition keeps related boundaries together so one agent sees both sides of shared knowledge.
+const PARTITION = `Your selection budget is ${8 * REVIEWERS} boundaries (eight per review agent), replacing the single-reviewer budget. Partition the selected boundaries into min(${REVIEWERS}, ceil(selected / 8)) groups of at most eight, keeping boundaries that share a module or consumers in the same group; when a related set exceeds eight, split it where the fewest consumers are shared and list the split in coverageNotes.`
 
 async function review(round, scope) {
   phase('Review')
-  const ctx = `Repository: current working directory. Base ref ${BASE}: the branch diff and uncommitted work against it are remediation from earlier rounds; treat what it touches as changed boundaries.
+  // Only after a remediation round is the diff against the base this workflow's own work.
+  const ctx = `Repository: current working directory.${round > 1 ? ` Base ref ${BASE}: the branch diff and uncommitted work against it are remediation from earlier rounds; treat what it touches as changed boundaries.` : ''}
 Prior dispositions ledger (a finding rejected with a rationale is re-raised only with evidence rebutting that rationale; a "fixed" finding is re-raised if the fix is incomplete or regressed): ${ledgerText()}
 ${AUTHORITY_STANCE}
 ${EVIDENCE}${INSTRUCTIONS}`
 
   // One group means fan-out would only hand the same code to a second and third agent; the lead reviews it alone.
-  const scoping = await agent(SKILL_INVOKE(scope, `the lead's "Parallel review" items 1-2: complete step 1 (full ranked boundary list with consumers, authority documents, the standard) and partition the selected boundaries into the number of groups the skill's formula gives (at most ${REVIEWERS}). If that is one group, do not stop: run steps 2-5 on it yourself, verify every finding against the code (re-read cited lines; reproduce confirmed consequences where feasible), settle severity by consequence, and return the full report in "report". ${IDS} With more than one group, do not review and omit "report".`) + '\n' + ctx,
+  const scoping = await agent(SKILL_INVOKE(scope, `**Scope**. ${PARTITION} If that gives one group, do not stop there: take the **Group review** and **Merge** roles for it too, reproduce confirmed consequences where feasible, and return the full report in "report". ${IDS} With more than one group, do not review and omit "report".`) + '\n' + ctx,
     { label: `review r${round}: scope`, phase: 'Review', schema: SCOPING })
   if (!scoping) throw new Error('scoping failed')
   log(`review r${round}: ${scoping.allBoundaries.length} boundaries, ${scoping.groups.length} group(s)`)
   if (scoping.groups.length <= 1 && scoping.report) return scoping.report
 
   const parts = (await parallel(scoping.groups.map((g, i) => () =>
-    agent(SKILL_INVOKE(scope, `reviewer ${i + 1}/${scoping.groups.length}, "Parallel review" item 3: run steps 2-5 on your group and return the five parts.
+    agent(SKILL_INVOKE(scope, `**Group review**, group ${i + 1} of ${scoping.groups.length}.
 Full boundary list: ${j(scoping.allBoundaries)}
 Your group "${g.name}": ${j(g.boundaries)}
-Standard from step 1: ${scoping.standard}`) + '\n' + ctx,
+Standard: ${scoping.standard}`) + '\n' + ctx,
       { label: `review r${round}: ${g.name}`, phase: 'Review', schema: REPORT }))))
   const missing = scoping.groups.filter((g, i) => !parts[i]).map((g) => g.name)
   if (missing.length) {
@@ -260,7 +281,7 @@ Standard from step 1: ${scoping.standard}`) + '\n' + ctx,
     log(`review r${round}: no result from group(s) ${missing.join(', ')}; recorded as uninspected`)
   }
 
-  const merged = await agent(SKILL_INVOKE(scope, `the lead's "Parallel review" items 4-5: merge these reviewer results, run lens-1 change-impact on knowledge with dependents across groups, verify every merged finding against the code (re-read cited lines; reproduce confirmed consequences where feasible), settle severity by consequence, and produce the report. ${IDS}
+  const merged = await agent(SKILL_INVOKE(scope, `**Merge**. Reproduce confirmed consequences where feasible. ${IDS}
 Scoping: ${j(scoping)}
 Reviewer results: ${j(parts.filter(Boolean))}${missing.length ? `
 These groups returned no result; list their boundaries under Coverage as uninspected: ${j(scoping.groups.filter((g) => missing.includes(g.name)))}` : ''}`) + '\n' + ctx,
@@ -514,9 +535,11 @@ try {
     const open = blockingOf(lastReview.findings)
     log(`review r${reviewRound}: ${lastReview.findings.length} findings, ${open.length} Critical/High/Medium`)
     history.push({ review: reviewRound, findings: lastReview.findings.map((f) => `${f.severity} ${f.id}`) })
+    // A review with dead groups cannot certify the scope clean, nor be reported as a complete review.
+    const incomplete = reviewMissing.length > missingBefore
+    if (incomplete && (REVIEW_ONLY || !open.length)) { stopReason = `review r${reviewRound} incomplete: ${reviewMissing.length - missingBefore} group(s) returned no result`; break }
+    if (REVIEW_ONLY) { stopReason = 'review only'; break }
     if (!open.length) {
-      // A review with dead groups cannot certify the scope clean.
-      if (reviewMissing.length > missingBefore) { stopReason = `review r${reviewRound} incomplete: ${reviewMissing.length - missingBefore} group(s) returned no result`; break }
       dry++
       if (dry >= DRY_ROUNDS) { stopReason = `only Low findings for ${dry} consecutive review(s)`; break }
       continue
@@ -564,7 +587,8 @@ const TREE = {
   verified: 'The working tree holds verified, uncommitted remediation. Show the user git diff against baseRef for review before committing.',
   failing: 'The working tree holds remediation whose verification FAILS (last history entry). Do not commit: inspect git diff and fix or revert first.',
 }
-const WHY = stopReason.startsWith('only Low') ? 'Only Low findings remain (finalFindings).'
+const WHY = stopReason === 'review only' ? 'Review only, as requested: the findings are in finalFindings; nothing was planned.'
+  : stopReason.startsWith('only Low') ? 'Only Low findings remain (finalFindings).'
   : stopReason.startsWith('maxRounds') ? 'Blocking findings remain (remainingBlocking); re-run with a narrower scope or instructions.'
   : stopReason.startsWith('review') ? 'The scope was not fully reviewed (reviewMissing); re-run before trusting the result.'
   : stopReason.startsWith('token budget') ? 'Stopped before another round to stay within the token budget.'
