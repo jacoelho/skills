@@ -1,8 +1,18 @@
 # jacoelho
 
-A Claude Code plugin with my personal skills and subagents. This repository is both the plugin and its marketplace.
+A Claude Code plugin with my personal skills, subagents and hooks. This repository is both the plugin and its marketplace.
 
-Skills live in `skills/`, agents in `agents/`. Everything is namespaced by the plugin name: skills run as `/jacoelho:<skill>` and agents are `jacoelho:<agent>`.
+Skills live in `skills/`, agents in `agents/`, hooks modules in `hooks/` with their tests in `tests/`. Everything is namespaced by the plugin name: skills run as `/jacoelho:<skill>` and agents are `jacoelho:<agent>`.
+
+## Prompt intake
+
+The plugin's `prompt.submit` hook (`hooks/prompt-intake/`) intercepts every message over 150 words that you type at the terminal. It runs in every session where the plugin is enabled.
+
+1. It holds the message and makes a model call to sort it into Goal, Facts and Asks and list every ambiguity.
+2. It asks about the ambiguities in the question dialog, up to 3 per round and 5 rounds. Questions still open after that are kept under Facts, marked `[unresolved]`; content that fits no section is marked `[unsorted]`. A question the model could not offer options for is kept as `[unresolved]` too.
+3. It drops the original and puts the clean version in the prompt box, keeping anything you typed meanwhile. Your next message is sent as typed, so edit the clean version and press Enter.
+
+Start a message with `raw:` to send the rest as typed (not `!raw`: a leading `!` opens bash mode). Slash commands, messages with attachments, Remote Control and other sessions' messages, and `-p` runs pass through, as does a long message sent while another is in intake. If you dismiss a question, press Esc, or the model call or its reply fails, the original goes back in the prompt box and nothing is sent.
 
 ## Install
 
@@ -26,7 +36,7 @@ Update with `claude plugin update jacoelho@jacoelho`, or turn on auto-update for
 
 ## Develop
 
-To try uncommitted edits, start a session with `claude --plugin-dir /path/to/skills`. It loads the checkout in place, and `/reload-plugins` picks up further edits. Run `claude plugin validate .` before pushing.
+To try uncommitted edits, start a session with `claude --plugin-dir /path/to/skills`. It loads the checkout in place, and `/reload-plugins` picks up further edits. Run `claude plugin validate .` and `claude plugin test .` before pushing.
 
 A machine can also install from the local checkout instead of GitHub:
 
