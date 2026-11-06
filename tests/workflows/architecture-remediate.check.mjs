@@ -82,7 +82,7 @@ describe('options', () => {
   })
   test('args given as JSON text are parsed, not taken as the scope', async () => {
     const { calls } = await run({ args: '{"scope": "internal/billing", "instructions": "KEEP-V1"}' })
-    assert.ok(calls[0].prompt.includes('args "internal/billing --agents'))
+    assert.ok(calls[0].prompt.includes('args "internal/billing"'))
     assert.ok(calls[0].prompt.includes('KEEP-V1'))
   })
   test('a value that would break the skill invocation is refused', async () => {
@@ -257,5 +257,41 @@ describe('the result says what the working tree holds', () => {
   test('a verify agent with no result leaves the tree failing, not verified', async () => {
     const { out } = await run({ findings: [finding('x1')], items: [item('x1')], nullLabel: /^verify/ })
     assert.equal(out.tree, 'failing')
+  })
+})
+
+describe('review only', () => {
+  test('the Scope agent gets a selection budget of eight per review agent', async () => {
+    const { calls } = await run({ args: { scope: 'repo', reviewOnly: true, reviewers: 4 }, findings: [] })
+    assert.ok(calls[0].prompt.includes('selection budget is 32 boundaries'))
+  })
+  test('a review with dead groups is reported incomplete, not as a finished review', async () => {
+    const { out } = await run({ args: { scope: 'repo', reviewOnly: true }, groups: 3, findings: [finding('x1')], nullLabel: /^review r1: g1$/ })
+    assert.ok(out.stopReason.startsWith('review r1 incomplete'))
+    assert.ok(out.next.includes('not fully reviewed'))
+  })
+  test('an option of the wrong type is refused, never read as its default', async () => {
+    for (const args of [{ scope: 'repo', reviewOnly: 'true' }, { scope: 'repo', reviewers: '3' }, { scope: 7 }]) {
+      const { out, calls } = await run({ args })
+      assert.equal(calls.length, 0)
+      assert.equal(out.reason, 'bad-option-type')
+    }
+  })
+  test('reviews once, plans and edits nothing, and leaves the tree untouched', async () => {
+    const { out, labels } = await run({ args: { scope: 'repo', reviewOnly: true }, groups: 3, findings: [finding('x1')], items: [item('x1')] })
+    assert.deepEqual(labels, ['review r1: scope', 'review r1: g0', 'review r1: g1', 'review r1: g2', 'review r1: merge'])
+    assert.equal(out.tree, 'untouched')
+    assert.equal(out.finalFindings.length, 1)
+  })
+  test('agents get skill roles by name, not step numbers', async () => {
+    const { calls } = await run({ args: { scope: 'repo', reviewOnly: true }, groups: 2, findings: [finding('x1')] })
+    const roles = calls.map((c) => (c.prompt.match(/YOUR ROLE: \*\*([A-Za-z ]+)\*\*/) || [])[1])
+    assert.deepEqual(roles, ['Scope', 'Group review', 'Group review', 'Merge'])
+    assert.ok(calls.every((c) => !/Parallel review|--agents|steps? \d/.test(c.prompt)))
+  })
+  test('round 1 does not call the existing branch diff remediation', async () => {
+    const { calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
+    assert.ok(!calls[0].prompt.includes('remediation from earlier rounds'))
+    assert.ok(calls.find((c) => c.label === 'review r2: scope').prompt.includes('remediation from earlier rounds'))
   })
 })

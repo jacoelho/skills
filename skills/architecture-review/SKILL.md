@@ -49,9 +49,12 @@ changed boundaries first, then the rest; within each group, rank by the number
 of distinct types, functions, input formats and documented rules consumers
 reference across the boundary, then by number of consumers, treating a public
 API's consumer count as larger than any in-repository count. Review the top
-eight, or the total budget the user sets, and record the rest as uninspected.
-Steps 2–5 apply to the selected boundaries. When invoked with `--agents N`, the
-budget is eight per agent; follow **Parallel review**.
+eight, or the total budget the user or an orchestrator sets, and record the rest as
+uninspected.
+Steps 2–5 apply to the selected boundaries. A scope too large for one reviewer
+is split across agents by `/jacoelho:architecture-remediate` (with `reviewOnly`
+for a review that edits nothing); an agent given a role from **Split review
+roles** follows that role.
 
 **2. Trace ownership.** For each selected boundary, identify the owner of each
 fact, invariant, state transition and resource, and which other modules depend on
@@ -101,33 +104,34 @@ finding: dialogs do not restore focus to whatever held it before they opened.
 **5. Stop** when steps 3–4 cover the selected boundaries, or when missing evidence
 blocks an assessment; then name what would need to be verified.
 
-## Parallel review
+## Split review roles
 
-`--agents N` widens coverage: N agents review different boundaries, not the
-same ones. Run it only where you can start subagents; otherwise review alone
-and note the reduced budget under Coverage.
+A review split across agents gives each agent one role. The orchestrator decides
+how many agents run, the selection budget, and which boundaries each agent gets;
+these roles define what each agent does and returns. One agent may be given
+several roles, and then performs them in order.
 
-1. Complete step 1 yourself: the full ranked boundary list, the authority
-   documents read, and the standard that applies.
-2. Start min(N, ⌈selected ÷ 8⌉) agents and partition the selected boundaries
-   among them, at most eight each, keeping boundaries that share a module or
-   consumers in the same group. When a related set exceeds eight, split it where
-   the fewest consumers are shared and list the split under Coverage.
-3. Give each agent this skill's files, the full boundary list, its group, and
-   the standard from step 1. It runs steps 2–5 on its group, may follow a
-   dependency into any other boundary, cites only lines it read, and returns
-   five parts: findings in the report's finding format; one-line breaches for
-   Improvements; coordination items for Change at a distance; Coverage items
-   (uninspected, unassessed and to verify); and its step-2 ownership map: each
-   fact, invariant and resource, its owner, and its dependents.
-4. Merge each part. Findings with the same root cause are one finding: keep the
-   strongest evidence, and re-read the code to settle disagreements on severity
-   or classification. Where the ownership maps show knowledge with dependents in
-   more than one group, run the lens 1 change-impact scenarios on it yourself
-   and confirm any candidate as in step 4.
-5. Verify each merged finding against the code before reporting it, including
-   its cited lines; correct references, and drop or downgrade what the code does
-   not support. Then write the whole report yourself.
+- **Scope:** complete step 1 for the whole scope and return the full ranked
+  boundary list with consumers, the authority documents read, and the standard
+  that applies. Partition as the orchestrator directs. Review only when also
+  given the other roles.
+- **Group review:** given the full boundary list, a group of it and the
+  standard, run steps 2–5 on the group. Follow a dependency into any other
+  boundary when needed, and cite only lines you read. Return five parts:
+  findings in the report's finding format; one-line breaches for Improvements;
+  coordination items for Change at a distance; Coverage items (uninspected,
+  unassessed and to verify); and the step-2 ownership map: each fact, invariant
+  and resource, its owner, and its dependents.
+- **Merge:** given every group's five parts, merge each part: keep every
+  group's Improvements, Change at a distance and Coverage items, including each
+  uninspected boundary and partition split, and consolidate findings with the same
+  root cause as in step 4, keeping the strongest evidence and re-reading the
+  code to settle disagreements on severity or classification. Where the
+  ownership maps show knowledge with dependents in more than one group, run the
+  lens 1 change-impact scenarios on it and confirm any candidate as in step 4.
+  Verify each merged finding against the code, including its cited lines;
+  correct references, and drop or downgrade what the code does not support.
+  Then write the whole report.
 
 ## Severity
 
