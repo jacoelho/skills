@@ -8,6 +8,13 @@ system with no network boundary has no distribution semantics to judge. A lens
 yields a finding when its candidate passes the skill's **Confirm each candidate**
 step, as confirmed or conditional, or is a breach the reviewed change introduces.
 
+Most rules in lenses 1, 2, 3 and 5 answer one question about two pieces of code:
+should they change together? They name three ways to get it wrong: pieces that
+must change together but sit apart or are linked only by convention; pieces tied
+together that change for different reasons; and pieces with no reason of their
+own to change. Use the question to read a signal, then cite the rule it breaches;
+when no rule covers it, judge it by consequence as the skill directs.
+
 Terms used throughout:
 
 - *Domain logic* is code that decides business rules, invariants and state
@@ -59,10 +66,15 @@ Look for:
 - implicit ordering between operations or lifecycle stages;
 - configuration read far from the code it affects;
 - an invariant enforced at several boundaries instead of owned at one;
-- callers depending on a module's implementation details;
+- callers relying on behaviour a module does not promise, such as iteration
+  order, timing or side effects;
 - implementation inheritance across modules, where a subtype depends on the
   supertype's internal call sequence, so a base-type edit changes subtype
-  behaviour.
+  behaviour;
+- files that version history shows are repeatedly committed together with no
+  declared dependency between them, and modules that depend on a module whose
+  history shows it changing more often than they do. History locates
+  candidates; the finding still needs a scenario from the code.
 
 **Change-impact scenarios.** For each selected changed boundary, and each module
 with shared or hidden knowledge, walk each of these changes the domain makes
@@ -91,9 +103,9 @@ Rules:
   logger, is a legitimate module. Breach: one capability's rules split across
   technical layers that must be read together to understand it.
 - **Deep modules.** A module hides a decision behind a surface simpler than its
-  implementation. Breach: a *shallow wrapper* that forwards, renames or
-  redistributes work and hides nothing, or one module combining unrelated
-  concerns so a change to one risks the other.
+  implementation. Breach: one module combining unrelated concerns so a change to
+  one risks the other. Wrappers that hide nothing are judged by **Smallest
+  design** (lens 5).
 - **One term per concept.** Each concept has one term, each term one meaning,
   and each module is named after the capability it owns. Breaches: one term
   naming two concepts, two terms naming one concept, or a vague-role module name
@@ -193,11 +205,12 @@ maintainer must hold; line count alone is not evidence.
 Rules:
 
 - **Smallest design.** The design satisfies the stated constraints with the
-  fewest such elements. Each wrapper, adaptor, interface or helper hides a
-  decision, owns a contract, or isolates a policy that changes independently;
-  otherwise it is a breach. A name, a mocking seam, a single call site or
-  hypothetical reuse justifies nothing either way; name the concrete burden it
-  adds or removes.
+  fewest such elements. Each wrapper, adaptor or helper hides a decision, owns a
+  contract, or isolates a policy that changes independently; otherwise it is a
+  breach, such as a *shallow wrapper* that forwards, renames or redistributes
+  work. Interfaces, and adaptors that implement one, are judged by **Narrow
+  interfaces** (lens 3). A name, a single call site or hypothetical reuse
+  justifies nothing either way; name the concrete burden it adds or removes.
 - **Delete obsolete paths.** Replaced behaviour is deleted. A compatibility
   path, shim or parallel implementation stays only when a requirement, persisted
   data or an operational constraint needs it, and the code or a document names
@@ -212,7 +225,10 @@ Look for:
 
 - generalisation or configurability beyond current callers;
 - control flow for one operation fragmented across modules;
-- special cases that a better model would remove.
+- special cases: code that exists for one situation instead of following from
+  the model, such as a branch on one value, a parameter only one caller
+  understands, a sleep or retry that waits for state another module owns, or a
+  disabled test. Each often records a requirement the model does not express.
 
 ## 6. Resources and performance
 
@@ -258,8 +274,7 @@ Rules:
   which internal functions were called.
 - **No tautological tests.** Breach: a test that cannot fail while the code
   compiles, derives its expected value from the code under test, or re-checks a
-  language, library or framework guarantee. Recommend only tests that pass both
-  **Contract tests** and **No tautological tests**.
+  language, library or framework guarantee.
 
 Look for:
 
