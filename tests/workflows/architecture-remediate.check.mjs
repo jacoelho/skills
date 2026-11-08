@@ -127,6 +127,7 @@ describe('review', () => {
   test('only Low findings stop the run without planning', async () => {
     const { out, labels } = await run({ findings: [finding('x1', 'Low')] })
     assert.equal(count(labels, /^plan/), 0)
+    assert.equal(out.stopKind, 'clean')
     assert.ok(out.stopReason.includes('only Low'))
   })
 })
@@ -204,8 +205,11 @@ describe('failures are reported, never read as success', () => {
   test('a verify run that lists failures has not passed', async () => {
     const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], verifyLies: true })
     assert.ok(labels.some((l) => l.startsWith('fix r1')))
+    assert.equal(out.stopKind, 'verify-failing')
     assert.ok(out.stopReason.startsWith('verification failing'))
     assert.ok(out.next.includes('Do not commit'))
+    // Every stop explains itself: this one once fell through to no reason at all.
+    assert.ok(out.next.includes('Verification still fails after round 1'))
   })
   test('a review group with no result is passed to the merge as uninspected', async () => {
     const { calls } = await run({ groups: 3, findings: [finding('x1')], items: [item('x1')], nullLabel: /^review r1: g1$/ })
@@ -215,9 +219,17 @@ describe('failures are reported, never read as success', () => {
     const { out } = await run({ findings: [finding('x1')], items: [item('x1')], nullLabel: /^consult r1\.1 #1/ })
     assert.equal(out.consultMissing.length, 1)
   })
+  test('maxRounds stops with the blocking findings left and says what to do', async () => {
+    const { out, labels } = await run({ args: { scope: 'repo', maxRounds: 1 }, findings: [finding('x1')], items: [item('x1')], blockingReviews: 9 })
+    assert.equal(count(labels, /^plan/), 1)
+    assert.equal(out.stopKind, 'max-rounds')
+    assert.ok(out.stopReason.startsWith('maxRounds (1) reached'))
+    assert.ok(out.next.includes('Blocking findings remain'))
+  })
   test('the token budget stops the run before a round it cannot cover', async () => {
     const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], blockingReviews: 9, budgetTotal: 120000 })
     assert.equal(count(labels, /^plan/), 1)
+    assert.equal(out.stopKind, 'budget')
     assert.ok(out.stopReason.startsWith('token budget'))
   })
 })
@@ -237,6 +249,7 @@ describe('the result says what the working tree holds', () => {
   })
   test('a review with dead groups cannot stop the run as clean', async () => {
     const { out } = await run({ groups: 3, findings: [], nullLabel: /^review r1: g1$/ })
+    assert.equal(out.stopKind, 'review-incomplete')
     assert.ok(out.stopReason.startsWith('review r1 incomplete'))
     assert.equal(out.reviewMissing.length, 1)
   })
@@ -244,7 +257,9 @@ describe('the result says what the working tree holds', () => {
     let plans = 0
     const { out } = await run({ findings: [finding('x1')], items: [item('x1')], blockingReviews: 9, nullLabel: { test: (l) => l.startsWith('plan') && ++plans === 2 } })
     assert.equal(out.started, true)
+    assert.equal(out.stopKind, 'error')
     assert.ok(out.stopReason.startsWith('error: planning failed'))
+    assert.ok(out.next.includes('The run failed: planning failed'))
     assert.equal(out.tree, 'verified') // round 1's verified edits, reported, not lost
     assert.equal(out.history.filter((h) => h.round).length, 1)
   })
@@ -267,6 +282,7 @@ describe('review only', () => {
   })
   test('a review with dead groups is reported incomplete, not as a finished review', async () => {
     const { out } = await run({ args: { scope: 'repo', reviewOnly: true }, groups: 3, findings: [finding('x1')], nullLabel: /^review r1: g1$/ })
+    assert.equal(out.stopKind, 'review-incomplete')
     assert.ok(out.stopReason.startsWith('review r1 incomplete'))
     assert.ok(out.next.includes('not fully reviewed'))
   })
@@ -281,6 +297,7 @@ describe('review only', () => {
     const { out, labels } = await run({ args: { scope: 'repo', reviewOnly: true }, groups: 3, findings: [finding('x1')], items: [item('x1')] })
     assert.deepEqual(labels, ['review r1: scope', 'review r1: g0', 'review r1: g1', 'review r1: g2', 'review r1: merge'])
     assert.equal(out.tree, 'untouched')
+    assert.equal(out.stopKind, 'review-only')
     assert.equal(out.finalFindings.length, 1)
   })
   test('agents get skill roles by name, not step numbers', async () => {

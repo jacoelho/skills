@@ -1,7 +1,7 @@
 export const meta = {
   name: 'architecture-remediate',
   description: 'Loop: /jacoelho:architecture-review -> plan -> risk-sized consultants -> batched implement -> verify -> critic, until only Low findings remain (Go-oriented defaults)',
-  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. Returns stopReason, next (what the caller should do now) and the findings left.',
+  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. Returns stopKind (review-incomplete, review-only, clean, max-rounds, budget, verify-failing, error), stopReason (the same in words), tree, next (what the caller should do now) and the findings left.',
   phases: [
     { title: 'Review', detail: 'jacoelho:architecture-review: scoping (reviews alone when one group), parallel group reviews, merge' },
     { title: 'Plan', detail: 'dispositions on the merits; dependency-ordered packets' },
@@ -517,7 +517,11 @@ let reviewRound = 0
 let implRounds = 0
 let dry = 0
 let lastReview = null
-let stopReason = ''
+// Why the loop ended, as one tagged value; `stopReason` and the advice in `next` are both derived
+// from it, so a new kind of stop cannot go unexplained.
+//   review-incomplete {round, missing} | review-only | clean {dry} | max-rounds {open}
+//   | budget {remaining, costliest} | verify-failing {round} | error {message}
+let stop = null
 const unresolvedCritic = []
 // The one record of what the working tree holds; `next` is derived from it, never guessed from the
 // stop reason. untouched: no round started. unverified: a round started and did not reach a
@@ -537,17 +541,17 @@ try {
     history.push({ review: reviewRound, findings: lastReview.findings.map((f) => `${f.severity} ${f.id}`) })
     // A review with dead groups cannot certify the scope clean, nor be reported as a complete review.
     const incomplete = reviewMissing.length > missingBefore
-    if (incomplete && (REVIEW_ONLY || !open.length)) { stopReason = `review r${reviewRound} incomplete: ${reviewMissing.length - missingBefore} group(s) returned no result`; break }
-    if (REVIEW_ONLY) { stopReason = 'review only'; break }
+    if (incomplete && (REVIEW_ONLY || !open.length)) { stop = { kind: 'review-incomplete', round: reviewRound, missing: reviewMissing.length - missingBefore }; break }
+    if (REVIEW_ONLY) { stop = { kind: 'review-only' }; break }
     if (!open.length) {
       dry++
-      if (dry >= DRY_ROUNDS) { stopReason = `only Low findings for ${dry} consecutive review(s)`; break }
+      if (dry >= DRY_ROUNDS) { stop = { kind: 'clean', dry }; break }
       continue
     }
     dry = 0
-    if (implRounds >= MAX_ROUNDS) { stopReason = `maxRounds (${MAX_ROUNDS}) reached with ${open.length} blocking finding(s)`; break }
+    if (implRounds >= MAX_ROUNDS) { stop = { kind: 'max-rounds', open: open.length }; break }
     if (BUDGET.total && costliestCycle && BUDGET.remaining() < costliestCycle) {
-      stopReason = `token budget: ${Math.round(BUDGET.remaining() / 1000)}k left, the costliest review-and-fix cycle so far used ${Math.round(costliestCycle / 1000)}k`
+      stop = { kind: 'budget', remaining: BUDGET.remaining(), costliest: costliestCycle }
       break
     }
     const input = j(lastReview.findings)
@@ -574,11 +578,29 @@ try {
     })
     costliestCycle = Math.max(costliestCycle, BUDGET.spent() - cycleStart)
     if (crit && crit.material.length) unresolvedCritic.push(...crit.material.map((m) => `round ${implRounds}: ${m}`))
-    if (tree === 'failing') { stopReason = `verification failing after round ${implRounds}`; break }
+    if (tree === 'failing') { stop = { kind: 'verify-failing', round: implRounds }; break }
   }
 } catch (e) {
-  stopReason = `error: ${e && e.message ? e.message : String(e)}`
+  stop = { kind: 'error', message: e && e.message ? e.message : String(e) }
 }
+
+// The caller-facing wording of each stop (stopReason) and what to do about it (part of `next`).
+// A switch with no default: an unhandled kind throws here, in tests, rather than reading as ''.
+function describeStop(st) {
+  const k = (n) => `${Math.round(n / 1000)}k`
+  switch (st.kind) {
+    case 'review-incomplete': return { reason: `review r${st.round} incomplete: ${st.missing} group(s) returned no result`, why: 'The scope was not fully reviewed (reviewMissing); re-run before trusting the result.' }
+    case 'review-only': return { reason: 'review only', why: 'Review only, as requested: the findings are in finalFindings; nothing was planned.' }
+    case 'clean': return { reason: `only Low findings for ${st.dry} consecutive review(s)`, why: 'Only Low findings remain (finalFindings).' }
+    case 'max-rounds': return { reason: `maxRounds (${MAX_ROUNDS}) reached with ${st.open} blocking finding(s)`, why: 'Blocking findings remain (remainingBlocking); re-run with a narrower scope or instructions.' }
+    case 'budget': return { reason: `token budget: ${k(st.remaining)} left, the costliest review-and-fix cycle so far used ${k(st.costliest)}`, why: 'Stopped before another round to stay within the token budget.' }
+    case 'verify-failing': return { reason: `verification failing after round ${st.round}`, why: `Verification still fails after round ${st.round}'s fix attempts (last history entry); fix or revert before re-running.` }
+    case 'error': return { reason: `error: ${st.message}`, why: `The run failed: ${st.message}.` }
+  }
+  throw new Error(`architecture-remediate: no description for stop kind ${JSON.stringify(st && st.kind)}`)
+}
+const described = describeStop(stop)
+const stopReason = described.reason
 log(`stopped: ${stopReason}`)
 
 const TREE = {
@@ -587,18 +609,12 @@ const TREE = {
   verified: 'The working tree holds verified, uncommitted remediation. Show the user git diff against baseRef for review before committing.',
   failing: 'The working tree holds remediation whose verification FAILS (last history entry). Do not commit: inspect git diff and fix or revert first.',
 }
-const WHY = stopReason === 'review only' ? 'Review only, as requested: the findings are in finalFindings; nothing was planned.'
-  : stopReason.startsWith('only Low') ? 'Only Low findings remain (finalFindings).'
-  : stopReason.startsWith('maxRounds') ? 'Blocking findings remain (remainingBlocking); re-run with a narrower scope or instructions.'
-  : stopReason.startsWith('review') ? 'The scope was not fully reviewed (reviewMissing); re-run before trusting the result.'
-  : stopReason.startsWith('token budget') ? 'Stopped before another round to stay within the token budget.'
-  : stopReason.startsWith('error') ? `The run failed: ${stopReason.slice(7)}.`
-  : ''
 return {
   started: true,
+  stopKind: stop.kind,
   stopReason,
   tree,
-  next: [TREE[tree], WHY, unresolvedCritic.length ? 'Unresolved critic findings need attention first (unresolvedCritic).' : ''].filter(Boolean).join(' '),
+  next: [TREE[tree], described.why, unresolvedCritic.length ? 'Unresolved critic findings need attention first (unresolvedCritic).' : ''].filter(Boolean).join(' '),
   unresolvedCritic,
   consultMissing,
   reviewMissing,
