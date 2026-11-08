@@ -1,8 +1,43 @@
 {
   "name": "jacoelho",
-  "description": "Personal skills, subagents and a prompt-intake hook: Go API design and performance, testing, specs, architecture review, technical writing.",
-  "author": { "name": "José Coelho" },
+  "description": "Personal skills, subagents and hooks (prompt intake, context handoff): Go API design and performance, testing, specs, architecture review, technical writing.",
+  "author": {
+    "name": "José Coelho"
+  },
   "homepage": "https://github.com/jacoelho/skills",
   "repository": "https://github.com/jacoelho/skills",
-  "license": "MIT"
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "handoff_offer_at": {
+      "type": "number",
+      "title": "Handoff: offer at (% of auto-compact)",
+      "description": "Show the handoff offer when context reaches this percent of the auto-compact threshold (the model's window when auto-compact is off). 0 turns the offer off.",
+      "default": 70,
+      "min": 0,
+      "max": 100
+    },
+    "handoff_on_compact": {
+      "type": "string",
+      "title": "Handoff: on compaction",
+      "description": "core: Claude Code compacts as usual. handoff: manual and auto compaction write a handoff and the transcript becomes that handoff; on any failure Claude Code compacts as usual.",
+      "options": [
+        "core",
+        "handoff"
+      ],
+      "default": "core"
+    },
+    "handoff_prompt_file": {
+      "type": "string",
+      "title": "Handoff: prompt file",
+      "description": "Path to the handoff prompt (~ allowed). Empty: the prompt bundled at hooks/handoff/prompts/handoff.md. Placeholder: {{cwd}}.",
+      "default": ""
+    },
+    "handoff_dir": {
+      "type": "string",
+      "title": "Handoff: save folder",
+      "description": "Where handoffs and handoff.log are saved (~ allowed). Empty: ~/.claude/handoffs.",
+      "default": ""
+    }
+  }
 }

@@ -14,6 +14,25 @@ The plugin's `prompt.submit` hook (`hooks/prompt-intake/`) intercepts every mess
 
 Start a message with `raw:` to send the rest as typed (not `!raw`: a leading `!` opens bash mode). Slash commands, messages with attachments, Remote Control and other sessions' messages, and `-p` runs pass through, as does a long message sent while another is in intake. If you dismiss a question, press Esc, or the model call or its reply fails, the original goes back in the prompt box and nothing is sent.
 
+## Context handoff
+
+`hooks/handoff/` writes a handoff of a long chat so the work can continue in a fresh context instead of a compacted one. The model that writes it is a fork of the main thread: it sees the whole conversation and reads it from the prompt cache. It re-sends the last request, so it does not see the final assistant reply.
+
+- **Offer:** after each turn, once the context reaches a percentage of the session's auto-compact threshold (the model's window when auto-compact is off), a row above the prompt box offers Write handoff or Not now. Not now keeps it away until the context drops below that point again.
+- **Write:** the Write handoff button or `/handoff` saves the handoff to `<save folder>/<date>-<title>.md`, with common token formats (API keys, JWTs, private keys, bearer tokens) removed; a free-form password is not caught. That row then offers Continue fresh (runs `/clear` and sends the handoff as the first prompt; shown only while no turn runs), Copy and Close.
+- **On compaction**, in `handoff` mode, manual and auto compaction write a handoff and the transcript becomes that message, followed by the newest assistant message and anything after it, which the fork did not see. Subagent compactions and idle precomputes always use Claude Code's own compaction, as does any compaction whose handoff fails; `handoff.log` in the save folder records why.
+
+Set these in `/config` (stored under `pluginConfigs` in `settings.json`):
+
+| Option | Default | Meaning |
+|---|---|---|
+| `handoff_offer_at` | `70` | Percent of the auto-compact threshold at which the row above the prompt box offers a handoff; `0` turns the offer off |
+| `handoff_on_compact` | `core` | `core`: Claude Code compacts as usual. `handoff`: compaction becomes a handoff |
+| `handoff_prompt_file` | bundled | The prompt, a plain text file; `{{cwd}}` is its one placeholder, and an unknown one fails with the file and placeholder named |
+| `handoff_dir` | `~/.claude/handoffs` | Where handoffs and `handoff.log` are saved |
+
+The bundled prompt is `hooks/handoff/prompts/handoff.md`; edit it in place or point `handoff_prompt_file` at your own copy.
+
 ## Architecture remediation workflow
 
 `/jacoelho:architecture-remediate` fixes architecture findings end to end. Each round reviews with `/jacoelho:architecture-review`, plans the fixes, has `jacoelho:consultant` agents challenge the plan, implements it in batches, verifies, and runs `jacoelho:critic` on the diff. Later rounds review only the diff; the run stops once a review finds nothing above Low.

@@ -1,1 +1,1 @@
-{ "modules": ["./prompt-intake/register.ts"] }
+{ "modules": ["./register.ts"] }

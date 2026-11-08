@@ -81,12 +81,16 @@ async function intake($: EngineInterface, message: string, signal: AbortSignal):
   return { kind: 'clean', text: render(sorted as Sorted, unresolved) }
 }
 
+// Where the person's long message is in its intake, one at a time (a second
+// would race the first for the prompt box):
+//   idle:      nothing held.
+//   analysing: a message is being sorted and clarified.
+//   reviewing: its clean version is in the box; the person's next submission is
+//              that version, edited or not, and goes through untouched.
+type Stage = 'idle' | 'analysing' | 'reviewing'
+
 export const register: Register = on => {
-  // Set only once a clean version is in the box: the person's next submission
-  // is their reviewed version (edited or not) and goes through untouched.
-  let isReviewPending = false
-  // One intake at a time: a second would race the first for the prompt box.
-  let isBusy = false
+  let stage: Stage = 'idle'
 
   on('prompt.submit', async ($, e, next) => {
     // Only text the person typed at the terminal: a bridge client cannot see
@@ -96,8 +100,8 @@ export const register: Register = on => {
     const decision = decide(e.text)
     const typed = decision.kind === 'raw' ? { ...e, text: decision.text } : e
 
-    if (isReviewPending) {
-      isReviewPending = false
+    if (stage === 'reviewing') {
+      stage = 'idle'
       return next(typed)
     }
     // Slash commands take no rewrite; attachments would be lost by drop and refill.
@@ -105,17 +109,17 @@ export const register: Register = on => {
     if (decision.kind === 'raw') {
       return decision.text === '' ? { drop: 'prompt-intake: nothing after raw: to send.' } : next(typed)
     }
-    if (isBusy) {
+    if (stage === 'analysing') {
       $.ui.toast('prompt-intake: another message is in intake; sent this one as typed')
       return next(e)
     }
 
-    isBusy = true
+    stage = 'analysing'
     let outcome: Outcome
     try {
       outcome = await intake($, e.text, next.signal)
     } finally {
-      isBusy = false
+      stage = 'idle'
     }
     // Abandoned (Esc, or a hook above settled first): the original was not
     // sent, so it goes back in the box like any other cancel.
@@ -146,7 +150,7 @@ export const register: Register = on => {
 
     switch (outcome.kind) {
       case 'clean':
-        isReviewPending = true
+        stage = 'reviewing'
         return { drop: 'prompt-intake: clean version is in the prompt box. Edit if needed, press Enter to send.' }
       case 'cancelled':
         return { drop: 'prompt-intake: cancelled. Your original is back in the prompt box; start it with raw: to skip intake.' }
