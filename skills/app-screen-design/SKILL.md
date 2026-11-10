@@ -140,6 +140,15 @@ Build and view every state ([components.md](references/components.md)):
 
 Screenshot at 1440×900, 768 and 390px wide, and judge the pictures: a problem visible there is real, whatever the code says.
 With no browser available, say in the report that this visual check did not run.
+
+Measure before judging geometry (*judgement*). A screenshot cannot show a 2px drift. On the rendered page at 1440, read
+each visible element's box and computed styles, and group values within 1px: the left and right edges of blocks and text
+columns, gaps between siblings, padding, radii, font size and weight pairs, control heights, borders and shadows. Each
+group must map to a token or role of the style. A group that maps to none, or two groups 1-4px apart, is drift. Compare
+the counts with the [foundation](references/foundation.md) and [layout](references/layout.md): 4-9 type sizes, about 3
+weights, one gutter, one radius family, one left edge and one right edge. Any position or size you report must come from
+this audit; from a screenshot alone, call it approximate.
+
 Answer these in writing:
 
 1. Does the biggest thing answer the screen's question, is it read first, and is the largest figure the one answering the
@@ -164,6 +173,24 @@ Then check against [tells.md](references/tells.md). Fix the worst three and look
 
 Tell the user, briefly: the style and why; the face and the signature element; each screen's one question; rules you
 deliberately broke and why; and the sample data to replace, listed so it can be found.
+
+## Reviewing an existing screen
+
+*Judgement.* A review is read-only unless the user asks for changes.
+
+1. Infer steps 1 and 2 from the screen: who opens it, its one question and its one finding. If the screen does not answer
+   its question, that is the first finding.
+2. Name the style or design system it is closest to, so the geometry audit has tokens to map to.
+3. Run step 8: screenshots, the geometry audit and the questions, then [tells.md](references/tells.md).
+4. Report at most seven findings, worst first. Each gives:
+   - **Severity:** *critical* if the screen hides or misrepresents its job; *high* if the structure is fragmented, such
+     as two grids or mixed gutters; *medium* for polish, such as drift or a peer button off size; *low* for refinement.
+   - **Evidence:** what is visible or measured, never "feels off".
+   - **Rule:** the default it breaks, from this skill or its references.
+   - **Fix:** the change, preferring a rule over a single element. One gutter, one edge or one radius family fixes more
+     than any single card.
+   - **Confidence:** measured, seen in a screenshot, or inferred from code.
+5. Name what works when it is deliberate, such as the face or a signature element, so a fix does not remove it.
 
 ## Limits of the evidence
 
