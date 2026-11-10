@@ -8,7 +8,7 @@ argument-hint: "[low|medium|high|xhigh|max] [PR number | branch | path] [--max-f
 
 A finding claims: through this entry point, with this input, the code does B where the contract says A. Each claim gets a test that runs the real code. Reading the code again is not proof in either direction.
 
-This skill writes and runs new tests during review, which `jacoelho:testing` reserves for implementation. The exception covers only the throwaway proof files below; tracked files stay unchanged.
+This skill writes and runs new tests during review, which `jacoelho:testing` reserves for implementation. The exception covers only the throwaway proof files below. Tracked files end the run as they started, unless `--fix` was passed.
 
 ## Review
 
@@ -33,14 +33,14 @@ Work through findings one at a time in this session: proofs share packages, and 
 
 1. **Claim.** State entry point, input, expected result with its source (contract, docs, types, callers, or an invariant every reasonable contract keeps, such as no data loss or no duplicated side effect), and the predicted wrong result. No independent source for the expected result: verdict CONTRACT-OPEN, no test.
 2. **Reachability.** Trace from a production entry point, or an exported API for a library, to the defect. Test inputs must be ones a caller can produce. Do not bypass validation, build values the constructor rejects, or call an unexported helper with inputs its callers never pass. A guard on every path makes the verdict UNREACHABLE: cite the guard as `file:line`. A failing helper-level test may still be shown as evidence of a latent defect, labelled as such.
-3. **Test.** Write the smallest test at the highest boundary that reaches the defect. Assert the correct behaviour, so the test fails exactly when the defect is real. Apply the Oracle, Boundary and Isolation criteria from `jacoelho:testing`. Put it in a new file named with a `zz_proof_<n>` prefix where the project's runner discovers it, for example `zz_proof_3_test.go` in the package directory for Go. Prefix test and helper names with `Proof<n>` so proofs in one package do not collide. Do not edit existing files; step 6's temporary fix, restored afterwards, is the only exception.
+3. **Test.** Write the smallest test at the highest boundary that reaches the defect. Assert the correct behaviour, so the test fails exactly when the defect is real. Apply the Oracle, Boundary and Isolation criteria from `jacoelho:testing`. Put it in a new file named with a `zz_proof_<n>` prefix where the project's runner discovers it, for example `zz_proof_3_test.go` in the package directory for Go. Prefix test and helper names with `Proof<n>` so proofs in one package do not collide. Do not edit existing files; the temporary probe in step 5 and fix in step 6, each restored afterwards, are the only exceptions.
    - Races: run with the race detector and a bounded repeat count, or force the interleaving with a controlled schedule.
    - Resource or efficiency claims: assert a measurable bound (allocations, call counts, query counts). Timing alone is UNPROVEN.
 4. **Run** only that test, with a timeout of 2 minutes, for example `go test -run '^TestProof3' -count=1 ./pkg/x`. No network, shared environments, real services, golden-file updates or full-suite runs.
 5. **Classify.**
    - Fails with the predicted wrong result: CONFIRMED.
    - Fails another way (build error, setup panic, a different value): the test is wrong. Fix it, at most two attempts, then UNPROVEN.
-   - Passes: first show the test reached the defect site, for example by flipping the expected value and seeing it fail. Then REFUTED. A run that selected no test proves nothing.
+   - Passes: first show the test executed the line the finding cites, with line coverage from the same run (for Go, `-coverprofile`, plus `-coverpkg` when that line is in another package, and a block covering the line with a count above zero). Without a coverage tool, add a temporary panic or throw at that line and see the test hit it, then restore the file as in step 6. Then REFUTED. A passing assertion alone shows only that the assertion ran, not which path the test took. Not reached: rewrite the test, sharing the two attempts above, then UNPROVEN. A run that selected no test proves nothing.
    - Needs what step 4 forbids, or more than the timeout: UNPROVEN, with the reason.
 6. **Counterfactual** for CONFIRMED, only when the fix is a few local lines: copy the file outside the repository, apply the fix, rerun and expect a pass, restore the copy and check with `cmp`. Skip otherwise and say so.
 
