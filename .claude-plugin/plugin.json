@@ -1,6 +1,6 @@
 {
   "name": "jacoelho",
-  "description": "Personal skills, subagents and hooks (prompt intake, context handoff): Go API design and performance, testing, specs, architecture review, technical writing.",
+  "description": "Personal skills, subagents and hooks (context handoff): Go API design and performance, testing, specs, architecture review, technical writing.",
   "author": {
     "name": "José Coelho"
   },
