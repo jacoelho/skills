@@ -5,7 +5,7 @@
     {
       "name": "jacoelho",
       "source": "./",
-      "description": "Personal skills, subagents and a prompt-intake hook: Go API design and performance, testing, specs, architecture review, technical writing."
+      "description": "Personal skills, subagents, workflows and a context-handoff hook: Go API design and performance, testing, specs, architecture review, technical writing."
     }
   ]
 }

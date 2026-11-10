@@ -1,14 +1,15 @@
 export const meta = {
   name: 'architecture-remediate',
-  description: 'Loop: /jacoelho:architecture-review -> plan -> risk-sized consultants -> batched implement -> verify -> critic, until only Low findings remain (Go-oriented defaults)',
-  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. Returns stopKind (review-incomplete, review-only, clean, max-rounds, budget, verify-failing, error), stopReason (the same in words), tree, next (what the caller should do now) and the findings left.',
+  description: 'Loop: /jacoelho:architecture-review -> plan with acceptance checks -> risk-sized consultants -> batched implement -> verify -> critic -> acceptance, until no Critical/High/Medium finding is open (Go-oriented defaults)',
+  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. By default the run stops after the round-1 plan (stopKind plan-ready) so the user can approve or edit it; continue with the same args plus approvedPlan (the returned checkpoint), or pass autoApprove:true to run unattended. Returns stopKind (plan-ready, review-incomplete, review-only, clean, max-rounds, budget, verify-failing, error), stopReason (the same in words), tree, next (what the caller should do now) and the findings left. Costly, and the cost follows the number of rounds, not the size of the scope: a round (review, plan, consultants, implementers, verification, critic) has used about 15 to 20 agents, 2 million tokens and 1.5 hours on a 20,000-line repository, and the default allows four. Tell the user that before starting. To spend less: maxRounds 1 or 2, reviewers 1, a token target, and a baseRef that already holds earlier remediation, since later rounds review the whole diff against baseRef. When it finishes, report the cost with the result (see next).',
   phases: [
     { title: 'Review', detail: 'jacoelho:architecture-review: scoping (reviews alone when one group), parallel group reviews, merge' },
     { title: 'Plan', detail: 'dispositions on the merits; dependency-ordered packets' },
     { title: 'Consult', detail: 'consultants sized to plan risk + batched QA and API review; targeted revise and re-check' },
     { title: 'Implement', detail: 'one implementer per dependency/file batch (cheap model), one batched benchmark comparison' },
     { title: 'Verify', detail: 'verification contract; fix until green' },
-    { title: 'Critic', detail: 'critic on the diff; resolve material findings' },
+    { title: 'Critic', detail: 'critic on the diff; resolve material findings; the last fix is always re-reviewed' },
+    { title: 'Accept', detail: "each finding's check fails on the pre-round tree and passes now" },
   ],
 }
 
@@ -19,7 +20,7 @@ const OPTIONS = {
   scope: { default: null, about: 'required: what round 1 reviews, such as a path, a module, "the branch diff" or "the whole repository"' },
   baseRef: { default: 'main', about: 'base ref; later rounds review the diff against it' },
   instructions: { default: '', about: 'free text for every stage that judges or edits: focus, constraints, contracts to keep' },
-  followUpScope: { default: null, about: 'what later rounds review (default: diff against baseRef plus uncommitted work)' },
+  followUpScope: { default: null, about: "what every later review covers (default: the previous round's changes and their consumers, then the whole diff against baseRef once before stopping clean)" },
   verify: { default: null, about: 'checks to run (default: the repo verification contract, plus gofmt and git diff --check for Go)' },
   reviewers: { default: 3, about: 'max parallel review agents; each reviews up to eight boundaries' },
   reviewOnly: { default: false, about: 'run one review of scope and return its report; plans and edits nothing' },
@@ -31,7 +32,10 @@ const OPTIONS = {
   implementModel: { default: 'sonnet', about: 'model for implementers and first fix attempts' },
   implementEffort: { default: 'medium', about: 'effort for implementers' },
   escalateModel: { default: 'opus', about: 'model for repeated fix attempts and critic fixes' },
+  consultantModel: { default: 'opus', about: 'model for the jacoelho:consultant plan reviewers; "" uses the agent definition\'s model' },
   runModel: { default: 'haiku', about: 'model that runs verification commands' },
+  autoApprove: { default: false, about: 'implement the round-1 plan without stopping for approval' },
+  approvedPlan: { default: null, object: true, about: 'the checkpoint a plan-ready run returned, edited or not: skips round 1 review and planning and implements it' },
 }
 const usage = () => Object.fromEntries(Object.entries(OPTIONS).map(([k, o]) => [k, o.default === null || o.default === '' ? o.about : `${o.about} (default ${JSON.stringify(o.default)})`]))
 // args can arrive as an object, as that object's JSON text, or as a bare string (the scope).
@@ -55,6 +59,7 @@ const typeOf = (v) => (v === null ? 'null' : typeof v)
 const badType = Object.keys(raw).filter((k) => {
   const d = OPTIONS[k].default
   const v = raw[k]
+  if (OPTIONS[k].object) return !(v && typeof v === 'object' && !Array.isArray(v))
   if (typeof d === 'number') return !(Number.isInteger(v) && v >= 0)
   if (typeof d === 'boolean') return typeof v !== 'boolean'
   return typeof v !== 'string' // string options, including those whose default is null
@@ -66,6 +71,12 @@ if (!raw.scope) return refuse('no-scope', 'Ask the user what to remediate (a pat
 const badQuoted = ['scope', 'followUpScope', 'baseRef'].filter((k) => raw[k] != null && /["`\n\r]/.test(String(raw[k])))
 if (badQuoted.length) return refuse('bad-scope', `${badQuoted.join(', ')} must be one line without double quotes or backticks; put prose in instructions.`, { invalid: badQuoted })
 const A = Object.assign(Object.fromEntries(Object.entries(OPTIONS).map(([k, o]) => [k, o.default])), raw)
+// The approved plan comes back through the caller, possibly hand-edited: check it before anything runs.
+if (A.approvedPlan && A.reviewOnly) return refuse('conflicting-options', 'reviewOnly edits nothing and approvedPlan implements a plan; pass one of them.')
+if (A.approvedPlan) {
+  const problems = checkpointProblems(A.approvedPlan)
+  if (problems.length) return refuse('bad-approved-plan', 'approvedPlan must be the checkpoint a plan-ready run returned ({findings, plan}); fix the listed problems and call again.', { problems })
+}
 
 const SCOPE = A.scope
 const BASE = A.baseRef
@@ -75,6 +86,8 @@ const CONSULTANTS = A.consultants
 const LOW_RISK_CONSULTANTS = A.lowRiskConsultants
 const BATCH_SIZE = A.batchSize
 const MAX_ROUNDS = A.maxRounds
+const AUTO_APPROVE = A.autoApprove
+const APPROVED = A.approvedPlan
 const DRY_ROUNDS = A.dryRounds
 const IMPL_MODEL = A.implementModel
 const RUN_MODEL = A.runModel
@@ -82,7 +95,11 @@ const IMPL_EFFORT = A.implementEffort
 // Escalation for judgement-heavy repairs: failed first fix attempts and critic findings.
 const ESCALATE_MODEL = A.escalateModel
 // Reviews after the first cover only what the remediation changed; unchanged boundaries keep their ledger dispositions.
-const FOLLOWUP_SCOPE = A.followUpScope || `the branch diff against ${BASE} plus uncommitted work (changed boundaries and their consumers)`
+// A follow-up review covers the previous round's changes: earlier rounds' fixes are already in the
+// ledger, proven by their acceptance checks or carried as open. Before the run may stop clean, one
+// review of the whole remediation looks for defects that only appear where rounds interact.
+const FULL_SCOPE = `the branch diff against ${BASE} plus uncommitted work (changed boundaries and their consumers)`
+const roundScope = (round, snap) => `the changes remediation round ${round} made (the working tree against snapshot ${snap}, untracked files included) and their direct consumers`
 const VERIFY = A.verify || 'every command in the repository verification contract (AGENTS.md / CLAUDE.md / Makefile), plus gofmt and `git diff --check` for Go repositories'
 const SKILL = 'jacoelho:architecture-review'
 // Free-text user direction for the whole run (focus, constraints, contracts to keep). Every stage
@@ -92,15 +109,20 @@ const INSTRUCTIONS = A.instructions
   : ''
 // Consultants are the plugin's own read-only decision-point agent, so the type always resolves.
 const CONSULTANT = 'jacoelho:consultant'
-const consultOnce = (prompt, opts) => agent(prompt, Object.assign({}, opts, { agentType: CONSULTANT }))
+const consultOnce = (prompt, opts) => agent(prompt, Object.assign({}, opts, { agentType: CONSULTANT }, A.consultantModel ? { model: A.consultantModel } : {}))
 const BLOCKING = ['Critical', 'High', 'Medium']
 
 // The user's standing instruction; it is not part of the review skill.
 const AUTHORITY_STANCE = `
 Authority documents (ARCHITECTURE.md, AGENTS.md, decision records) are EVIDENCE of intent, not proof of correctness. Where a finding, the code and a document disagree, decide on the merits: binding external requirements (specs, public contracts, persisted data, stated limits) first, then demonstrated consequences, then the documented rationale; say which side is wrong and fix that side (the document included). A recorded rejected alternative stands only while its stated constraint still holds.`
 
+// Every tool result stays in the agent's context and is re-read on each later turn, so output volume
+// multiplies cost: in one 77-agent run, cached re-reads were 16 times the new context written.
+const OUTPUT = `
+Keep tool output small; it stays in your context for the rest of the task. Filter test and build output (\`2>&1 | tail -n 40\`, or grep for FAIL, panic and the failing test), read file ranges rather than whole files, and cap searches (\`grep -m\`, \`| head\`).`
+
 const EVIDENCE = `
-Cite only file:line you read in this run. Prefer reproducing a consequence through the public surface (throwaway module outside the repo, deleted afterwards).`
+Cite only file:line you read in this run. Prefer reproducing a consequence through the public surface (throwaway module outside the repo, deleted afterwards).` + OUTPUT
 
 // ---------- schemas ----------
 const FINDING = {
@@ -164,8 +186,13 @@ const ITEM = {
     changesTests: { type: 'boolean' },
     contractRisk: { type: 'boolean', description: 'changes a public API, persisted or wire format, documented limit or binding spec' },
     dependsOn: { type: 'array', items: { type: 'string' } },
+    acceptance: {
+      type: 'array',
+      description: 'per finding this item fixes: a command that exits 0 once the defect is gone and non-zero while it is present',
+      items: { type: 'object', properties: { findingId: { type: 'string' }, command: { type: 'string' }, proves: { type: 'string' } }, required: ['findingId', 'command', 'proves'] },
+    },
   },
-  required: ['id', 'title', 'findingIds', 'disposition', 'authorityAnalysis', 'owner', 'change', 'files', 'tests', 'needsApiDesign', 'hotPath', 'changesTests', 'contractRisk', 'dependsOn'],
+  required: ['id', 'title', 'findingIds', 'disposition', 'authorityAnalysis', 'owner', 'change', 'files', 'tests', 'needsApiDesign', 'hotPath', 'changesTests', 'contractRisk', 'dependsOn', 'acceptance'],
 }
 const PLAN = {
   type: 'object',
@@ -210,10 +237,50 @@ const BATCH_DONE = {
   },
   required: ['items'],
 }
+// No `passed` field: the verdict is computed from exit codes (verdictOf), so an agent's reading of a
+// conditional or skipped check can never fail, or pass, a run.
 const RUN = {
   type: 'object',
-  properties: { passed: { type: 'boolean' }, failures: { type: 'array', items: { type: 'string' } }, summary: { type: 'string' } },
-  required: ['passed', 'failures', 'summary'],
+  properties: {
+    commands: { type: 'array', items: { type: 'object', properties: { command: { type: 'string' }, exitCode: { type: 'integer' } }, required: ['command', 'exitCode'] } },
+    failures: { type: 'array', items: { type: 'string' }, description: 'failing package/test and key error lines, for non-zero exits only' },
+    notRun: { type: 'array', items: { type: 'string' }, description: 'checks skipped as conditional or out of scope, with the reason' },
+    summary: { type: 'string' },
+  },
+  required: ['commands', 'failures', 'summary'],
+}
+const PERF = {
+  type: 'object',
+  properties: {
+    measured: { type: 'boolean', description: 'true only if benchstat output for both trees is in hand' },
+    regressions: {
+      type: 'array',
+      items: { type: 'object', properties: { item: { type: 'string' }, benchmark: { type: 'string' }, delta: { type: 'string' }, cause: { type: 'string' } }, required: ['item', 'benchmark', 'delta'] },
+    },
+    summary: { type: 'string' },
+  },
+  required: ['measured', 'regressions', 'summary'],
+}
+const SNAPSHOT = { type: 'object', properties: { sha: { type: 'string' } }, required: ['sha'] }
+const ACCEPT = {
+  type: 'object',
+  properties: {
+    checks: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          index: { type: 'integer', description: 'the index the check was given with' },
+          afterExit: { type: 'integer' },
+          beforeExit: { type: 'integer' },
+          matched: { type: 'boolean', description: 'false when a test command selected no test' },
+          beforeFailure: { type: 'string', enum: ['assertion', 'build', 'other', 'none'] },
+        },
+        required: ['index', 'afterExit', 'beforeExit', 'matched', 'beforeFailure'],
+      },
+    },
+  },
+  required: ['checks'],
 }
 const CRITIQUE = {
   type: 'object',
@@ -223,8 +290,44 @@ const CRITIQUE = {
 
 // Compact JSON: prompts carry these blobs to every agent, so indentation is pure token cost.
 const j = (x) => JSON.stringify(x)
+// First sentence of an agent summary, for one-line progress logs; full text stays in `history`.
+const brief = (s) => { const t = String(s || '').trim().split(/(?<=[.!?])\s/)[0]; return t.length > 200 ? t.slice(0, 199) + '…' : t }
+// Benchmark comparisons belong to the round's one perf step; every other agent is told so, because
+// a fixer that re-runs the suite on its own costs hours (seen: 2h49m to confirm no regression).
+const NO_BENCH = 'Do not run benchmark comparisons or full benchmark suites: the round\'s perf step owns them. Run at most the specific benchmarks a failure or finding names.'
 const blockingOf = (fs) => fs.filter((f) => BLOCKING.includes(f.severity))
 const active = (p) => p.items.filter((it) => it.disposition !== 'reject')
+// What the critic and its fixer need from a plan: what each item changes and how it is proven.
+// The planner's authority analysis and routing flags stay with the planner and consultants.
+const compactPlan = (p) => ({
+  summary: p.summary,
+  items: p.items.map((it) => ({ id: it.id, title: it.title, findingIds: it.findingIds, disposition: it.disposition, change: it.change, deletes: it.deletes, files: it.files, docUpdates: it.docUpdates, tests: it.tests, acceptance: it.acceptance })),
+})
+
+// Shape check for a checkpoint that went through the caller. Returns problems, empty when usable.
+function checkpointProblems(c) {
+  const out = []
+  const str = (v) => typeof v === 'string' && v.length > 0
+  const findings = Array.isArray(c.findings) ? c.findings : (out.push('findings: not an array'), [])
+  findings.forEach((f, i) => { if (!f || !str(f.id) || !['Critical', 'High', 'Medium', 'Low'].includes(f.severity)) out.push(`findings[${i}]: needs id and severity`) })
+  const ids = new Set(findings.map((f) => f && f.id))
+  const items = c.plan && Array.isArray(c.plan.items) ? c.plan.items : (out.push('plan.items: not an array'), [])
+  items.forEach((it, i) => {
+    const at = `plan.items[${i}]${it && str(it.id) ? ` (${it.id})` : ''}`
+    if (!it || !str(it.id) || !str(it.title) || !str(it.change)) return out.push(`${at}: needs id, title and change`)
+    if (!['fix-code', 'fix-doc', 'fix-both', 'reject'].includes(it.disposition)) out.push(`${at}: unknown disposition ${JSON.stringify(it.disposition)}`)
+    if (!Array.isArray(it.findingIds) || it.findingIds.some((f) => !ids.has(f))) out.push(`${at}: findingIds must name findings in the checkpoint`)
+    for (const k of ['files', 'dependsOn', 'acceptance']) if (!Array.isArray(it[k])) out.push(`${at}: ${k} must be an array`)
+    if (Array.isArray(it.acceptance)) it.acceptance.forEach((a, n) => { if (!a || !str(a.findingId) || !str(a.command)) out.push(`${at}: acceptance[${n}] needs findingId and command`) })
+  })
+  const itemIds = items.map((it) => it && it.id)
+  for (const id of new Set(itemIds.filter((x, i) => itemIds.indexOf(x) !== i))) out.push(`plan.items: id ${id} used twice`)
+  for (const fid of ids) {
+    const ds = items.filter((it) => it && Array.isArray(it.findingIds) && it.findingIds.includes(fid)).map((it) => it.disposition === 'reject')
+    if (ds.includes(true) && ds.includes(false)) out.push(`finding ${fid}: both rejected and fixed by different items`)
+  }
+  return out
+}
 
 const CONSULTANT_LENSES = [
   { key: 'design-skeptic', text: 'Design and authority skeptic: does each item remove the root cause or patch a symptom; is the disposition right where code, finding and authority documents disagree; are findings misread?' },
@@ -239,6 +342,18 @@ const SOLO_LENS = { key: 'all-lenses', text: CONSULTANT_LENSES.map((l) => l.text
 // Latest disposition per finding id; earlier rounds' entries for the same id are superseded, not kept.
 const ledger = new Map()
 const ledgerText = () => (ledger.size ? j([...ledger.values()]) : 'none')
+// Latest version of every finding any review raised, so an unresolved one can be carried forward.
+const findingById = new Map()
+// Blocking findings a round planned but did not prove fixed. They stay open whether or not the
+// next review raises them again: a fresh review is no evidence the defect is gone.
+// 'planned' counts as open: a round that stopped before acceptance (verify failing, an error) proved nothing.
+const isBlocking = (fid) => findingById.has(fid) && BLOCKING.includes(findingById.get(fid).severity)
+const unproven = () => [...ledger.values()].filter((e) => (e.status === 'unresolved' || e.status === 'planned') && isBlocking(e.findingId))
+const carried = () => unproven().map((e) => findingById.get(e.findingId))
+const openFindings = (report) => {
+  const own = blockingOf(report.findings)
+  return own.concat(carried().filter((f) => !own.some((o) => o.id === f.id)))
+}
 const history = []
 const consultMissing = []
 const reviewMissing = []
@@ -254,11 +369,10 @@ const IDS = 'Give each finding a stable kebab-case id, reusing ledger ids for th
 // partition keeps related boundaries together so one agent sees both sides of shared knowledge.
 const PARTITION = `Your selection budget is ${8 * REVIEWERS} boundaries (eight per review agent), replacing the single-reviewer budget. Partition the selected boundaries into min(${REVIEWERS}, ceil(selected / 8)) groups of at most eight, keeping boundaries that share a module or consumers in the same group; when a related set exceeds eight, split it where the fewest consumers are shared and list the split in coverageNotes.`
 
-async function review(round, scope) {
+async function review(round, scope, focus) {
   phase('Review')
-  // Only after a remediation round is the diff against the base this workflow's own work.
-  const ctx = `Repository: current working directory.${round > 1 ? ` Base ref ${BASE}: the branch diff and uncommitted work against it are remediation from earlier rounds; treat what it touches as changed boundaries.` : ''}
-Prior dispositions ledger (a finding rejected with a rationale is re-raised only with evidence rebutting that rationale; a "fixed" finding is re-raised if the fix is incomplete or regressed): ${ledgerText()}
+  const ctx = `Repository: current working directory.${focus ? ` ${focus}` : ''}
+Prior dispositions ledger. status resolved: its acceptance check failed before the fix and passes now; re-raise it only by naming, with evidence, what that check does not cover. status rejected: re-raise only with evidence rebutting the rationale. status unresolved: still open; the workflow carries it forward, so raise it only with new evidence. Ledger: ${ledgerText()}
 ${AUTHORITY_STANCE}
 ${EVIDENCE}${INSTRUCTIONS}`
 
@@ -296,15 +410,24 @@ const PLAN_RULES = `- Every Critical/High/Medium finding gets an item; a Low one
 ${AUTHORITY_STANCE}
 - Dependency order. needsApiDesign for exported or cross-package Go API changes (internal packages included); hotPath for hot paths; changesTests when tests are added or materially changed; contractRisk when the item changes a public API, persisted or wire format, documented limit or binding spec.
 - docUpdates name the owner document; tests describe observable behaviour through the public surface with expectations from the requirement.
-- Implementation runs on a cheaper model: make each item's change concrete (files, symbols, target signatures, deletions) so it needs no further design judgement.${INSTRUCTIONS}`
+- Implementation runs on a cheaper model: make each item's change concrete (files, symbols, target signatures, deletions) so it needs no further design judgement.
+- acceptance: for each Critical/High/Medium finding an item fixes (not reject), at least one shell command, run from the repository root, that exits 0 once the defect is gone and non-zero while it is present. Usually it runs a test the item adds, selected exactly (\`go test -run '^TestName$' ./pkg\`); for a deleted path, a check such as \`! grep -rn 'obsoleteSymbol' internal/\`. The workflow runs it on the tree before the round with the round's test files copied in, and again after: the finding counts as fixed only if it fails before and passes after. Prefer a check that compiles against the pre-round code (through a surface the round does not change), so it fails before by assertion: a check that fails before only because the package does not build is reported as weak evidence. proves says what the passing check shows. An unresolved finding in the ledger needs a stronger fix or a corrected check.${INSTRUCTIONS}`
 
-async function plan(round, input) {
+// Lens consultants re-read the cited code themselves; the planner and reviser keep the full evidence.
+const compactFindings = (fs) => fs.map((f) => ({ id: f.id, severity: f.severity, title: f.title, location: f.location, impact: f.impact }))
+
+async function plan(round, findings) {
   phase('Plan')
+  const input = j(findings)
+  // The consultants' questions, asked by the planner first: in one run every consultant blocked the
+  // first draft and QA blocked every round, each costing a revision and a second consult pass.
+  const selfCheck = `Before returning, invoke the Skill tool with skill "jacoelho:testing" and apply its criteria to every item's tests and acceptance checks, then check the plan against the questions its reviewers will ask:\n${CONSULTANT_LENSES.map((l) => `- ${l.text}`).join('\n')}`
   let current = await agent(`Plan remediation of architecture findings in the current repository (base ref ${BASE}). Do not edit files.
 Read the repository's agent instructions and architecture documents, and the code each finding cites. Each item is a dependency-complete packet (contract, owner, invariant, path, bounds, proof, writeback). Target the clean end state: single owner, obsolete paths deleted, no shims unless a binding contract requires them.
 Findings: ${input}
 ${PLAN_RULES}
-Prior ledger: ${ledgerText()}`, { label: `plan r${round}`, phase: 'Plan', schema: PLAN })
+Prior ledger: ${ledgerText()}
+${selfCheck}${OUTPUT}`, { label: `plan r${round}`, phase: 'Plan', schema: PLAN })
   if (!current) throw new Error('planning failed')
 
   // The planner already did the research; revision edits only what advice touches.
@@ -327,16 +450,16 @@ Advice: ${j(advice)}`, { label: `revise r${round}.${pass}`, phase: 'Plan', schem
   const tag = (key, a) => (a ? Object.assign({ lens: key }, a) : null)
   const consult = (lens, i, n, pl, focus, pass) => consultOnce(`You are consultant ${i + 1}/${n}, independent of the others, reviewing a remediation plan. Lens: ${lens.text}
 Read the code the plan touches; do not edit files. Approve unless an issue would make the change wrong, incomplete or harmful; each blocking issue needs evidence (file:line, spec text or a concrete scenario) and a concrete fix. Preferences go in nonBlocking.
-${focus || ''}Findings: ${input}
+${focus || ''}Findings: ${j(compactFindings(findings))}
 Plan: ${j(pl)}
 ${AUTHORITY_STANCE}
 ${EVIDENCE}${INSTRUCTIONS}`, { label: `consult r${round}.${pass} #${i + 1} ${lens.key}`, phase: 'Consult', schema: ADVICE })
     .then((a) => tag(lens.key, a))
   const qa = (pl, focus, pass) => agent(`Invoke the Skill tool with skill "jacoelho:testing", then follow it to assess, as one batch, the tests this remediation plan proposes before any are written. Do not edit files. For each item with changesTests: are the proposed tests contract tests with expectations from the requirement, at the right level, covering boundaries, failure and opposing shapes; which are change detectors or tautologies; which existing tests must be rewritten or deleted. Return blocking issues (wrong or missing proof) with a concrete test specification each, and the final test specification per item id in nonBlocking.
 ${focus || ''}Plan: ${j(pl)}
-Testing boundaries: the repository's verification contract and test documentation.${INSTRUCTIONS}`,
+Testing boundaries: the repository's verification contract and test documentation.${OUTPUT}${INSTRUCTIONS}`,
     { label: `consult r${round}.${pass} qa-tests`, phase: 'Consult', schema: ADVICE }).then((a) => tag('qa-tests', a))
-  const api = (pl, focus, pass) => agent(`Invoke the Skill tool with skill "jacoelho:programming-go-api-design", then follow it. Task mode: review. Review, as one batch, every exported or cross-package Go API change in this remediation plan (items with needsApiDesign). Callers: find with gopls references. Compatibility: internal packages carry no external obligations; the root module's exported API is binding unless an item says otherwise. Permitted edits: none. Return blocking issues with the recommended surface and caller examples per item id.${INSTRUCTIONS}
+  const api = (pl, focus, pass) => agent(`Invoke the Skill tool with skill "jacoelho:programming-go-api-design", then follow it. Task mode: review. Review, as one batch, every exported or cross-package Go API change in this remediation plan (items with needsApiDesign). Callers: find with gopls references. Compatibility: internal packages carry no external obligations; the root module's exported API is binding unless an item says otherwise. Permitted edits: none. Return blocking issues with the recommended surface and caller examples per item id.${OUTPUT}${INSTRUCTIONS}
 ${focus || ''}Plan: ${j(pl)}`,
     { label: `consult r${round}.${pass} api-design`, phase: 'Consult', schema: ADVICE }).then((a) => tag('api-design', a))
 
@@ -431,7 +554,7 @@ function batches(items) {
   return out
 }
 
-async function implement(round, p) {
+async function implement(round, p, snap) {
   phase('Implement')
   const results = []
   // An item that did not finish poisons everything depending on it, across batches too: a split
@@ -449,65 +572,158 @@ async function implement(round, p) {
 Items: ${j(batch)}
 Plan summary: ${p.summary}${INSTRUCTIONS}
 Each item's change already includes the API-design review and its tests field is the QA assessment: write only those tests; anything more goes in followUps as a spec.
-Use gopls for identifier lookup and renames. Delete the obsolete path in the same change. Update the listed documents so code, docs and tests agree. gofmt changed files. After each item, run the affected packages' tests until they pass before starting the next. If an item is wrong or underspecified, report it blocked with the reason instead of improvising a design, and mark items that depend on it skipped.`,
+Use gopls for identifier lookup and renames. Delete the obsolete path in the same change. Update the listed documents so code, docs and tests agree. gofmt changed files. After each item, run the affected packages' tests until they pass before starting the next. If an item is wrong or underspecified, report it blocked with the reason instead of improvising a design, and mark items that depend on it skipped.${OUTPUT}`,
       { label: `impl ${ids}`, phase: 'Implement', schema: BATCH_DONE, model: IMPL_MODEL, effort: IMPL_EFFORT })
     results.push({ items: ids, done })
     const status = new Map(done ? done.items.map((r) => [r.id, r.status]) : [])
     for (const it of batch) if (status.get(it.id) !== 'done') unfinished.add(it.id)
-    log(done ? done.items.map((r) => `${r.id}: ${r.status}`).join('; ') : `${ids}: no result`)
+    log(done ? done.items.map((r) => `${r.id}: ${r.status}: ${brief(r.summary)}`).join('; ') : `${ids}: no result`)
   }
-  // One serialised benchmark comparison per round covering every hot-path item, not one per item.
+  return { results, perf: await measure(round, p, snap) }
+}
+
+// One serialised benchmark comparison per round covering every hot-path item, not one per item.
+// Returns null when no item is on a hot path; otherwise a PERF record, `measured: false` when the
+// agent died or returned without numbers, so the critic and the caller see the gap instead of a
+// fixer re-running the suite to fill it.
+async function measure(round, p, snap) {
   const hot = active(p).filter((it) => it.hotPath)
-  if (hot.length) {
-    const perf = await agent(`Measure the performance effect of this round's remediation on the hot paths it touches: ${j(hot.map((h) => ({ id: h.id, title: h.title, files: h.files })))}.
-Compare the pre-change tree (\`git worktree add\` at ${BASE} in a temp dir, removed afterwards) against the current working tree: select only benchmarks exercising those paths (the repository's documented comparison workloads where they apply), -benchmem, -count >= 10, serialised runs, benchstat. Edit scope: none. Report regressions per item with numbers and likely cause.`,
-      { label: `perf r${round}`, phase: 'Implement', agentType: 'jacoelho:programming-go-performance' })
-    results.push({ perf })
+  if (!hot.length) return null
+  const perf = await agent(`Measure the performance effect of this round's remediation on the hot paths it touches: ${j(hot.map((h) => ({ id: h.id, title: h.title, files: h.files })))}.
+Compare the pre-round tree (\`git worktree add --detach\` at ${snap}, the snapshot taken before this round, in a temp dir, removed afterwards) against the current working tree: select only benchmarks exercising those paths (the repository's documented comparison workloads where they apply), -benchmem, -count >= 10, serialised runs, benchstat. Edit scope: none. Report regressions per item with numbers and likely cause.
+Wait for every run to finish before you return: this result is final and nothing reads a later notification, so returning while a benchmark is still running loses the measurement. measured is true only if you hold benchstat output for both trees.${OUTPUT}`,
+    { label: `perf r${round}`, phase: 'Implement', agentType: 'jacoelho:programming-go-performance', schema: PERF })
+  const out = perf || { measured: false, regressions: [], summary: 'perf agent returned no result' }
+  log(`perf r${round}: ${out.measured ? `${out.regressions.length} regression(s)` : 'NOT measured'}: ${brief(out.summary)}`)
+  return out
+}
+
+// ---------- snapshot ----------
+// The tree before a round, as a commit, built through a temporary index so the user's index and
+// working tree are untouched. Round 1's edits are never committed, so baseRef is not "before round 2".
+// The commit is unreferenced; git gc prunes it after its expiry window.
+async function snapshot(round) {
+  phase('Implement')
+  const cmd = `T=$(mktemp) && cp "$(git rev-parse --git-path index)" "$T" && GIT_INDEX_FILE="$T" git add -A && git commit-tree "$(GIT_INDEX_FILE="$T" git write-tree)" -p HEAD -m "architecture-remediate: before round ${round}"; S=$?; rm -f "$T"; exit $S`
+  const r = await agent(`Run exactly this shell command from the repository root and return the commit id it prints as sha. Do not edit files or run anything else.\n${cmd}`,
+    { label: `snapshot r${round}`, phase: 'Implement', schema: SNAPSHOT, model: RUN_MODEL, effort: 'low' })
+  const sha = r && String(r.sha).trim()
+  if (!sha || !/^[0-9a-f]{40}([0-9a-f]{24})?$/.test(sha)) throw new Error(`snapshot r${round} returned no commit id (${r ? JSON.stringify(r.sha) : 'no result'})`)
+  return sha
+}
+
+// The current tree as a tree object, built the same way as the snapshot. Plain \`git diff <snap>\`
+// compares only paths in the user's index, so files that were untracked at the snapshot (every
+// earlier round's new files) would read as deleted.
+const CURRENT_TREE = `$(T=$(mktemp) && cp "$(git rev-parse --git-path index)" "$T" && GIT_INDEX_FILE="$T" git add -A && GIT_INDEX_FILE="$T" git write-tree; rm -f "$T")`
+const roundDiff = (snap, flags) => `git diff${flags ? ' ' + flags : ''} ${snap} "${CURRENT_TREE}"`
+
+// ---------- acceptance ----------
+// Every check the plan declared is judged in code from exit codes: fixed means it fails on the
+// pre-round tree (with this round's tests copied in) and passes now. A check the agent did not
+// report, or a test command that selected no test, proves nothing.
+async function accept(round, p, snap) {
+  phase('Accept')
+  const checks = active(p).flatMap((it) => (it.acceptance || []).map((a) => ({ findingId: a.findingId, command: a.command }))).map((c, index) => ({ index, ...c }))
+  const res = checks.length ? await agent(`Run acceptance checks for remediation round ${round}. Do not edit the working tree.
+After: run each command from the repository root of the current working tree.
+Before: \`git worktree add --detach <tmp> ${snap}\` (the tree before this round), copy into it every test file this round added or changed (\`${roundDiff(snap, '--name-only --diff-filter=AM')}\`; for Go, *_test.go files and testdata/ entries), run each command there, then remove the worktree.
+Return one entry per check with the index it was given. Report each command's exact exit codes. Set matched false when a test command selected no test (for go test, "no tests to run" or no test listed under -v). For a non-zero before exit, say whether it failed on a build error, an assertion or something else.${OUTPUT}
+Checks: ${j(checks)}`, { label: `accept r${round}`, phase: 'Accept', schema: ACCEPT, model: RUN_MODEL, effort: 'low' }) : null
+  const reported = (res && res.checks) || []
+  const judged = checks.map((c) => {
+    const r = reported.find((x) => x.index === c.index)
+    const why = !r ? (res ? 'not reported' : 'acceptance run returned no result')
+      : r.matched === false ? 'selected no test'
+      : r.afterExit !== 0 ? `fails after the fix (exit ${r.afterExit})`
+      : r.beforeExit === 0 ? 'passes before the fix, so it does not detect the defect'
+      : ''
+    return { ...c, passed: !why, why, weak: !why && r.beforeFailure === 'build' }
+  })
+  // A finding is fixed when it has at least one check and every check passed.
+  // A finding several items share is judged once over all their checks; a reject only stands
+  // when no item fixes it. A Low finding needs no check, so having none is not a failure.
+  const out = new Map()
+  for (const fid of new Set(p.items.flatMap((it) => it.findingIds))) {
+    if (!active(p).some((it) => it.findingIds.includes(fid))) { out.set(fid, { status: 'rejected' }); continue }
+    const mine = judged.filter((c) => c.findingId === fid)
+    const failed = mine.filter((c) => !c.passed)
+    out.set(fid, !mine.length ? (isBlocking(fid) ? { status: 'unresolved', reason: 'no acceptance check' } : { status: 'unchecked' })
+      : failed.length ? { status: 'unresolved', reason: failed.map((c) => `${c.command}: ${c.why}`).join('; ') }
+      : { status: 'resolved', check: mine.map((c) => c.command).join(' && '), weak: mine.some((c) => c.weak) })
   }
-  return results
+  const vals = [...out.values()]
+  log(`accept r${round}: ${vals.filter((v) => v.status === 'resolved').length} resolved, ${vals.filter((v) => v.status === 'unresolved').length} unresolved${judged.some((c) => c.weak) ? ', some proven only by a build failure on the old tree' : ''}`)
+  return { byFinding: out, checks: judged }
 }
 
 // ---------- verify ----------
 async function verify(label) {
   phase('Verify')
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const run = await agent(`Run ${VERIFY} in the current working directory. Do not edit files. Report each command with its exact exit code; passed is true only if every exit code is 0 (never infer success from output text). For failures give the failing package/test and key error lines, not full logs.`,
+    const run = await agent(`Run ${VERIFY} in the current working directory. Do not edit files. Report every command you ran with its exact exit code (never infer success from output text). For non-zero exits give the failing package/test and key error lines, not full logs. Benchmark comparisons (benchstat against a pre-change tree) are out of scope: the round's perf step owns them. List any check you did not run under notRun with the reason; a check not run is not a failure.${OUTPUT}`,
       { label: `verify ${label}.${attempt}`, phase: 'Verify', schema: RUN, model: RUN_MODEL, effort: 'low' })
-    // Clamp in code: a run that lists failures has not passed, whatever its flag says.
-    if (run) run.passed = !!run.passed && !(run.failures && run.failures.length)
-    if (run && run.passed) return run
-    if (attempt === 3) return run
-    await agent(`Verification failed after architecture remediation. Fix the root cause in the working tree without weakening or deleting tests and without reverting the remediation's intent; if a test encodes removed behaviour, move it to the new contract and say so. Do not commit.${INSTRUCTIONS}
+    const v = verdictOf(run)
+    log(`verify ${label}.${attempt}: ${v.passed ? 'passed' : `FAILED: ${v.failed.join('; ') || 'no commands reported'}`}`)
+    if (v.passed || attempt === 3) return v
+    const fixLabel = attempt === 1 ? `fix ${label}.${attempt}` : `fix ${label}.${attempt} (escalated)`
+    const fix = await agent(`Verification failed after architecture remediation. Fix the root cause in the working tree without weakening or deleting tests and without reverting the remediation's intent; if a test encodes removed behaviour, move it to the new contract and say so. Do not commit. ${NO_BENCH}${OUTPUT}${INSTRUCTIONS}
 Failures: ${j(run)}`,
-      attempt === 1 ? { label: `fix ${label}.${attempt}`, phase: 'Verify', schema: DONE, model: IMPL_MODEL, effort: IMPL_EFFORT } : { label: `fix ${label}.${attempt} (escalated)`, phase: 'Verify', schema: DONE, model: ESCALATE_MODEL })
+      attempt === 1 ? { label: fixLabel, phase: 'Verify', schema: DONE, model: IMPL_MODEL, effort: IMPL_EFFORT } : { label: fixLabel, phase: 'Verify', schema: DONE, model: ESCALATE_MODEL })
+    fixes.push(fixRecord(fixLabel, fix))
   }
+}
+
+// The verdict is the exit codes, nothing else: a run with no commands, or any non-zero exit, fails.
+function verdictOf(run) {
+  if (!run) return { passed: false, failed: [], failures: ['verify returned no result'], notRun: [], summary: '' }
+  const failed = run.commands.filter((c) => c.exitCode !== 0).map((c) => `${c.command} (exit ${c.exitCode})`)
+  return { passed: run.commands.length > 0 && !failed.length, failed, failures: run.failures, notRun: run.notRun || [], summary: run.summary }
+}
+
+// Fix agents change the tree, so their outcome is part of the round's record, not discarded.
+function fixRecord(label, done) {
+  const r = done ? { label, status: done.status, summary: done.summary, filesChanged: done.filesChanged || [] } : { label, status: 'no result', summary: '', filesChanged: [] }
+  log(`${label}: ${r.status}${r.summary ? `: ${brief(r.summary)}` : ''}`)
+  return r
 }
 
 // ---------- critic ----------
-async function critique(round, p, ver) {
+// At most CRITIC_FIXES fixes, and every fix is followed by another critic pass: the last fix is
+// reviewed too, and what that final pass still finds is reported unresolved.
+const CRITIC_FIXES = 2
+async function critique(round, p, ver, perf, snap) {
   phase('Critic')
   let crit = null
-  for (let pass = 1; pass <= 2; pass++) {
+  // Each pass replaces crit, so the latest verification lives outside it.
+  let verified = null
+  for (let pass = 1; ; pass++) {
     crit = await agent(`Requirements: resolve these architecture findings per the plan, preserving all binding contracts.${INSTRUCTIONS}
-Plan: ${j(p)}
-Diff: \`git diff ${BASE}\` plus untracked files from \`git status\`.
+Plan: ${j(compactPlan(p))}
+This round's diff: \`${roundDiff(snap)}\`; all remediation so far: \`git diff ${BASE}\` plus untracked files from \`git status\`.
 Verification evidence: ${j(ver)}
-Return material findings (concrete failure modes) and minor ones.`,
+Performance evidence (this round's only benchmark comparison, run before any critic fix): ${perf ? j(perf) : 'none: no item is on a hot path'}
+Judge regressions from that evidence. A missing or unmeasured comparison is already reported to the user by the workflow; do not raise it as a finding.
+Return material findings (concrete failure modes) and minor ones.${OUTPUT}`,
       { label: `critic r${round}.${pass}`, phase: 'Critic', agentType: 'jacoelho:critic', schema: CRITIQUE })
-    if (!crit) { crit = { material: [`critic r${round}.${pass} returned no result: this round's diff was not critic-reviewed`], minor: [], ran: false }; break }
-    if (!crit.material.length) break
-    await agent(`Resolve these material critic findings in the working tree within the plan's scope. Do not commit. Run the affected packages' tests.${INSTRUCTIONS}
+    if (!crit) { crit = { material: [`critic r${round}.${pass} returned no result: this round's diff was not critic-reviewed`], minor: [], ran: false }; log(`critic r${round}.${pass}: no result`); break }
+    log(`critic r${round}.${pass}: ${crit.material.length} material, ${(crit.minor || []).length} minor${crit.material.length ? `: ${crit.material.map(brief).join(' | ')}` : ''}`)
+    if (!crit.material.length || pass > CRITIC_FIXES) break
+    const fixLabel = `critic-fix r${round}.${pass}`
+    const fix = await agent(`Resolve these material critic findings in the working tree within the plan's scope. Do not commit. Run the affected packages' tests. ${NO_BENCH}${OUTPUT}${INSTRUCTIONS}
 ${j(crit.material)}
-Plan: ${j(p)}`,
-      { label: `critic-fix r${round}.${pass}`, phase: 'Critic', schema: DONE, model: ESCALATE_MODEL })
-    const rv = await verify(`r${round}c${pass}`)
-    crit.verify = rv || { passed: false, failures: ['verify returned no result'], summary: '' }
-    if (!crit.verify.passed) { crit.material.push('verification failing after critic fixes: ' + j(rv)); break }
+Plan: ${j(compactPlan(p))}`,
+      { label: fixLabel, phase: 'Critic', schema: DONE, model: ESCALATE_MODEL })
+    fixes.push(fixRecord(fixLabel, fix))
+    verified = await verify(`r${round}c${pass}`)
+    if (!verified.passed) { crit.material.push('verification failing after critic fixes: ' + j(verified)); break }
   }
-  return crit
+  return Object.assign(crit, { verify: verified })
 }
 
 // ---------- loop ----------
+const FULL_FOCUS = `Base ref ${BASE}: the branch diff and uncommitted work against it are remediation from earlier rounds; treat what it touches as changed boundaries.`
+const fullReview = () => ({ kind: 'full', scope: A.followUpScope || FULL_SCOPE, focus: FULL_FOCUS })
 // A run over its token budget dies mid-round with no result and an unverified tree. Before each
 // implementation round, stop if what remains is less than the costliest cycle so far (its review
 // included, since another review always follows a round).
@@ -519,14 +735,25 @@ let dry = 0
 let lastReview = null
 // Why the loop ended, as one tagged value; `stopReason` and the advice in `next` are both derived
 // from it, so a new kind of stop cannot go unexplained.
-//   review-incomplete {round, missing} | review-only | clean {dry} | max-rounds {open}
+//   plan-ready | review-incomplete {round, missing} | review-only | clean {dry} | max-rounds {open}
 //   | budget {remaining, costliest} | verify-failing {round} | error {message}
 let stop = null
+// Output tokens the turn had spent when the loop started; the script can read no clock and no
+// input-token count, so `cost` is a floor and the caller adds the harness's figures (COST_REPORT).
+const spentAtStart = BUDGET.spent()
 const unresolvedCritic = []
+// Rounds whose hot-path changes have no benchmark comparison: surfaced, never silently re-run.
+const unmeasured = []
+// Verify-fix and critic-fix outcomes of the current round, in order.
+let fixes = []
 // The one record of what the working tree holds; `next` is derived from it, never guessed from the
 // stop reason. untouched: no round started. unverified: a round started and did not reach a
 // verification (an error mid-round). verified / failing: the last verification of the tree.
 let tree = 'untouched'
+// The round-1 plan and the findings it answers, returned at a plan-ready stop for approval.
+let checkpoint = null
+// What the next review covers: round 1's scope, the last round's changes, or the whole remediation.
+let next = { kind: 'initial', scope: SCOPE, focus: '' }
 
 // Any throw (a dead scoping, merge or plan agent; the token budget running out mid-round) still
 // returns the report: after round 1 the tree may hold edits the caller must know about.
@@ -534,19 +761,30 @@ try {
   while (true) {
     const cycleStart = BUDGET.spent()
     reviewRound++
+    // An approved checkpoint stands in for round 1's review and plan: the user has already judged both.
+    const approved = APPROVED && reviewRound === 1 ? APPROVED : null
     const missingBefore = reviewMissing.length
-    lastReview = await review(reviewRound, reviewRound === 1 ? SCOPE : FOLLOWUP_SCOPE)
-    const open = blockingOf(lastReview.findings)
-    log(`review r${reviewRound}: ${lastReview.findings.length} findings, ${open.length} Critical/High/Medium`)
-    history.push({ review: reviewRound, findings: lastReview.findings.map((f) => `${f.severity} ${f.id}`) })
-    // A review with dead groups cannot certify the scope clean, nor be reported as a complete review.
-    const incomplete = reviewMissing.length > missingBefore
-    if (incomplete && (REVIEW_ONLY || !open.length)) { stop = { kind: 'review-incomplete', round: reviewRound, missing: reviewMissing.length - missingBefore }; break }
-    if (REVIEW_ONLY) { stop = { kind: 'review-only' }; break }
-    if (!open.length) {
-      dry++
-      if (dry >= DRY_ROUNDS) { stop = { kind: 'clean', dry }; break }
-      continue
+    lastReview = approved
+      ? { findings: approved.findings, coverage: approved.coverage || [], improvements: approved.improvements || [] }
+      : await review(reviewRound, next.scope, next.focus)
+    const reviewed = approved ? 'initial' : next.kind
+    for (const f of lastReview.findings) findingById.set(f.id, f)
+    const open = openFindings(lastReview)
+    log(`review r${reviewRound}${approved ? ' (approved checkpoint)' : ''}: ${lastReview.findings.length} findings, ${open.length} open Critical/High/Medium`)
+    history.push({ review: reviewRound, approved: !!approved, scope: reviewed, findings: lastReview.findings.map((f) => `${f.severity} ${f.id}`), carried: carried().map((f) => f.id) })
+    if (!approved) {
+      // A review with dead groups cannot certify the scope clean, nor be reported as a complete review.
+      const incomplete = reviewMissing.length > missingBefore
+      if (incomplete && (REVIEW_ONLY || !open.length)) { stop = { kind: 'review-incomplete', round: reviewRound, missing: reviewMissing.length - missingBefore }; break }
+      if (REVIEW_ONLY) { stop = { kind: 'review-only' }; break }
+      if (!open.length) {
+        // A clean review of one round's changes cannot certify the whole remediation.
+        if (reviewed === 'round') { next = fullReview(); continue }
+        dry++
+        if (dry >= DRY_ROUNDS) { stop = { kind: 'clean', dry }; break }
+        if (reviewed === 'full') next = fullReview()
+        continue
+      }
     }
     dry = 0
     if (implRounds >= MAX_ROUNDS) { stop = { kind: 'max-rounds', open: open.length }; break }
@@ -554,30 +792,52 @@ try {
       stop = { kind: 'budget', remaining: BUDGET.remaining(), costliest: costliestCycle }
       break
     }
-    const input = j(lastReview.findings)
-    implRounds++
-    const p = await plan(implRounds, input)
-    for (const it of p.items) for (const fid of it.findingIds) {
-      ledger.set(fid, { round: implRounds, findingId: fid, disposition: it.disposition, rationale: it.disposition === 'reject' ? it.authorityAnalysis : it.change.slice(0, 300) })
+    // Carried findings go back to the planner even when this review did not raise them again.
+    const input = lastReview.findings.concat(carried().filter((f) => !lastReview.findings.some((x) => x.id === f.id)))
+    const p = approved ? approved.plan : await plan(implRounds + 1, input)
+    if (implRounds === 0 && !approved && !AUTO_APPROVE) {
+      checkpoint = { findings: lastReview.findings, coverage: lastReview.coverage || [], improvements: lastReview.improvements || [], reviewMissing: reviewMissing.slice(), plan: p }
+      stop = { kind: 'plan-ready' }
+      break
     }
+    implRounds++
+    for (const fid of new Set(p.items.flatMap((it) => it.findingIds))) {
+      const it = active(p).find((x) => x.findingIds.includes(fid)) || p.items.find((x) => x.findingIds.includes(fid))
+      ledger.set(fid, { round: implRounds, findingId: fid, disposition: it.disposition, status: it.disposition === 'reject' ? 'rejected' : 'planned', rationale: it.disposition === 'reject' ? it.authorityAnalysis : it.change.slice(0, 300) })
+    }
+    // The planner must answer every open blocking finding; one it left out stays open and returns next round.
+    const omitted = open.filter((f) => !p.items.some((it) => it.findingIds.includes(f.id)))
+    for (const f of omitted) ledger.set(f.id, { round: implRounds, findingId: f.id, disposition: 'none', status: 'unresolved', reason: 'no plan item' })
+    if (omitted.length) log(`plan r${implRounds}: no item for ${omitted.map((f) => f.id).join(', ')}; carried to the next round`)
+    const snap = await snapshot(implRounds)
+    next = A.followUpScope ? { kind: 'full', scope: A.followUpScope, focus: FULL_FOCUS }
+      : { kind: 'round', scope: roundScope(implRounds, snap), focus: `Round ${implRounds}'s changes: \`${roundDiff(snap)}\`. Earlier rounds' fixes are in the ledger; review them only where this round's changes touch or rely on them.` }
     tree = 'unverified'
-    const impl = await implement(implRounds, p)
+    fixes = []
+    const impl = await implement(implRounds, p, snap)
     const ver = await verify(`r${implRounds}`)
-    const crit = await critique(implRounds, p, ver)
+    const crit = await critique(implRounds, p, ver, impl.perf, snap)
     // The tree's state is its LAST verification: the critic's fixes, when they ran, come after `ver`.
     const last = (crit && crit.verify) || ver
-    tree = last && last.passed ? 'verified' : 'failing'
+    tree = last.passed ? 'verified' : 'failing'
+    // Acceptance runs on the final tree of the round; a failing tree stops the run before it.
+    const acc = tree === 'verified' ? await accept(implRounds, p, snap) : null
+    if (acc) for (const [fid, v] of acc.byFinding) ledger.set(fid, Object.assign(ledger.get(fid), v))
     // History is returned to the calling session, so it records outcomes, not full plans and transcripts.
     history.push({
       round: implRounds,
       items: p.items.map((it) => `${it.id} [${it.disposition}] ${it.title}`),
       rejectedAdvice: p.rejectedAdvice || [],
-      impl: impl.map((r) => (r.perf ? { perf: r.perf } : { items: r.items, results: r.done ? r.done.items : 'no result', followUps: r.done ? r.done.followUps || [] : [] })),
-      verify: last ? { passed: last.passed, failures: last.failures, afterCriticFixes: last !== ver } : null,
+      impl: impl.results.map((r) => ({ items: r.items, results: r.done ? r.done.items : 'no result', followUps: r.done ? r.done.followUps || [] : [] })),
+      perf: impl.perf,
+      fixes,
+      verify: { passed: last.passed, failed: last.failed, failures: last.failures, notRun: last.notRun, afterCriticFixes: last !== ver },
       critic: crit ? { material: crit.material, minor: crit.minor || [] } : null,
+      acceptance: acc ? acc.checks : null,
     })
     costliestCycle = Math.max(costliestCycle, BUDGET.spent() - cycleStart)
     if (crit && crit.material.length) unresolvedCritic.push(...crit.material.map((m) => `round ${implRounds}: ${m}`))
+    if (impl.perf && !impl.perf.measured) unmeasured.push(implRounds)
     if (tree === 'failing') { stop = { kind: 'verify-failing', round: implRounds }; break }
   }
 } catch (e) {
@@ -589,6 +849,7 @@ try {
 function describeStop(st) {
   const k = (n) => `${Math.round(n / 1000)}k`
   switch (st.kind) {
+    case 'plan-ready': return { reason: 'round-1 plan ready for approval', why: (reviewMissing.length ? `The review was incomplete (checkpoint.reviewMissing: ${reviewMissing.join('; ')}); say so when showing the plan. ` : '') + 'Show the user checkpoint.plan (items, dispositions, acceptance checks) against checkpoint.findings and ask whether to proceed. To proceed, call again with the same args plus approvedPlan: the checkpoint, with any edits the user asks for. Pass autoApprove: true to skip this stop.' }
     case 'review-incomplete': return { reason: `review r${st.round} incomplete: ${st.missing} group(s) returned no result`, why: 'The scope was not fully reviewed (reviewMissing); re-run before trusting the result.' }
     case 'review-only': return { reason: 'review only', why: 'Review only, as requested: the findings are in finalFindings; nothing was planned.' }
     case 'clean': return { reason: `only Low findings for ${st.dry} consecutive review(s)`, why: 'Only Low findings remain (finalFindings).' }
@@ -603,6 +864,12 @@ const described = describeStop(stop)
 const stopReason = described.reason
 log(`stopped: ${stopReason}`)
 
+// What the caller owes the user about cost. The harness alone knows the agents, total tokens and
+// running time of a run (the usage block of its completion notification); the script can only ask
+// for them to be reported, and add what it does know.
+const COST_REPORT = 'Report what the run cost, in the same summary as its result: helper agents, tokens and running time from the usage block of this run\'s completion notification, with the reviews and rounds in `cost`. Say that the figures exclude the calling session, and that another run of the same number of rounds will cost about the same whatever its scope.'
+const unresolvedFindings = unproven()
+const weakFindings = [...ledger.values()].filter((e) => e.status === 'resolved' && e.weak).map((e) => e.findingId)
 const TREE = {
   untouched: 'Nothing was changed: no remediation round ran.',
   unverified: 'The run stopped mid-round, so the working tree may hold UNVERIFIED edits. Inspect git diff against baseRef before anything else; do not commit as is.',
@@ -614,14 +881,19 @@ return {
   stopKind: stop.kind,
   stopReason,
   tree,
-  next: [TREE[tree], described.why, unresolvedCritic.length ? 'Unresolved critic findings need attention first (unresolvedCritic).' : ''].filter(Boolean).join(' '),
+  next: [TREE[tree], described.why, unresolvedFindings.length ? `${unresolvedFindings.length} planned finding(s) are not proven fixed (unresolvedFindings).` : '', weakFindings.length ? `Finding(s) ${weakFindings.join(', ')} count as fixed only because their check did not build on the old tree; review those checks before trusting the fix.` : '', unresolvedCritic.length ? 'Unresolved critic findings need attention first (unresolvedCritic).' : '', unmeasured.length ? `Hot-path changes in round(s) ${unmeasured.join(', ')} have no benchmark comparison (history[].perf); measure before committing.` : '', COST_REPORT].filter(Boolean).join(' '),
+  cost: { reviews: reviewRound, rounds: implRounds, outputTokens: BUDGET.spent() - spentAtStart },
+  checkpoint,
+  unresolvedFindings,
+  weakFindings,
   unresolvedCritic,
+  unmeasured,
   consultMissing,
   reviewMissing,
   history,
   ledger: [...ledger.values()],
   finalFindings: lastReview ? lastReview.findings : null,
-  remainingBlocking: lastReview ? blockingOf(lastReview.findings) : null,
+  remainingBlocking: lastReview ? openFindings(lastReview) : null,
   improvements: lastReview ? lastReview.improvements : null,
   coverage: lastReview ? lastReview.coverage : null,
 }

@@ -15,7 +15,8 @@ const KNOWN_AGENT_TYPES = ['jacoelho:consultant', 'jacoelho:critic', 'jacoelho:p
 const finding = (id, severity = 'High') => ({ id, severity, title: id, classification: 'confirmed', location: 'a.go:1', evidence: 'e', impact: 'i', recommendation: 'r' })
 const item = (id, o = {}) => ({
   id, title: id, findingIds: [id], disposition: 'fix-code', authorityAnalysis: '', owner: 'o', change: 'c', files: [`${id}.go`], tests: 't',
-  needsApiDesign: false, hotPath: false, changesTests: false, contractRisk: false, dependsOn: [], ...o,
+  needsApiDesign: false, hotPath: false, changesTests: false, contractRisk: false, dependsOn: [],
+  acceptance: [{ findingId: id, command: `go test -run '^Test_${id}$' ./...`, proves: 'p' }], ...o,
 })
 
 
@@ -34,7 +35,7 @@ async function run(s) {
     if (L.includes(': scope')) {
       reviews++
       const g = reviews === 1 ? (s.groups ?? 1) : 1
-      const findings = reviews <= (s.blockingReviews ?? 1) ? (s.findings ?? []) : []
+      const findings = s.reviewFindings ? s.reviewFindings(reviews) : reviews <= (s.blockingReviews ?? 1) ? (s.findings ?? []) : []
       return { standard: 's', allBoundaries: ['b'], groups: Array.from({ length: g }, (_, i) => ({ name: `g${i}`, boundaries: ['b'] })), report: g === 1 ? { findings, coverage: [] } : undefined }
     }
     if (L.includes(': merge')) return { findings: s.findings ?? [], coverage: [] }
@@ -46,19 +47,31 @@ async function run(s) {
       return { approve: !block, blocking: block ? [{ item: s.blockItem ?? 'x1', issue: 'i', evidence: 'e', fix: 'f' }] : [] }
     }
     if (L.startsWith('impl')) return { items: L.slice(5).split(', ').map((id) => ({ id, status: s.implStatus?.[id] ?? 'done', summary: 'ok' })) }
-    if (s.verifyFail && s.verifyFail.test(L)) return { passed: false, failures: ['pkg/x: TestY failed'], summary: 'fail' }
-    if (L.startsWith('verify')) return s.verifyLies ? { passed: true, failures: ['pkg/x: TestY failed'], summary: 'ok?' } : { passed: true, failures: [], summary: 'ok' }
-    if (L.startsWith('critic r')) return { material: s.criticMaterial && L.endsWith('.1') ? ['m1'] : [] }
+    if (s.verifyFail && s.verifyFail.test(L)) return { commands: [{ command: 'make test', exitCode: 2 }], failures: ['pkg/x: TestY failed'], summary: 'fail' }
+    if (L.startsWith('verify')) return s.verifyRun ?? { commands: [{ command: 'make test', exitCode: 0 }], failures: [], summary: 'ok' }
+    if (L.startsWith('snapshot')) return 'snapshot' in s ? s.snapshot : { sha: 'a'.repeat(40) }
+    // Default: every declared check fails before and passes after. s.accept(check) overrides per check.
+    if (L.startsWith('accept')) {
+      if (s.nullAccept) return null
+      const checks = JSON.parse(prompt.split('\nChecks: ')[1])
+      return { checks: checks.map((c) => ({ ...c, afterExit: 0, beforeExit: 1, matched: true, beforeFailure: 'assertion', ...(s.accept ? s.accept(c, L) : {}) })) }
+    }
+    if (L.startsWith('perf')) return 'perf' in s ? s.perf : { measured: true, regressions: [], summary: 'No regression.' }
+    if (L.startsWith('critic r')) return { material: s.criticAlways || (s.criticMaterial && L.endsWith('.1')) ? ['m1'] : [] }
+    if (L.startsWith('fix') || L.startsWith('critic-fix')) return { status: 'done', summary: `fixed by ${L}. Details.` }
     return {}
   }
   const parallel = (ts) => Promise.all(ts.map((t) => t().catch(() => null)))
   const main = new Function('args', 'agent', 'parallel', 'phase', 'log', 'budget', `return (async () => {${SOURCE}\n})()`)
-  const out = await main('args' in s ? s.args : { scope: 'repo' }, agent, parallel, () => {}, () => {}, budget)
+  const logs = []
+  const out = await main('args' in s ? s.args : { scope: 'repo', autoApprove: true }, agent, parallel, () => {}, (m) => logs.push(m), budget)
   const labels = calls.map((c) => c.label)
   const planOf = (label) => calls.find((c) => c.label === label).prompt.split('Plan: ')[1].split('\n')[0]
-  return { out, calls, labels, planOf }
+  return { out, calls, labels, planOf, logs }
 }
 
+// history interleaves review entries; this is the last remediation round's record.
+const lastRound = (out) => out.history.filter((h) => h.round).at(-1)
 const count = (labels, re) => labels.filter((l) => re.test(l)).length
 
 describe('options', () => {
@@ -104,12 +117,12 @@ describe('options', () => {
   test('instructions reach every stage that judges or edits', async () => {
     const mark = 'KEEP-THE-V1-WIRE-FORMAT'
     const { calls, labels } = await run({
-      args: { scope: 'repo', instructions: mark }, groups: 3, findings: [finding('x1')],
+      args: { scope: 'repo', instructions: mark, autoApprove: true }, groups: 3, findings: [finding('x1')],
       items: [item('x1', { contractRisk: true, changesTests: true, needsApiDesign: true })], blockLabel: '#1 ',
       verifyFail: /^verify r1\.1$/, criticMaterial: true, // so the verify-fix and critic-fix agents run too
     })
     assert.ok(labels.some((l) => l.startsWith('fix r1')) && labels.some((l) => l.startsWith('critic-fix')))
-    assert.deepEqual(calls.filter((c) => !/^verify|^perf/.test(c.label) && !c.prompt.includes(mark)).map((c) => c.label), [])
+    assert.deepEqual(calls.filter((c) => !/^verify|^perf|^snapshot|^accept/.test(c.label) && !c.prompt.includes(mark)).map((c) => c.label), [])
   })
 })
 
@@ -190,9 +203,42 @@ describe('implement', () => {
     })
     assert.deepEqual(labels.filter((l) => l.startsWith('impl')), ['impl a, b, c', 'impl e'])
   })
-  test('a hot-path item triggers one benchmark run', async () => {
-    const { labels } = await run({ findings: [finding('x1')], items: [item('x1', { hotPath: true }), item('x2', { hotPath: true })] })
+  test('a hot-path item triggers one benchmark run, and the critic gets its result', async () => {
+    const perf = { measured: true, regressions: [{ item: 'x2', benchmark: 'BenchmarkHot-8', delta: '+12% sec/op' }], summary: 'One regression.' }
+    const { labels, calls, out } = await run({ findings: [finding('x1')], items: [item('x1', { hotPath: true }), item('x2', { hotPath: true })], perf })
     assert.equal(count(labels, /^perf/), 1)
+    assert.ok(calls.find((c) => c.label === 'critic r1.1').prompt.includes('BenchmarkHot-8'))
+    assert.deepEqual(out.unmeasured, [])
+  })
+  test('no hot-path item: no benchmark run, and the critic is told there is none', async () => {
+    const { labels, calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
+    assert.equal(count(labels, /^perf/), 0)
+    assert.ok(calls.find((c) => c.label === 'critic r1.1').prompt.includes('no item is on a hot path'))
+  })
+})
+
+describe('verification', () => {
+  // Seen in a real run: the verify agent listed a skipped conditional benchstat check as a failure,
+  // and the fix agent spent 2h49m re-running every benchmark to change nothing.
+  test('checks not run do not fail verification, whatever the agent puts in failures', async () => {
+    const verifyRun = { commands: [{ command: 'make test', exitCode: 0 }], failures: ['Not run: benchstat comparison'], notRun: ['benchstat: perf step owns it'], summary: 'ok' }
+    const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], verifyRun })
+    assert.equal(count(labels, /^fix /), 0)
+    assert.equal(out.tree, 'verified')
+    assert.deepEqual(lastRound(out).verify.notRun, ['benchstat: perf step owns it'])
+  })
+})
+
+describe('progress and outcomes surface', () => {
+  test('fix outcomes are kept in history and each stage logs one line', async () => {
+    const { out, logs } = await run({
+      findings: [finding('x1')], items: [item('x1', { hotPath: true })], blockingReviews: 1,
+      verifyFail: /^verify r1\.1$/, criticMaterial: true,
+    })
+    assert.deepEqual(lastRound(out).fixes.map((f) => [f.label, f.status]), [['fix r1.1', 'done'], ['critic-fix r1.1', 'done']])
+    for (const line of ['perf r1: 0 regression(s)', 'verify r1.1: FAILED: make test (exit 2)', 'fix r1.1: done: fixed by fix r1.1.', 'critic r1.1: 1 material, 0 minor: m1', 'critic-fix r1.1: done']) {
+      assert.ok(logs.some((l) => l.startsWith(line)), `no log line starting ${JSON.stringify(line)} in ${JSON.stringify(logs)}`)
+    }
   })
 })
 
@@ -202,14 +248,27 @@ describe('failures are reported, never read as success', () => {
     assert.equal(out.unresolvedCritic.length, 1)
     assert.ok(out.next.includes('Unresolved critic findings'))
   })
-  test('a verify run that lists failures has not passed', async () => {
-    const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], verifyLies: true })
+  test('a non-zero exit fails verification even when the agent lists no failures', async () => {
+    const verifyRun = { commands: [{ command: 'make test', exitCode: 0 }, { command: 'make lint', exitCode: 1 }], failures: [], summary: 'all good' }
+    const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], verifyRun })
     assert.ok(labels.some((l) => l.startsWith('fix r1')))
     assert.equal(out.stopKind, 'verify-failing')
     assert.ok(out.stopReason.startsWith('verification failing'))
     assert.ok(out.next.includes('Do not commit'))
     // Every stop explains itself: this one once fell through to no reason at all.
     assert.ok(out.next.includes('Verification still fails after round 1'))
+  })
+  test('a verify run reporting no commands has not passed', async () => {
+    const { out } = await run({ findings: [finding('x1')], items: [item('x1')], verifyRun: { commands: [], failures: [], summary: 'nothing to run' } })
+    assert.equal(out.tree, 'failing')
+  })
+  test('an unmeasured hot-path round is surfaced, whether the perf agent died or returned early', async () => {
+    for (const perf of [null, { measured: false, regressions: [], summary: 'Waiting for the benchmark run to finish.' }]) {
+      const { out } = await run({ findings: [finding('x1')], items: [item('x1', { hotPath: true })], perf })
+      assert.deepEqual(out.unmeasured, [1], `perf=${JSON.stringify(perf)}`)
+      assert.ok(out.next.includes('no benchmark comparison'))
+      assert.equal(lastRound(out).perf.measured, false)
+    }
   })
   test('a review group with no result is passed to the merge as uninspected', async () => {
     const { calls } = await run({ groups: 3, findings: [finding('x1')], items: [item('x1')], nullLabel: /^review r1: g1$/ })
@@ -220,11 +279,16 @@ describe('failures are reported, never read as success', () => {
     assert.equal(out.consultMissing.length, 1)
   })
   test('maxRounds stops with the blocking findings left and says what to do', async () => {
-    const { out, labels } = await run({ args: { scope: 'repo', maxRounds: 1 }, findings: [finding('x1')], items: [item('x1')], blockingReviews: 9 })
+    const { out, labels } = await run({ args: { scope: 'repo', maxRounds: 1, autoApprove: true }, findings: [finding('x1')], items: [item('x1')], blockingReviews: 9 })
     assert.equal(count(labels, /^plan/), 1)
     assert.equal(out.stopKind, 'max-rounds')
     assert.ok(out.stopReason.startsWith('maxRounds (1) reached'))
     assert.ok(out.next.includes('Blocking findings remain'))
+    // The script can read no clock and no token total, so it asks the caller for the harness's figures.
+    assert.ok(out.next.includes('usage block'))
+    assert.equal(out.cost.rounds, out.history.filter((h) => h.round).length)
+    assert.equal(out.cost.reviews, out.history.filter((h) => h.review).length)
+    assert.ok(out.cost.outputTokens > 0)
   })
   test('the token budget stops the run before a round it cannot cover', async () => {
     const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], blockingReviews: 9, budgetTotal: 120000 })
@@ -309,6 +373,180 @@ describe('review only', () => {
   test('round 1 does not call the existing branch diff remediation', async () => {
     const { calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
     assert.ok(!calls[0].prompt.includes('remediation from earlier rounds'))
-    assert.ok(calls.find((c) => c.label === 'review r2: scope').prompt.includes('remediation from earlier rounds'))
   })
 })
+
+describe('plan checkpoint', () => {
+  test('by default the run stops after the round-1 plan and edits nothing', async () => {
+    const { out, labels } = await run({ args: { scope: 'repo' }, findings: [finding('x1')], items: [item('x1')] })
+    assert.equal(out.stopKind, 'plan-ready')
+    assert.equal(out.tree, 'untouched')
+    assert.equal(count(labels, /^snapshot|^impl|^verify|^critic/), 0)
+    assert.deepEqual(out.checkpoint.plan.items.map((it) => it.id), ['x1'])
+    assert.deepEqual(out.checkpoint.findings.map((f) => f.id), ['x1'])
+    assert.ok(out.next.includes('approvedPlan'))
+  })
+  test('an approved checkpoint is implemented as given, without re-reviewing or re-planning round 1', async () => {
+    const first = await run({ args: { scope: 'repo' }, findings: [finding('x1')], items: [item('x1')] })
+    const edited = { ...first.out.checkpoint, plan: { ...first.out.checkpoint.plan, items: [item('x1', { title: 'USER-EDITED' })] } }
+    const { out, labels, calls } = await run({ args: { scope: 'repo', approvedPlan: edited }, findings: [finding('x1')], items: [item('x1')] })
+    assert.equal(count(labels, /^review r1|^plan r1|^consult r1/), 0)
+    assert.ok(calls.find((c) => c.label.startsWith('impl x1')).prompt.includes('USER-EDITED'))
+    assert.equal(out.stopKind, 'clean')
+    assert.equal(out.tree, 'verified')
+  })
+  test('a malformed approved plan is refused before any agent runs', async () => {
+    const bad = { findings: [finding('x1')], plan: { items: [item('x1', { findingIds: ['nope'], acceptance: 'x' })] } }
+    const { out, calls } = await run({ args: { scope: 'repo', approvedPlan: bad } })
+    assert.equal(calls.length, 0)
+    assert.equal(out.reason, 'bad-approved-plan')
+    assert.ok(out.problems.some((p) => p.includes('findingIds')) && out.problems.some((p) => p.includes('acceptance')))
+  })
+})
+
+describe('acceptance decides whether a finding is fixed', () => {
+  test('a check that fails before and passes after resolves its finding, and the run stops clean', async () => {
+    const { out } = await run({ findings: [finding('x1')], items: [item('x1')] })
+    assert.equal(out.ledger.find((e) => e.findingId === 'x1').status, 'resolved')
+    assert.deepEqual(out.unresolvedFindings, [])
+    assert.equal(out.stopKind, 'clean')
+  })
+  for (const [why, accept] of [
+    ['passes before the fix', { beforeExit: 0 }],
+    ['fails after the fix', { afterExit: 1 }],
+    ['selected no test', { matched: false }],
+  ]) {
+    test(`a check that ${why} leaves the finding open, and it is re-planned though the review no longer raises it`, async () => {
+      const { out, calls } = await run({ findings: [finding('x1')], items: [item('x1')], blockingReviews: 1, accept: (c, L) => (L === 'accept r1' ? accept : {}) })
+      const plan2 = calls.find((c) => c.label === 'plan r2')
+      assert.ok(plan2, 'round 2 planned the carried finding')
+      assert.ok(plan2.prompt.includes('"id":"x1"'))
+      assert.equal(out.ledger.find((e) => e.findingId === 'x1').status, 'resolved') // round 2's check passed
+    })
+  }
+  test('an item with no check, or a dead acceptance agent, proves nothing', async () => {
+    for (const s of [{ items: [item('x1', { acceptance: [] })] }, { items: [item('x1')], nullAccept: true }]) {
+      const { out } = await run({ findings: [finding('x1')], args: { scope: 'repo', maxRounds: 1, autoApprove: true }, ...s })
+      assert.equal(out.stopKind, 'max-rounds')
+      assert.deepEqual(out.unresolvedFindings.map((e) => e.findingId), ['x1'])
+      assert.deepEqual(out.remainingBlocking.map((f) => f.id), ['x1'])
+    }
+  })
+  test('a rejected finding needs no check and is not carried', async () => {
+    const { out } = await run({ findings: [finding('x1')], items: [item('x1', { disposition: 'reject', acceptance: [] })] })
+    assert.equal(out.ledger.find((e) => e.findingId === 'x1').status, 'rejected')
+    assert.equal(out.stopKind, 'clean')
+  })
+  test('the follow-up review sees which findings were proven fixed', async () => {
+    const { calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
+    assert.ok(calls.find((c) => c.label === 'review r2: scope').prompt.includes('"status":"resolved"'))
+  })
+  test('checks run against the pre-round snapshot, and a snapshot without a commit id stops the run', async () => {
+    const ok = await run({ findings: [finding('x1')], items: [item('x1', { hotPath: true })] })
+    for (const L of ['accept r1', 'perf r1', 'critic r1.1']) assert.ok(ok.calls.find((c) => c.label === L).prompt.includes('a'.repeat(40)), L)
+    const bad = await run({ findings: [finding('x1')], items: [item('x1')], snapshot: { sha: 'HEAD' } })
+    assert.equal(bad.out.stopKind, 'error')
+    assert.equal(count(bad.labels, /^impl/), 0)
+  })
+})
+
+describe('critic', () => {
+  test('the last critic fix is reviewed, and what that pass finds stays unresolved', async () => {
+    const { out, labels } = await run({ findings: [finding('x1')], items: [item('x1')], criticAlways: true })
+    assert.deepEqual(labels.filter((l) => l.startsWith('critic')), ['critic r1.1', 'critic-fix r1.1', 'critic r1.2', 'critic-fix r1.2', 'critic r1.3'])
+    assert.ok(out.unresolvedCritic.length > 0)
+  })
+})
+
+
+describe('critic review regressions', () => {
+  test('a critic fix that repairs failing verification leaves the tree verified', async () => {
+    // The round's own verification fails all three attempts; the critic fix makes it pass.
+    const { out } = await run({ findings: [finding('x1')], items: [item('x1')], verifyFail: /^verify r1\.\d$/, criticMaterial: true, args: { scope: 'repo', maxRounds: 1, autoApprove: true } })
+    assert.equal(out.tree, 'verified')
+    assert.equal(lastRound(out).verify.afterCriticFixes, true)
+    assert.equal(out.ledger.find((e) => e.findingId === 'x1').status, 'resolved')
+  })
+  test('a round that stops before acceptance keeps its findings open in both result lists', async () => {
+    const { out } = await run({ findings: [finding('x1')], items: [item('x1')], verifyFail: /^verify /, args: { scope: 'repo', maxRounds: 1, autoApprove: true } })
+    assert.equal(out.stopKind, 'verify-failing')
+    assert.deepEqual(out.unresolvedFindings.map((e) => e.findingId), ['x1'])
+    assert.deepEqual(out.remainingBlocking.map((f) => f.id), ['x1'])
+  })
+  test('a blocking finding the planner left out stays open', async () => {
+    const { out, logs } = await run({ findings: [finding('x1'), finding('x2')], items: [item('x1')], args: { scope: 'repo', maxRounds: 1, autoApprove: true } })
+    assert.deepEqual(out.unresolvedFindings.map((e) => e.findingId), ['x2'])
+    assert.equal(out.stopKind, 'max-rounds')
+    assert.ok(logs.some((l) => l.includes('no item for x2')))
+  })
+  test('a Low finding fixed alongside a blocking one needs no check', async () => {
+    const { out } = await run({ findings: [finding('x1'), finding('l1', 'Low')], items: [item('x1', { findingIds: ['x1', 'l1'] })] })
+    assert.equal(out.ledger.find((e) => e.findingId === 'l1').status, 'unchecked')
+    assert.deepEqual(out.unresolvedFindings, [])
+  })
+  test('a check proven only by a build failure on the old tree is called out', async () => {
+    const { out } = await run({ findings: [finding('x1')], items: [item('x1')], accept: () => ({ beforeFailure: 'build' }) })
+    assert.deepEqual(out.weakFindings, ['x1'])
+    assert.ok(out.next.includes('did not build on the old tree'))
+  })
+  test('conflicting or contradictory approved plans are refused', async () => {
+    const cp = { findings: [finding('x1')], plan: { items: [item('x1')] } }
+    const both = await run({ args: { scope: 'repo', reviewOnly: true, approvedPlan: cp } })
+    assert.equal(both.out.reason, 'conflicting-options')
+    const dup = await run({ args: { scope: 'repo', approvedPlan: { ...cp, plan: { items: [item('x1'), item('x1', { disposition: 'reject' })] } } } })
+    assert.equal(dup.out.reason, 'bad-approved-plan')
+    assert.ok(dup.out.problems.some((p) => p.includes('used twice')) && dup.out.problems.some((p) => p.includes('both rejected and fixed')))
+    assert.equal(both.calls.length + dup.calls.length, 0)
+  })
+  test('an incomplete review is carried into the checkpoint', async () => {
+    const { out } = await run({ args: { scope: 'repo' }, groups: 3, findings: [finding('x1')], items: [item('x1')], nullLabel: /^review r1: g1$/ })
+    assert.equal(out.stopKind, 'plan-ready')
+    assert.equal(out.checkpoint.reviewMissing.length, 1)
+    assert.ok(out.next.includes('review was incomplete'))
+  })
+  test('the round diff covers files untracked at the snapshot', async () => {
+    const { calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
+    for (const L of ['critic r1.1', 'accept r1']) assert.ok(calls.find((c) => c.label === L).prompt.includes('GIT_INDEX_FILE'), L)
+  })
+})
+
+describe('follow-up review scope', () => {
+  const scopeOf = (calls, r) => calls.find((c) => c.label === `review r${r}: scope`).prompt
+  test("a follow-up reviews the last round's changes, then the whole remediation once before stopping clean", async () => {
+    const { out, calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
+    assert.ok(scopeOf(calls, 2).includes(`snapshot ${'a'.repeat(40)}`))
+    assert.ok(!scopeOf(calls, 2).includes('remediation from earlier rounds'))
+    assert.ok(scopeOf(calls, 3).includes('branch diff against main'))
+    assert.deepEqual(out.history.filter((h) => h.review).map((h) => h.scope), ['initial', 'round', 'full'])
+    assert.equal(out.stopKind, 'clean')
+  })
+  test('a finding in the whole-remediation review starts another round', async () => {
+    // Reviews 1 and 3 (the full one) report x1; the round-scoped review 2 is clean.
+    let n = 0
+    const { calls } = await run({ findings: [finding('x1')], items: [item('x1')], args: { scope: 'repo', maxRounds: 2, autoApprove: true }, reviewFindings: () => (++n === 2 ? [] : n <= 3 ? [finding('x1')] : []) })
+    assert.ok(calls.some((c) => c.label === 'plan r2'))
+  })
+  test('a caller-supplied followUpScope is used for every follow-up, with no extra review', async () => {
+    const { out, calls } = await run({ findings: [finding('x1')], items: [item('x1')], args: { scope: 'repo', followUpScope: 'internal/billing', autoApprove: true } })
+    assert.ok(scopeOf(calls, 2).includes('internal/billing'))
+    assert.equal(out.history.filter((h) => h.review).length, 2)
+    assert.equal(out.stopKind, 'clean')
+  })
+})
+
+describe('consultants', () => {
+  test('consultantModel sets the consultant model; empty uses the agent definition', async () => {
+    const risky = [item('x1', { contractRisk: true })]
+    const dflt = await run({ findings: [finding('x1')], items: risky })
+    assert.deepEqual([...new Set(dflt.calls.filter((c) => c.agentType === 'jacoelho:consultant').map((c) => c.model))], ['opus'])
+    const def = await run({ findings: [finding('x1')], items: risky, args: { scope: 'repo', consultantModel: '', autoApprove: true } })
+    assert.deepEqual([...new Set(def.calls.filter((c) => c.agentType === 'jacoelho:consultant').map((c) => c.model))], [undefined])
+  })
+  test('consultants get findings without evidence; the planner keeps it', async () => {
+    const f = { ...finding('x1'), evidence: 'EVIDENCE-TEXT-123' }
+    const { calls } = await run({ findings: [f], items: [item('x1')] })
+    assert.ok(calls.find((c) => c.label === 'plan r1').prompt.includes('EVIDENCE-TEXT-123'))
+    assert.ok(calls.filter((c) => c.agentType === 'jacoelho:consultant').every((c) => !c.prompt.includes('EVIDENCE-TEXT-123')))
+  })
+})
+
