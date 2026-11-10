@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 
-// Run with: node --test tests/workflows/
+// Run with: node --test tests/workflows/*.check.mjs (a bare directory matches no file: Node does not
+// discover the .check.mjs suffix, and reports 0 tests as success).
 // Not part of `claude plugin test`: its runner imports files as modules, and a workflow script
 // (top-level `return`) is not one.
 // Drives workflows/architecture-remediate.js with scripted agents: these tests check the control
@@ -20,6 +21,9 @@ const item = (id, o = {}) => ({
 })
 
 
+// What the fake charges per agent call; budget tests derive their thresholds from it.
+const CALL_COST = 10000
+
 async function run(s) {
   const calls = []
   let reviews = 0
@@ -28,7 +32,7 @@ async function run(s) {
   const agent = async (prompt, o) => {
     const L = o.label
     calls.push({ label: L, prompt, agentType: o.agentType, model: o.model })
-    spent += 10000
+    spent += CALL_COST
     if (s.nullLabel && s.nullLabel.test(L)) return null
     if (s.throwLabel && s.throwLabel.test(L)) throw new Error('token budget exhausted')
     if (o.agentType && !KNOWN_AGENT_TYPES.includes(o.agentType)) throw new Error(`unknown agent ${o.agentType}`)
@@ -350,6 +354,14 @@ describe('review only', () => {
     assert.ok(out.stopReason.startsWith('review r1 incomplete'))
     assert.ok(out.next.includes('not fully reviewed'))
   })
+  test('a count outside its range is refused before any agent starts', async () => {
+    // batchSize 0 never advances the batching loop; consultants 0 skips review of a risky plan.
+    for (const args of [{ scope: 'repo', batchSize: 0 }, { scope: 'repo', reviewers: 0 }, { scope: 'repo', reviewers: 9 }, { scope: 'repo', consultants: 0 }, { scope: 'repo', dryRounds: 0 }]) {
+      const { out, calls } = await run({ args })
+      assert.equal(calls.length, 0, JSON.stringify(args))
+      assert.equal(out.reason, 'bad-option-type', JSON.stringify(args))
+    }
+  })
   test('an option of the wrong type is refused, never read as its default', async () => {
     for (const args of [{ scope: 'repo', reviewOnly: 'true' }, { scope: 'repo', reviewers: '3' }, { scope: 7 }]) {
       const { out, calls } = await run({ args })
@@ -507,6 +519,8 @@ describe('critic review regressions', () => {
   test('the round diff covers files untracked at the snapshot', async () => {
     const { calls } = await run({ findings: [finding('x1')], items: [item('x1')] })
     for (const L of ['critic r1.1', 'accept r1']) assert.ok(calls.find((c) => c.label === L).prompt.includes('GIT_INDEX_FILE'), L)
+    // A copied file list loses moved tests; a patch carries adds, edits, deletes and renames.
+    assert.ok(calls.find((c) => c.label === 'accept r1').prompt.includes('| git -C <tmp> apply'))
   })
 })
 
@@ -529,8 +543,67 @@ describe('follow-up review scope', () => {
   test('a caller-supplied followUpScope is used for every follow-up, with no extra review', async () => {
     const { out, calls } = await run({ findings: [finding('x1')], items: [item('x1')], args: { scope: 'repo', followUpScope: 'internal/billing', autoApprove: true } })
     assert.ok(scopeOf(calls, 2).includes('internal/billing'))
-    assert.equal(out.history.filter((h) => h.review).length, 2)
+    assert.deepEqual(out.history.filter((h) => h.review).map((h) => h.scope), ['initial', 'caller'])
     assert.equal(out.stopKind, 'clean')
+  })
+})
+
+// Rules carried only in prompt text: these tests are what fails when a prompt loses one.
+describe('standing rules reach the agents they bind', () => {
+  // One run, shared by the tests below, that starts every kind of agent: risky item (QA, API, perf),
+  // a blocked consultant (revise), a failed first verification (fix) and a critic finding (critic-fix).
+  let shared
+  const everyAgent = () => (shared ??= run({
+    findings: [finding('x1')],
+    items: [item('x1', { contractRisk: true, hotPath: true, changesTests: true, needsApiDesign: true })],
+    blockLabel: '#1 ', verifyFail: /^verify r1\.1$/, criticMaterial: true,
+  }))
+  test('every agent that reads or runs code is told to keep tool output small', async () => {
+    const { calls } = await everyAgent()
+    for (const kind of [/^review r1: scope/, /^plan/, /^consult .* #/, /qa-tests/, /api-design/, /^revise/, /^impl/, /^perf/, /^verify/, /^fix/, /^critic r/, /^critic-fix/, /^accept/]) {
+      assert.ok(calls.some((c) => kind.test(c.label)), `scenario starts no ${kind} agent`)
+    }
+    // The snapshot agent runs one fixed command and reads nothing.
+    const missing = calls.filter((c) => !c.label.startsWith('snapshot') && !c.prompt.includes('Keep tool output small')).map((c) => c.label)
+    assert.deepEqual(missing, [])
+  })
+  test('the planner checks its draft against the testing criteria and every consultant lens', async () => {
+    const { calls } = await everyAgent()
+    const prompt = calls.find((c) => c.label === 'plan r1').prompt
+    for (const text of ['jacoelho:testing', 'Design and authority skeptic', 'Simplicity and ownership', 'Risk, verification and external contracts']) assert.ok(prompt.includes(text), text)
+  })
+  test('no agent but the perf step is allowed to run benchmark comparisons', async () => {
+    const { calls } = await everyAgent()
+    const missing = calls.filter((c) => /^(impl|verify|fix|critic)/.test(c.label) && !/do not run benchmark comparisons/i.test(c.prompt)).map((c) => c.label)
+    assert.deepEqual(missing, [])
+  })
+})
+
+describe('token budget covers the reviews a clean stop needs', () => {
+  // Costs come from an unbudgeted run of the same scenario: the review's cost, and what was spent
+  // before a given agent started.
+  async function costs(s) {
+    const { labels } = await run(s)
+    return { review: count(labels, /^review r1/) * CALL_COST, before: (label) => labels.indexOf(label) * CALL_COST }
+  }
+  test('a budget too small for the whole-remediation review stops instead of skipping it', async () => {
+    const s = { findings: [finding('x1')], items: [item('x1')] }
+    const c = await costs(s)
+    // Enough for the round review (one call), not for the full review after it.
+    const { out, labels } = await run({ ...s, budgetTotal: c.before('review r2: scope') + CALL_COST + c.review - 1 })
+    assert.equal(count(labels, /^review r3/), 0)
+    assert.equal(out.stopKind, 'budget')
+    assert.equal(out.tree, 'verified')
+    assert.ok(out.next.includes('NOT reviewed as a whole'))
+  })
+  test('a round is not started when the budget covers the round but not the review after it', async () => {
+    const s = { findings: [finding('x1')], items: [item('x1')], blockingReviews: 9, args: { scope: 'repo', maxRounds: 2, autoApprove: true } }
+    const c = await costs(s)
+    const cycle = c.before('review r2: scope')
+    // At the round guard (after review r2, one call) what remains covers the round but not the review after it.
+    const { out, labels } = await run({ ...s, budgetTotal: cycle + CALL_COST + cycle + c.review - 1 })
+    assert.equal(count(labels, /^plan r2/), 0)
+    assert.equal(out.stopKind, 'budget')
   })
 })
 

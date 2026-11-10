@@ -1,7 +1,7 @@
 export const meta = {
   name: 'architecture-remediate',
   description: 'Loop: /jacoelho:architecture-review -> plan with acceptance checks -> risk-sized consultants -> batched implement -> verify -> critic -> acceptance, until no Critical/High/Medium finding is open (Go-oriented defaults)',
-  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. By default the run stops after the round-1 plan (stopKind plan-ready) so the user can approve or edit it; continue with the same args plus approvedPlan (the returned checkpoint), or pass autoApprove:true to run unattended. Returns stopKind (plan-ready, review-incomplete, review-only, clean, max-rounds, budget, verify-failing, error), stopReason (the same in words), tree, next (what the caller should do now) and the findings left. Costly, and the cost follows the number of rounds, not the size of the scope: a round (review, plan, consultants, implementers, verification, critic) has used about 15 to 20 agents, 2 million tokens and 1.5 hours on a 20,000-line repository, and the default allows four. Tell the user that before starting. To spend less: maxRounds 1 or 2, reviewers 1, a token target, and a baseRef that already holds earlier remediation, since later rounds review the whole diff against baseRef. When it finishes, report the cost with the result (see next).',
+  whenToUse: 'Fix architecture findings end to end, editing the working tree without committing. Args: {scope (required), baseRef="main", instructions}; a bare string is the scope. If the user named no scope, ask for one instead of calling with none: a bare call starts nothing. Pass reviewOnly:true for a wide read-only review split across agents (edits nothing). Pass "help" for every option with its default. By default the run stops after the round-1 plan (stopKind plan-ready) so the user can approve or edit it; continue with the same args plus approvedPlan (the returned checkpoint), or pass autoApprove:true to run unattended. Returns stopKind (plan-ready, review-incomplete, review-only, clean, max-rounds, budget, verify-failing, error), stopReason (the same in words), tree, next (what the caller should do now) and the findings left. Costly, and the cost follows the number of rounds, not the size of the scope: a round (review, plan, consultants, implementers, verification, critic) has used about 15 to 20 agents, 2 million tokens and 1.5 hours on a 20,000-line repository, and the default allows four. Tell the user that before starting. To spend less: maxRounds 1 or 2, reviewers 1, a token target, and a baseRef that already holds earlier remediation, since the review before a clean stop covers the whole diff against baseRef. When it finishes, report the cost with the result (see next).',
   phases: [
     { title: 'Review', detail: 'jacoelho:architecture-review: scoping (reviews alone when one group), parallel group reviews, merge' },
     { title: 'Plan', detail: 'dispositions on the merits; dependency-ordered packets' },
@@ -18,17 +18,17 @@ export const meta = {
 // meta.whenToUse names only the common ones, since meta must be a literal and cannot read this.
 const OPTIONS = {
   scope: { default: null, about: 'required: what round 1 reviews, such as a path, a module, "the branch diff" or "the whole repository"' },
-  baseRef: { default: 'main', about: 'base ref; later rounds review the diff against it' },
+  baseRef: { default: 'main', about: 'base ref; the one review of the whole remediation before a clean stop covers the diff against it' },
   instructions: { default: '', about: 'free text for every stage that judges or edits: focus, constraints, contracts to keep' },
   followUpScope: { default: null, about: "what every later review covers (default: the previous round's changes and their consumers, then the whole diff against baseRef once before stopping clean)" },
   verify: { default: null, about: 'checks to run (default: the repo verification contract, plus gofmt and git diff --check for Go)' },
-  reviewers: { default: 3, about: 'max parallel review agents; each reviews up to eight boundaries' },
+  reviewers: { default: 3, min: 1, max: 8, about: 'max parallel review agents; each reviews up to eight boundaries' },
   reviewOnly: { default: false, about: 'run one review of scope and return its report; plans and edits nothing' },
-  consultants: { default: 3, about: 'consultants for a plan touching a contract, hot path or exported API' },
-  lowRiskConsultants: { default: 1, about: 'consultants for any other plan' },
-  batchSize: { default: 3, about: 'max linked plan items per implementer' },
+  consultants: { default: 3, min: 1, max: 6, about: 'consultants for a plan touching a contract, hot path or exported API' },
+  lowRiskConsultants: { default: 1, max: 6, about: 'consultants for any other plan' },
+  batchSize: { default: 3, min: 1, about: 'max linked plan items per implementer' },
   maxRounds: { default: 4, about: 'max implementation rounds' },
-  dryRounds: { default: 1, about: 'clean reviews in a row needed to stop; above 1 re-reviews an unchanged tree' },
+  dryRounds: { default: 1, min: 1, about: 'clean whole-scope reviews (initial, full or followUpScope) in a row needed to stop; a clean review of one round\'s changes never counts, it leads to a full review; above 1 re-reviews an unchanged tree' },
   implementModel: { default: 'sonnet', about: 'model for implementers and first fix attempts' },
   implementEffort: { default: 'medium', about: 'effort for implementers' },
   escalateModel: { default: 'opus', about: 'model for repeated fix attempts and critic fixes' },
@@ -37,7 +37,9 @@ const OPTIONS = {
   autoApprove: { default: false, about: 'implement the round-1 plan without stopping for approval' },
   approvedPlan: { default: null, object: true, about: 'the checkpoint a plan-ready run returned, edited or not: skips round 1 review and planning and implements it' },
 }
-const usage = () => Object.fromEntries(Object.entries(OPTIONS).map(([k, o]) => [k, o.default === null || o.default === '' ? o.about : `${o.about} (default ${JSON.stringify(o.default)})`]))
+const bounds = (o) => ({ min: o.min || 0, max: o.max ?? Infinity })
+const range = (o) => { const b = bounds(o); return typeof o.default !== 'number' ? '' : b.max < Infinity ? `, ${b.min} to ${b.max}` : `, at least ${b.min}` }
+const usage = () => Object.fromEntries(Object.entries(OPTIONS).map(([k, o]) => [k, o.default === null || o.default === '' ? o.about : `${o.about} (default ${JSON.stringify(o.default)}${range(o)})`]))
 // args can arrive as an object, as that object's JSON text, or as a bare string (the scope).
 // Every refusal returns started:false with a `next` for the caller instead of throwing: nothing ran,
 // and the caller should fix the call, not debug a crash.
@@ -55,16 +57,18 @@ const unknown = Object.keys(raw).filter((k) => !(k in OPTIONS))
 if (unknown.length) return refuse('unknown-option', `Unknown option(s) ${unknown.join(', ')}; correct the names against usage and call again.`, { unknown })
 // Each option has its default's type. A wrong type is refused rather than read as the default:
 // reviewOnly: "true" read as false would run a full remediation the caller asked to avoid.
+// Numbers also have a range: batchSize 0 never advances the batching loop, consultants 0 would
+// skip review of a risky plan unannounced, and fan-out options bound how many agents run at once.
 const typeOf = (v) => (v === null ? 'null' : typeof v)
 const badType = Object.keys(raw).filter((k) => {
   const d = OPTIONS[k].default
   const v = raw[k]
   if (OPTIONS[k].object) return !(v && typeof v === 'object' && !Array.isArray(v))
-  if (typeof d === 'number') return !(Number.isInteger(v) && v >= 0)
+  if (typeof d === 'number') { const b = bounds(OPTIONS[k]); return !(Number.isInteger(v) && v >= b.min && v <= b.max) }
   if (typeof d === 'boolean') return typeof v !== 'boolean'
   return typeof v !== 'string' // string options, including those whose default is null
 })
-if (badType.length) return refuse('bad-option-type', `Option(s) ${badType.map((k) => `${k} (got ${typeOf(raw[k])} ${JSON.stringify(raw[k])})`).join(', ')} have the wrong type; see usage for each default.`, { invalid: badType })
+if (badType.length) return refuse('bad-option-type', `Option(s) ${badType.map((k) => `${k} (got ${typeOf(raw[k])} ${JSON.stringify(raw[k])})`).join(', ')} have the wrong type or are out of range; see usage for each default and range.`, { invalid: badType })
 // A run edits the working tree, so its target is never a default: a bare invocation starts nothing.
 if (!raw.scope) return refuse('no-scope', 'Ask the user what to remediate (a path, a module, "the branch diff" or "the whole repository") and any instructions, then call again with {scope, instructions?}.')
 // scope, followUpScope and baseRef are quoted inside the review skill's args, so a quote or newline would break that invocation.
@@ -436,7 +440,7 @@ You own the decision: adopt what the evidence supports; list the rest in rejecte
 Findings: ${input}
 ${PLAN_RULES}
 Current plan: ${j(current)}
-Advice: ${j(advice)}`, { label: `revise r${round}.${pass}`, phase: 'Plan', schema: PLAN })
+Advice: ${j(advice)}${OUTPUT}`, { label: `revise r${round}.${pass}`, phase: 'Plan', schema: PLAN })
 
   const isRisky = (pl) => active(pl).some((it) => it.contractRisk || it.hotPath || it.needsApiDesign)
   const lensesFor = (pl) => (isRisky(pl)
@@ -572,7 +576,7 @@ async function implement(round, p, snap) {
 Items: ${j(batch)}
 Plan summary: ${p.summary}${INSTRUCTIONS}
 Each item's change already includes the API-design review and its tests field is the QA assessment: write only those tests; anything more goes in followUps as a spec.
-Use gopls for identifier lookup and renames. Delete the obsolete path in the same change. Update the listed documents so code, docs and tests agree. gofmt changed files. After each item, run the affected packages' tests until they pass before starting the next. If an item is wrong or underspecified, report it blocked with the reason instead of improvising a design, and mark items that depend on it skipped.${OUTPUT}`,
+Use gopls for identifier lookup and renames. Delete the obsolete path in the same change. Update the listed documents so code, docs and tests agree. gofmt changed files. After each item, run the affected packages' tests until they pass before starting the next. If an item is wrong or underspecified, report it blocked with the reason instead of improvising a design, and mark items that depend on it skipped. ${NO_BENCH}${OUTPUT}`,
       { label: `impl ${ids}`, phase: 'Implement', schema: BATCH_DONE, model: IMPL_MODEL, effort: IMPL_EFFORT })
     results.push({ items: ids, done })
     const status = new Map(done ? done.items.map((r) => [r.id, r.status]) : [])
@@ -627,7 +631,7 @@ async function accept(round, p, snap) {
   const checks = active(p).flatMap((it) => (it.acceptance || []).map((a) => ({ findingId: a.findingId, command: a.command }))).map((c, index) => ({ index, ...c }))
   const res = checks.length ? await agent(`Run acceptance checks for remediation round ${round}. Do not edit the working tree.
 After: run each command from the repository root of the current working tree.
-Before: \`git worktree add --detach <tmp> ${snap}\` (the tree before this round), copy into it every test file this round added or changed (\`${roundDiff(snap, '--name-only --diff-filter=AM')}\`; for Go, *_test.go files and testdata/ entries), run each command there, then remove the worktree.
+Before: \`git worktree add --detach <tmp> ${snap}\` (the tree before this round), apply this round's test-file changes to it as a patch, so added, edited, deleted and moved tests all carry over (\`${roundDiff(snap, '--binary')} -- <test paths> | git -C <tmp> apply\`, with pathspecs for the repository's test files; for Go, '*_test.go' '*testdata/*'), run each command there, then remove the worktree.
 Return one entry per check with the index it was given. Report each command's exact exit codes. Set matched false when a test command selected no test (for go test, "no tests to run" or no test listed under -v). For a non-zero before exit, say whether it failed on a build error, an assertion or something else.${OUTPUT}
 Checks: ${j(checks)}`, { label: `accept r${round}`, phase: 'Accept', schema: ACCEPT, model: RUN_MODEL, effort: 'low' }) : null
   const reported = (res && res.checks) || []
@@ -661,7 +665,7 @@ Checks: ${j(checks)}`, { label: `accept r${round}`, phase: 'Accept', schema: ACC
 async function verify(label) {
   phase('Verify')
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const run = await agent(`Run ${VERIFY} in the current working directory. Do not edit files. Report every command you ran with its exact exit code (never infer success from output text). For non-zero exits give the failing package/test and key error lines, not full logs. Benchmark comparisons (benchstat against a pre-change tree) are out of scope: the round's perf step owns them. List any check you did not run under notRun with the reason; a check not run is not a failure.${OUTPUT}`,
+    const run = await agent(`Run ${VERIFY} in the current working directory. Do not edit files. Report every command you ran with its exact exit code (never infer success from output text). For non-zero exits give the failing package/test and key error lines, not full logs. ${NO_BENCH} List any check you did not run under notRun with the reason; a check not run is not a failure.${OUTPUT}`,
       { label: `verify ${label}.${attempt}`, phase: 'Verify', schema: RUN, model: RUN_MODEL, effort: 'low' })
     const v = verdictOf(run)
     log(`verify ${label}.${attempt}: ${v.passed ? 'passed' : `FAILED: ${v.failed.join('; ') || 'no commands reported'}`}`)
@@ -703,7 +707,7 @@ Plan: ${j(compactPlan(p))}
 This round's diff: \`${roundDiff(snap)}\`; all remediation so far: \`git diff ${BASE}\` plus untracked files from \`git status\`.
 Verification evidence: ${j(ver)}
 Performance evidence (this round's only benchmark comparison, run before any critic fix): ${perf ? j(perf) : 'none: no item is on a hot path'}
-Judge regressions from that evidence. A missing or unmeasured comparison is already reported to the user by the workflow; do not raise it as a finding.
+Judge regressions from that evidence; do not run benchmark comparisons yourself. A missing or unmeasured comparison is already reported to the user by the workflow; do not raise it as a finding.
 Return material findings (concrete failure modes) and minor ones.${OUTPUT}`,
       { label: `critic r${round}.${pass}`, phase: 'Critic', agentType: 'jacoelho:critic', schema: CRITIQUE })
     if (!crit) { crit = { material: [`critic r${round}.${pass} returned no result: this round's diff was not critic-reviewed`], minor: [], ran: false }; log(`critic r${round}.${pass}: no result`); break }
@@ -723,12 +727,19 @@ Plan: ${j(compactPlan(p))}`,
 
 // ---------- loop ----------
 const FULL_FOCUS = `Base ref ${BASE}: the branch diff and uncommitted work against it are remediation from earlier rounds; treat what it touches as changed boundaries.`
-const fullReview = () => ({ kind: 'full', scope: A.followUpScope || FULL_SCOPE, focus: FULL_FOCUS })
-// A run over its token budget dies mid-round with no result and an unverified tree. Before each
-// implementation round, stop if what remains is less than the costliest cycle so far (its review
-// included, since another review always follows a round).
+// What a follow-up review covers. A caller-supplied followUpScope replaces both kinds; history records
+// it as 'caller', since it is not a review of the whole remediation.
+const followUp = (kind, round, snap) => (A.followUpScope ? { kind: 'caller', scope: A.followUpScope, focus: FULL_FOCUS }
+  : kind === 'round' ? { kind, scope: roundScope(round, snap), focus: `Round ${round}'s changes: \`${roundDiff(snap)}\`. Earlier rounds' fixes are in the ledger; review them only where this round's changes touch or rely on them.` }
+  : { kind: 'full', scope: FULL_SCOPE, focus: FULL_FOCUS })
+// A run over its token budget dies mid-round with no result and an unverified tree, so each kind of
+// spend is checked before it starts, whatever transition leads there. Before a review: the costliest
+// review so far. Before an implementation round: the costliest cycle (review and round) plus one more
+// review, since a clean stop after the round needs a round review and a full review.
 const BUDGET = typeof budget === 'undefined' ? { total: null, spent: () => 0, remaining: () => Infinity } : budget
 let costliestCycle = 0
+let costliestReview = 0
+const overBudget = (need, before) => (BUDGET.total && BUDGET.remaining() < need ? { kind: 'budget', remaining: BUDGET.remaining(), need, before, scope: next.kind } : null)
 let reviewRound = 0
 let implRounds = 0
 let dry = 0
@@ -736,7 +747,7 @@ let lastReview = null
 // Why the loop ended, as one tagged value; `stopReason` and the advice in `next` are both derived
 // from it, so a new kind of stop cannot go unexplained.
 //   plan-ready | review-incomplete {round, missing} | review-only | clean {dry} | max-rounds {open}
-//   | budget {remaining, costliest} | verify-failing {round} | error {message}
+//   | budget {remaining, need, before: review | round, scope} | verify-failing {round} | error {message}
 let stop = null
 // Output tokens the turn had spent when the loop started; the script can read no clock and no
 // input-token count, so `cost` is a floor and the caller adds the harness's figures (COST_REPORT).
@@ -759,6 +770,7 @@ let next = { kind: 'initial', scope: SCOPE, focus: '' }
 // returns the report: after round 1 the tree may hold edits the caller must know about.
 try {
   while (true) {
+    if ((stop = overBudget(costliestReview, 'review'))) break
     const cycleStart = BUDGET.spent()
     reviewRound++
     // An approved checkpoint stands in for round 1's review and plan: the user has already judged both.
@@ -767,6 +779,7 @@ try {
     lastReview = approved
       ? { findings: approved.findings, coverage: approved.coverage || [], improvements: approved.improvements || [] }
       : await review(reviewRound, next.scope, next.focus)
+    if (!approved) costliestReview = Math.max(costliestReview, BUDGET.spent() - cycleStart)
     const reviewed = approved ? 'initial' : next.kind
     for (const f of lastReview.findings) findingById.set(f.id, f)
     const open = openFindings(lastReview)
@@ -779,19 +792,16 @@ try {
       if (REVIEW_ONLY) { stop = { kind: 'review-only' }; break }
       if (!open.length) {
         // A clean review of one round's changes cannot certify the whole remediation.
-        if (reviewed === 'round') { next = fullReview(); continue }
+        if (reviewed === 'round') { next = followUp('full'); continue }
         dry++
         if (dry >= DRY_ROUNDS) { stop = { kind: 'clean', dry }; break }
-        if (reviewed === 'full') next = fullReview()
+        if (reviewed !== 'initial') next = followUp('full')
         continue
       }
     }
     dry = 0
     if (implRounds >= MAX_ROUNDS) { stop = { kind: 'max-rounds', open: open.length }; break }
-    if (BUDGET.total && costliestCycle && BUDGET.remaining() < costliestCycle) {
-      stop = { kind: 'budget', remaining: BUDGET.remaining(), costliest: costliestCycle }
-      break
-    }
+    if (costliestCycle && (stop = overBudget(costliestCycle + costliestReview, 'round'))) break
     // Carried findings go back to the planner even when this review did not raise them again.
     const input = lastReview.findings.concat(carried().filter((f) => !lastReview.findings.some((x) => x.id === f.id)))
     const p = approved ? approved.plan : await plan(implRounds + 1, input)
@@ -810,8 +820,7 @@ try {
     for (const f of omitted) ledger.set(f.id, { round: implRounds, findingId: f.id, disposition: 'none', status: 'unresolved', reason: 'no plan item' })
     if (omitted.length) log(`plan r${implRounds}: no item for ${omitted.map((f) => f.id).join(', ')}; carried to the next round`)
     const snap = await snapshot(implRounds)
-    next = A.followUpScope ? { kind: 'full', scope: A.followUpScope, focus: FULL_FOCUS }
-      : { kind: 'round', scope: roundScope(implRounds, snap), focus: `Round ${implRounds}'s changes: \`${roundDiff(snap)}\`. Earlier rounds' fixes are in the ledger; review them only where this round's changes touch or rely on them.` }
+    next = followUp('round', implRounds, snap)
     tree = 'unverified'
     fixes = []
     const impl = await implement(implRounds, p, snap)
@@ -852,9 +861,17 @@ function describeStop(st) {
     case 'plan-ready': return { reason: 'round-1 plan ready for approval', why: (reviewMissing.length ? `The review was incomplete (checkpoint.reviewMissing: ${reviewMissing.join('; ')}); say so when showing the plan. ` : '') + 'Show the user checkpoint.plan (items, dispositions, acceptance checks) against checkpoint.findings and ask whether to proceed. To proceed, call again with the same args plus approvedPlan: the checkpoint, with any edits the user asks for. Pass autoApprove: true to skip this stop.' }
     case 'review-incomplete': return { reason: `review r${st.round} incomplete: ${st.missing} group(s) returned no result`, why: 'The scope was not fully reviewed (reviewMissing); re-run before trusting the result.' }
     case 'review-only': return { reason: 'review only', why: 'Review only, as requested: the findings are in finalFindings; nothing was planned.' }
-    case 'clean': return { reason: `only Low findings for ${st.dry} consecutive review(s)`, why: 'Only Low findings remain (finalFindings).' }
+    case 'clean': return { reason: `only Low findings for ${st.dry} consecutive whole-scope review(s)`, why: 'Only Low findings remain (finalFindings).' }
     case 'max-rounds': return { reason: `maxRounds (${MAX_ROUNDS}) reached with ${st.open} blocking finding(s)`, why: 'Blocking findings remain (remainingBlocking); re-run with a narrower scope or instructions.' }
-    case 'budget': return { reason: `token budget: ${k(st.remaining)} left, the costliest review-and-fix cycle so far used ${k(st.costliest)}`, why: 'Stopped before another round to stay within the token budget.' }
+    case 'budget': return {
+      reason: `token budget: ${k(st.remaining)} left, ${st.before === 'round' ? 'another round and its reviews need' : 'the next review needs'} about ${k(st.need)}`,
+      why: st.before === 'round' ? 'Stopped before another round to stay within the token budget.' : {
+        initial: 'Stopped before re-reviewing the scope (dryRounds) to stay within the token budget.',
+        round: 'The last round\'s changes were NOT reviewed; run /jacoelho:architecture-review on them before committing.',
+        full: 'The last round\'s changes reviewed clean, but the whole remediation was NOT reviewed as a whole against baseRef; run /jacoelho:architecture-review on the diff before committing.',
+        caller: 'The last round was NOT reviewed in followUpScope; review it before committing.',
+      }[st.scope],
+    }
     case 'verify-failing': return { reason: `verification failing after round ${st.round}`, why: `Verification still fails after round ${st.round}'s fix attempts (last history entry); fix or revert before re-running.` }
     case 'error': return { reason: `error: ${st.message}`, why: `The run failed: ${st.message}.` }
   }
