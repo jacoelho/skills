@@ -1,6 +1,6 @@
 {
   "name": "jacoelho",
-  "description": "Personal skills, subagents and hooks (context handoff): Go API design and performance, testing, specs, architecture review, technical writing.",
+  "description": "Personal skills, subagents and hooks (prompt intake, context handoff): Go API design and performance, testing, specs, architecture review, technical writing.",
   "author": {
     "name": "José Coelho"
   },
@@ -9,6 +9,19 @@
   "license": "MIT",
   "types": "./types/index.d.ts",
   "userConfig": {
+    "intake_effort": {
+      "type": "string",
+      "title": "Prompt intake: effort",
+      "description": "How hard the session's model thinks when it sorts an intake: message. Thinking counts toward the reply cap, which grows with effort (low 4096, medium 8192, higher 16384 tokens) and is reserved against your output-token rate limit, so higher levels are slower and more likely to hit a 429.",
+      "options": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "default": "low"
+    },
     "handoff_offer_at": {
       "type": "number",
       "title": "Handoff: offer at (% of auto-compact)",
