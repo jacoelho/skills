@@ -8,14 +8,7 @@ Take an important sentence and construct two implementations that interpret it d
 
 “Keep the latest record” is unresolved until the relevant clock, comparison, tie, missing value, and scope of identity are known. It need not specify a sorting algorithm.
 
-When the decision is not settled interactively, record the fork in the decision record:
-
-```text
-Question: <one concrete choice>
-Case: <small input, state, or event that separates the choices>
-Why it matters: <observable consequence or blocked work>
-Options: <materially different outcomes>
-```
+When the decision is not settled interactively, record the fork in the decision record as an open question in the shape `jacoelho:spectacular-spec-grilling` uses: decision ID, case, why it matters, options ([question block](../../spectacular-spec-grilling/assets/session.md#next-question)).
 
 ## Write a decidable obligation
 
@@ -53,22 +46,10 @@ Do not ask for a statistical measure when the actual obligation is a hard per-op
 
 Use an alternative-mechanism test: would a different implementation preserve all of the caller's promises and binding constraints? If yes, the mechanism can usually be proposed separately or left open.
 
-Do not apply this as “all technical detail is design”. Public schemas, error semantics, memory lifetimes, and numerical behaviour can be essential obligations. An authorised deployment or dependency constraint also remains binding even when not directly user-visible.
-
-## Structure and verifiability
-
-Before leaving structure open, apply a verifiability test: could affordable evidence at the contract's boundary distinguish a correct implementation from a plausible wrong one? Evidence gathered only end to end can leave wrong compositions undetected when the implementer chooses the decomposition. Adding behavioural text does not close that gap; a structural commitment can.
-
-Make one when the test fails and the work spans several components or implementers. Bind only what the evidence needs: boundary-crossing types, module boundaries, signatures, or permitted dependencies. Leave private helpers open. A bounded change to existing code starts from a structure the code already fixes; refer to the boundary it changes instead.
-
-Hold the commitment as declarations in the source language, such as stubs with types, signatures, and documented contracts, committed and reviewed with the code. Prose architecture descriptions are a weaker form. Keep stub contracts short; correct but over-detailed ones can reduce an implementer's accuracy.
-
-The capability contract stays organised by outcome and records only the commitment's location and reason. A stub contract refines a requirement and cites its identifier; it states no caller-visible behaviour that a requirement does not settle. A cross-component invariant remains an `INV` declaration in its owning contract. Check each component's obligations at that component's boundary, and keep capability-boundary evidence for how the components compose.
-
-A poor decomposition becomes a commitment that takes a decision to undo. Treat a structural commitment as a design decision with a recorded basis, not as a default.
+Do not apply this as “all technical detail is design”. Public schemas, error semantics, memory lifetimes, and numerical behaviour can be essential obligations. An authorised deployment or dependency constraint also remains binding even when not directly user-visible. When leaving structure open would make a wrong composition undetectable, make a [structural commitment](structure.md).
 
 ## Acceptance shape
 
-A criterion records the situation, expected observation, prohibited observation where relevant, expectation's basis, and test boundary. For important cases, name a deliberately wrong implementation or changed input that should make the check fail.
+A criterion records the situation, expected observation, prohibited observation where relevant, the oracle behind the expectation, and the test boundary; [declarations](declarations.md#fields) names the fields. For important cases, name a deliberately wrong implementation or changed input that should make the check fail.
 
 An invariant or a rule over every member of a domain defaults to a property check with a named input domain; a list of examples is enough only when the domain can be enumerated. A property can be useful without being an independent basis for the requirement. For example, idempotence can verify a chosen deduplication rule without establishing that the user's workflow wants that rule.

@@ -2,7 +2,7 @@
 
 ## Review the obligations, not their vocabulary
 
-Read [EARS requirements](../../spectacular-spec-writing/references/ears.md) for the single requirement syntax and its terms. The normalisation below is a temporary comparison aid, not another way to author requirements. Carry each EARS clause and its referenced scope into the comparison.
+Read [EARS requirements](../../spectacular-spec-writing/references/ears.md) for the single requirement syntax and [terms](../../spectacular-spec-writing/references/terms.md) for its vocabulary. The normalisation below is a temporary comparison aid, not another way to author requirements. Carry each EARS clause and its referenced scope into the comparison.
 
 Normalise each consequential rule temporarily as:
 

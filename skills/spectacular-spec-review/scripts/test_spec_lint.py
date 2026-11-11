@@ -33,7 +33,7 @@ class SpecLintTests(unittest.TestCase):
             f"### {kind}-TEST-001\nStatus: {status}\nStatement: {statement}\n"
             "Basis: Authorised test contract.\n\n"
             "### AC-TEST-001\n"
-            f"Covers: {kind}-TEST-001\nExpected: The agreed observation.\n"
+            f"Covers: {kind}-TEST-001\nExpected: The agreed observation.\nVerification: Planned.\n"
         )
 
     def symlink(self, link: Path, target: Path) -> None:
@@ -349,7 +349,7 @@ class SpecLintTests(unittest.TestCase):
                     result = self.scan_text(text)
                     self.assertEqual(result.exit_code(strict=True), 1)
                     self.assertEqual(result.declarations, 2)
-                    self.assertEqual([(f.code, f.line) for f in result.findings], [("unsupported-field", 12)])
+                    self.assertEqual([(f.code, f.line) for f in result.findings], [("unsupported-field", 13)])
         illustrative = self.document("The notes service shall withhold inaccessible notes.") + (
             "\n| Rule reference | Expected |\n| --- | --- |\n"
             "| [REQ-TEST-001](https://example.test/rules) | `[Statement](url): literal` |\n"
@@ -384,7 +384,7 @@ class SpecLintTests(unittest.TestCase):
             with self.subTest(table=table):
                 text = self.document("The notes service shall withhold inaccessible notes.") + "\n" + table
                 result = self.scan_text(text)
-                expected = [("unsupported-field", 12)] if table in rejected else []
+                expected = [("unsupported-field", 13)] if table in rejected else []
                 self.assertEqual([(f.code, f.line) for f in result.findings], expected)
                 self.assertEqual(result.declarations, 2)
                 self.assertEqual(result.exit_code(strict=True), int(table in rejected))
@@ -396,7 +396,7 @@ class SpecLintTests(unittest.TestCase):
                     "\nID | **Statement**\n" + gap + "--- | ---\n"
                 )
                 result = self.scan_text(text)
-                expected = [("unsupported-field", 12)] if not gap else []
+                expected = [("unsupported-field", 13)] if not gap else []
                 self.assertEqual([(f.code, f.line) for f in result.findings], expected)
                 self.assertEqual(result.declarations, 2)
 
@@ -404,8 +404,8 @@ class SpecLintTests(unittest.TestCase):
         prefix = "| Field |\n| --- |\n"
         field = "| Statement: The alarm may restart. |\n"
         cases = (
-            (prefix + field + "---\n", 14),
-            (prefix + field + "===\n", 14),
+            (prefix + field + "---\n", 15),
+            (prefix + field + "===\n", 15),
             (prefix + "\n" + field + "---\n", None),
             (prefix + "```text\nA literal example.\n```\n" + field + "---\n", None),
             (prefix + "### Commentary\n" + field + "---\n", None),
@@ -413,12 +413,12 @@ class SpecLintTests(unittest.TestCase):
             (prefix + '| "Statement: The alarm may restart." |\n---\n', None),
             (prefix + "`Statement: The alarm may restart.`\n", None),
             (prefix + '"Statement: The alarm may restart."\n', None),
-            (prefix + "**Statement**: The alarm may restart.\n", 14),
-            (prefix + "[Statement](url): The alarm may restart.\n", 14),
-            (prefix + "Ordinary body text\n" + field + "---\n", 15),
-            ("Field | Expected\n- | -\nvalue | Statement: The alarm may restart.\n---\n", 14),
+            (prefix + "**Statement**: The alarm may restart.\n", 15),
+            (prefix + "[Statement](url): The alarm may restart.\n", 15),
+            (prefix + "Ordinary body text\n" + field + "---\n", 16),
+            ("Field | Expected\n- | -\nvalue | Statement: The alarm may restart.\n---\n", 15),
             (prefix + "---\n" + field + "---\n", None),
-            (prefix + "===\n" + field + "---\n", 15),
+            (prefix + "===\n" + field + "---\n", 16),
         )
         for table, error_line in cases:
             with self.subTest(table=table):
@@ -430,7 +430,7 @@ class SpecLintTests(unittest.TestCase):
 
     def test_table_content_cannot_supply_declaration_fields(self) -> None:
         requirement = "<!-- spec-lint: active -->\n## REQ-TEST-001\n"
-        acceptance = "\n## AC-TEST-001\nCovers: REQ-TEST-001\nExpected: The alarm stops.\n"
+        acceptance = "\n## AC-TEST-001\nCovers: REQ-TEST-001\nExpected: The alarm stops.\nVerification: Planned.\n"
         missing_statement = requirement + "Status: proposed\nRationale: A table follows.\n"
         cases = (
             (missing_statement + "| Field |\n| --- |\nStatement: The alarm service shall stop.\n"
@@ -440,8 +440,8 @@ class SpecLintTests(unittest.TestCase):
             (requirement + "Statement: The alarm service shall stop.\nRationale: A table follows.\n"
              "| Field |\n| --- |\nStatus: proposed\n" + acceptance, 7, "invalid-status", 2),
             (requirement + "Status: proposed\nStatement: The alarm service shall stop.\nRationale: A rule.\n"
-             "\n## AC-TEST-001\nCovers: REQ-TEST-001\nRationale: A table follows.\n"
-             "| Field |\n| --- |\nExpected: The alarm stops.\n", 12, "missing-expected", 7),
+             "\n## AC-TEST-001\nCovers: REQ-TEST-001\nVerification: Planned.\nRationale: A table follows.\n"
+             "| Field |\n| --- |\nExpected: The alarm stops.\n", 13, "missing-expected", 7),
         )
         for text, error_line, missing_code, declaration_line in cases:
             with self.subTest(text=text):
@@ -467,8 +467,8 @@ class SpecLintTests(unittest.TestCase):
                 self.assertEqual(result.exit_code(strict=True), 1)
                 self.assertEqual(result.active_documents, 1)
                 self.assertEqual(result.declarations, 3)
-                self.assertEqual([(f.code, f.line) for f in result.findings if f.code == "invalid-fence"], [("invalid-fence", 12)])
-                self.assertEqual([(f.code, f.line) for f in result.findings if f.code == "invalid-ears"], [("invalid-ears", 15)])
+                self.assertEqual([(f.code, f.line) for f in result.findings if f.code == "invalid-fence"], [("invalid-fence", 13)])
+                self.assertEqual([(f.code, f.line) for f in result.findings if f.code == "invalid-ears"], [("invalid-ears", 16)])
 
     def test_malformed_opener_before_marker_preserves_active_scope(self) -> None:
         text = "```json `response`\n" + self.document("The notes service shall withhold inaccessible notes.")
@@ -567,6 +567,7 @@ Basis: DEC-BOOK-001.
 ### AC-BOOK-001 — Cancelled booking
 Covers: REQ-BOOK-001
 Expected: The booking is cancelled.
+Verification: Planned.
 """,
                 encoding="utf-8",
             )
@@ -655,6 +656,7 @@ Status: historical prose, not a second field.
 ### AC-BOOK-001 — Cancelled booking
 Covers: REQ-BOOK-001
 Expected: The booking is cancelled.
+Verification: Planned.
 """,
                 encoding="utf-8",
             )
@@ -1214,9 +1216,13 @@ Statement: When a pending booking is cancelled, the booking service shall change
             ),
             "invalid status": (base.replace("Status: accepted", "Status: draft"), [("invalid-status", 3)]),
             "missing basis": (base.replace("Basis: Authorised test contract.\n", ""), [("missing-basis", 3)]),
+            "oracle on a requirement": (
+                base.replace("contract.\n", "contract.\nOracle: The product owner's decision.\n", 1),
+                [("invalid-oracle-owner", 7)],
+            ),
             "duplicate id": (
                 base + "\n### REQ-TEST-001\nStatus: proposed\nStatement: The alarm service shall stop.\n",
-                [("duplicate-id", 3), ("duplicate-id", 12), ("ambiguous-reference", 9)],
+                [("duplicate-id", 3), ("duplicate-id", 13), ("ambiguous-reference", 9)],
             ),
         }
         for label, (text, expected) in cases.items():

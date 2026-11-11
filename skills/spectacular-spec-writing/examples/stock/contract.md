@@ -35,6 +35,6 @@ Basis: Stock policy adopted by the inventory product owner.
 Covers: INV-STOCK-001
 Situation: Stock S has 2 total units; any generated sequence of booking, cancellation, and repeated cancellation requests for S is sent to the booking service API.
 Expected: After every request, stock S reports between 0 and 2 available units.
-Basis: The inventory owner's stock policy fixes the bound independently of the booking implementation.
+Oracle: The inventory owner's stock policy fixes the bound independently of the booking implementation.
 Verification: Planned property test at the booking service API; not executed.
 Counterexample: A repeated cancellation that releases its unit twice reports 3 available units.

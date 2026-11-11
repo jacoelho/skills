@@ -18,7 +18,7 @@ IDENTIFIER_START = re.compile(rf"{PREFIXES}(?:-[A-Z0-9]+)+")
 CANDIDATE = re.compile(rf"{PREFIXES}-")
 HEADING = re.compile(r"^(#{1,6})[ \t]+(.+?)\s*#*\s*$")
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
-FIELD_LABELS = r"Status|Statement|Basis|References|Covers|Expected"
+FIELD_LABELS = r"Status|Statement|Basis|References|Covers|Situation|Expected|Oracle|Verification|Counterexample"
 FIELD = re.compile(rf"^({FIELD_LABELS}):[ \t]*(.*)$")
 CLAUSE_SEPARATOR = re.compile(r",[ \t]+(?=(?:where|while|when|if|then|the)\b)", re.IGNORECASE)
 OBLIGATION = re.compile(r"\bshall\b", re.IGNORECASE)
@@ -603,13 +603,14 @@ def scan(inputs: Iterable[Path]) -> Result:
                 result.add("error", "missing-basis", block.path, block.line,
                            f"{block.identifier} claims acceptance without a recorded basis.")
         if kind == "AC":
-            for name in ("Covers", "Expected"):
+            for name in ("Covers", "Expected", "Verification"):
                 if block.absent(name):
                     result.add("error", f"missing-{name.lower()}", block.path, block.line,
                                f"{block.identifier} needs a {name} field.")
-        if "Covers" in block.fields and kind != "AC":
-            result.add("error", "invalid-covers-owner", block.path, block.fields["Covers"][1],
-                       "Only AC declarations may use Covers.")
+        for name in ("Covers", "Situation", "Oracle", "Verification", "Counterexample"):
+            if name in block.fields and kind != "AC":
+                result.add("error", f"invalid-{name.lower()}-owner", block.path, block.fields[name][1],
+                           f"Only AC declarations may use {name}.")
         for name in ("References", "Covers"):
             if name not in block.fields or name in block.placeholders:
                 continue

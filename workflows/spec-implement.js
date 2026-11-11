@@ -18,7 +18,7 @@ const OPTIONS = {
   contracts: { default: null, about: 'contract paths to implement (a list, or one path); required unless record is given' },
   record: { default: null, about: 'path of an implementation record to resume; re-invoking with it approves the gate the run stopped at' },
   instructions: { default: '', about: 'free text every agent must follow' },
-  gates: { default: ['plan', 'discard'], about: 'where to stop for approval: "plan" (only when the design adds a seam, module or dependency), "change" (after each change), "discard" (before discarding a feature spec); [] runs unattended' },
+  gates: { default: ['plan', 'discard'], about: 'where to stop for approval: "plan" (only when the design adds a seam, module or dependency), "change" (after each change), "discard" (before discarding a feature contract); [] runs unattended' },
   concurrency: { default: 3, min: 1, max: 8, about: 'max units per wave' },
   models: { default: { planner: 'opus', testWriter: 'sonnet', implementer: 'sonnet', runner: 'haiku', reviewer: 'opus', recorder: 'sonnet' }, object: true, about: 'model per role: a model name, or "inherit" for the session model; missing roles keep their default.' },
   maxAttempts: { default: 2, min: 1, max: 5, about: 'attempts per unit with the implementer model before one attempt with the planner model; then the unit is blocked' },
@@ -369,12 +369,12 @@ async function run() {
     }
     if (plan.lifecycle === 'feature' && opt.gates.includes('discard')) {
       await writeRecord(plan, 'discard gate', 'discard-ready')
-      return out(plan, 'discard-ready', `Everything is accepted. Show the user the discard gate for the feature spec; on approval, ${RERUN} to discard it.`)
+      return out(plan, 'discard-ready', `Everything is accepted. Show the user the discard gate for the feature contract; on approval, ${RERUN} to discard it.`)
     }
   }
 
   phase('Close')
-  const closed = await agent(brief('planner', `Close the implementation by its lifecycle as the skill's Execute section describes. Acceptance and conformance are already done by other roles: do not repeat them. Your summary is shown to the user: list the files you edited or created and the open questions you carried into the decision record, and do not question instructions you followed. Carry every open question in the record into the capability's decision record (jacoelho:spectacular-spec-grilling's Decision record section says where) before the record can be deleted. ${plan.lifecycle === 'feature' ? 'Check the discard gate, then discard the feature spec.' : `Mark each AC's Verification as executed, naming its test${opt.keepRecord ? ', and update the record\'s contract hashes to the edited contracts' : ''}.`} ${opt.keepRecord ? 'Keep the record and set its status to accepted.' : 'Then delete the record.'}`, { record: plan.record, lifecycle: plan.lifecycle, keepRecord: opt.keepRecord }),
+  const closed = await agent(brief('planner', `Close the implementation by its lifecycle as the skill's Execute section describes. Acceptance and conformance are already done by other roles: do not repeat them. Your summary is shown to the user: list the files you edited or created and the open questions you carried into the decision record, and do not question instructions you followed. Carry every open question in the record into the capability's decision record (jacoelho:spectacular-spec-grilling's Decision record section says where) before the record can be deleted. ${plan.lifecycle === 'feature' ? 'Check the discard gate, then discard the feature contract.' : `Mark each AC's Verification as executed, naming its test${opt.keepRecord ? ', and update the record\'s contract hashes to the edited contracts' : ''}.`} ${opt.keepRecord ? 'Keep the record and set its status to accepted.' : 'Then delete the record.'}`, { record: plan.record, lifecycle: plan.lifecycle, keepRecord: opt.keepRecord }),
     { label: 'close', phase: 'Close', schema: CLOSE, model: MODEL.planner })
   if (!closed || !closed.closed) return out(plan, 'error', `Closing did not complete${closed ? `: ${closed.summary}` : ''}; ${RERUN}.`)
   return out(plan, 'done', `Report to the user: ${closed.summary} The tree is uncommitted; review and commit it.`, { discarded: closed.discarded, specBlocked: plan.specBlocked })

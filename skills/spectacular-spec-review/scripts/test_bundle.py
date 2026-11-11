@@ -30,7 +30,7 @@ def anchors(document: Path) -> set[str]:
     return {re.sub(r"[^\w\- ]", "", title.lower()).replace(" ", "-") for title in HEADING.findall(text)}
 LINTABLE_FENCE = re.compile(r"^```markdown spec-lint\n(.*?)^```$", re.MULTILINE | re.DOTALL)
 # Any recognised field that still contains a bracket is unfilled template text.
-UNFILLED_FIELD = re.compile(r"^(?:Status|Statement|Basis|References|Covers|Expected): .*\[")
+UNFILLED_FIELD = re.compile(r"^(?:Status|Statement|Basis|References|Covers|Situation|Expected|Oracle|Verification|Counterexample): .*\[")
 
 
 def sibling(name: str) -> Path:

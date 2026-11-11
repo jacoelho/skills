@@ -17,7 +17,7 @@ Add limit, permission, retry, ordering, concurrency, or time cases only when the
 
 ## Establish the oracle
 
-Every expected result needs an oracle: a domain-reviewed decision or example, a binding external contract, or a separately justified property. Name its source, version, or owner when available.
+Every expected result needs an oracle: a domain-reviewed decision or example, a binding external contract, or a separately justified property. Name its source, version, or owner when available. In a contract it is the AC's `Oracle:` field; in a feature file it is the `# Oracle:` header line.
 
 These are not oracles: the implementation's output, the production query or helper the system itself uses, a fixture that repeats that logic, or another agent's agreement. A property derived only from a disputed rule checks conformance to that rule; it does not justify it.
 
@@ -34,4 +34,4 @@ Start a `.feature` file from [the feature template](../assets/feature.template).
 
 ## Link scenarios from the contract
 
-With the bundled declaration layout, record coverage with a pointer AC: `Covers:` names the rule and `Expected:` names the scenario. The linter does not read `.feature` files, so the pointer AC is the only coverage record. [The booking example](../examples/booking-cancellation/) shows a contract, its feature file, and the pointer ACs; lint `examples/` as one root, because it references an invariant owned by the stock contract.
+Record coverage with a pointer AC ([declarations](declarations.md#fields)): `Covers:` names the rule and `Expected:` names the scenario, and the feature file's header names the oracle, so the AC carries no `Oracle:` or `Situation:` of its own. The linter does not read `.feature` files, so the pointer AC is the only coverage record. [The booking example](../examples/booking-cancellation/) shows a contract, its feature file, and the pointer ACs; lint `examples/` as one root, because it references an invariant owned by the stock contract.
