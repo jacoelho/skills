@@ -10,11 +10,15 @@ Classify each disagreement with [the source mismatch classes](mismatch.md) befor
 
 When a contract changes, preserve enough prior wording and decision history for a reviewer to see what changed and why, following repository convention. Keep that history outside the current contract; readers should not have to apply a sequence of contradictory amendments to learn the active rule.
 
-Keep unresolved replacement proposals in the working record. Challenging an existing obligation does not retire it: retain its identified source until an authorised revision or governing source settles what applies, and isolate work that depends on the conflict.
+Keep unresolved replacement proposals in the decision record. Challenging an existing obligation does not retire it: retain its identified source until an authorised revision or governing source settles what applies, and isolate work that depends on the conflict.
+
+## Defects
+
+For a defect, deliver a reproduction as an executed observation, the governing REQ or INV (or the `unspecified case` class when none settles it), the behaviour the fix must preserve, and an AC whose counterexample is the reproduction. Change contract text only for a specification defect; an implementation defect leaves the contract as it is.
 
 ## Impact envelope
 
-Trace the changed obligation to related rules, examples, verification, interfaces, consumers, existing data, pending work, and in-flight operations when they can affect this increment. Inspect direct references and the few semantic dependencies needed to avoid a false handoff; do not turn the impact pass into an inventory of the whole system.
+Trace the changed obligation to related rules, examples, verification, interfaces, consumers, existing data, pending work, and in-flight operations when they can affect this change. Inspect direct references and the few semantic dependencies needed to avoid a false handoff; do not turn the impact pass into an inventory of the whole system.
 
 For a deliberate change to shipped behaviour, identify coexistence or correction obligations only when an existing external contract, deployed behaviour, persisted data, in-flight operation, compatibility promise, or other binding constraint requires them. A new or greenfield requirement does not create a migration obligation by itself.
 
@@ -26,4 +30,4 @@ List which earlier results are invalidated and which remain relevant. An unchang
 
 Identify the contract revision in the next handoff. Communicate changed obligations and cancelled work to affected implementers, and point them to the evidence they must refresh. Independent work can continue when it does not depend on the changed decision.
 
-Distinguish recommending a correction from possessing authority to adopt it. Record user-provided decisions directly; do not create unnecessary repeat-approval gates. When authority or evidence for a replacement is absent, preserve the existing contract, record the proposal and affected work in the task or decision record, and make the consequence explicit.
+Distinguish recommending a correction from possessing authority to adopt it. Record user-provided decisions directly; do not create unnecessary repeat-approval gates. When authority or evidence for a replacement is absent, preserve the existing contract, record the proposal and affected work in the decision record, and make the consequence explicit.

@@ -1,6 +1,6 @@
 # Requirements clarification: [capability]
 
-Use this shape only when no existing task or decision record already captures the scope, evidence, answers, and handoff. Update one authoritative record rather than creating a parallel ledger.
+Use this shape only when no existing decision record already captures the scope, evidence, answers, and handoff. Update that record instead of starting a second one.
 
 Session status: [active / handed off / stopped / awaiting evidence]
 Scope: [next bounded commitment]
@@ -56,4 +56,4 @@ Restart: [retrieve the named sources, compare their current state with this reco
 
 This record is an input to the maintained specification, not a second normative specification or evidence that implementation passed.
 
-If a settled answer needs a proposed requirement statement for handoff, write it in EARS using the skill's `references/ears.md`, identify its basis, and label it non-governing until adopted in the maintained contract. Open questions remain questions rather than incomplete requirement templates.
+If a settled answer needs a proposed requirement statement for handoff, write it in EARS using `spectacular-spec-writing/references/ears.md`, identify its basis, and label it non-governing until adopted in the maintained contract. Open questions remain questions rather than incomplete requirement templates.

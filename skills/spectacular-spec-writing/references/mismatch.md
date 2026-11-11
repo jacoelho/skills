@@ -1,6 +1,6 @@
 # Source mismatches
 
-Use these names when a specification, decision, code path, test, example, or external contract disagree. Classify the mismatch with a concrete input, state, or event before editing any source; the class decides which source changes. Every Spectacular skill ships an identical copy of this file.
+Use these names when a specification, decision, code path, test, example, or external contract disagree. Classify the mismatch with a concrete input, state, or event before editing any source; the class decides which source changes.
 
 | Class | Recognise it when | Repair |
 | --- | --- | --- |
@@ -13,6 +13,6 @@ Use these names when a specification, decision, code path, test, example, or ext
 | contradiction | Two governing obligations cannot both hold for a shared applicable case. | Their authority, then a deliberate revision or scope change. |
 | environment changed | The environment no longer supports an assumption the promise relied on. | Reassessment of the affected promise, recovery, and feasibility. |
 | undesirable mechanism | A mechanism is undesirable but its behaviour satisfies the contract. | The design, while retaining the contract. |
-| unresolved conflict | Authority or evidence is insufficient to choose which source should change. | Preserve the existing contract, record the question and affected work with its owner in the task or decision record, and isolate dependent work. |
+| unresolved conflict | Authority or evidence is insufficient to choose which source should change. | Preserve the existing contract, record the question and affected work with its owner in the decision record, and isolate dependent work. |
 
 Code describes actual behaviour, not automatically intended behaviour. A test demonstrates an encoded expectation, not automatically the governing requirement. Preserve the evidence needed to decide which source is wrong, and correct that source rather than synchronising every source to the same mistake.

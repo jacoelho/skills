@@ -5,6 +5,7 @@
 
 Contract revision: example-1
 Decision owner: inventory product owner
+Lifecycle: anchored
 Effective scope: booking service, target version
 
 ## Intent and boundary

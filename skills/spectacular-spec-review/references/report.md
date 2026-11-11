@@ -1,17 +1,19 @@
 # Review report template
 
+A layout for larger reviews. Include only the sections and assessments the review scope covers, and omit the rest.
+
 ## Basis
 
-Scope: [bounded capability/increment].
+Scope: [bounded capability or change].
 Reviewed state: [document revisions or workspace state].
 Sources inspected: [current contracts, shared interfaces, decisions, relevant checks].
 Limits: [inaccessible sources, excluded domains, unexecuted checks, sampling].
 Review execution: [self-review or actual named reviewer runs; never implied independence].
 Execution evidence: [code/configuration state, commands, fixtures, boundaries, and results; distinguish runtime observations from static inference].
 
-## Four independent assessments
+## Assessments
 
-Specification quality: [justified, clear, consistent, feasible, and verifiable enough for this increment / unresolved / unassessed].
+Specification quality: [justified, clear, consistent, feasible, and verifiable enough for this change / unresolved / unassessed].
 Agent readiness: [current contract and history accessible, tools and checks available, scope and discretion clear, evidence boundary reachable / gap and consequence].
 Implementation conformance: [supported, violated, unverified, or unassessed for each named obligation; attach the code state and executed evidence].
 Faulty-specification response: [no evidence challenging the rule / counterexample and affected decisions, examples, code, tests, dependants, or released effects].
@@ -22,7 +24,7 @@ Faulty-specification response: [no evidence challenging the rule / counterexampl
 
 Severity: [blocker / material / minor].
 Certainty: [demonstrated / plausible interpretation / requires evidence].
-Category: [EARS syntax / ambiguity / duplicate authority / contradiction / missing case / unjustified constraint / weak oracle / source mismatch (class from mismatch.md) / other specific defect].
+Category: [EARS syntax / ambiguity / duplicate authority / contradiction / missing case / unjustified constraint / weak oracle / source mismatch (class from spectacular-spec-writing/references/mismatch.md) / other specific defect].
 Location: [IDs, paths, and revisions].
 Applicability: [case or scope in which the issue matters].
 Witness: [concrete input, timeline, incompatible outputs, or specific missing evidence].

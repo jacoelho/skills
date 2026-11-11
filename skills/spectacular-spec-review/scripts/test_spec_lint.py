@@ -51,6 +51,33 @@ class SpecLintTests(unittest.TestCase):
             path.write_text(text, encoding="utf-8")
             return spec_lint.scan([path])
 
+    def test_vague_terms_warn_but_quoted_and_embedded_words_do_not(self) -> None:
+        cases = {
+            "The export service shall respond quickly.": ["quickly"],
+            "When a report is requested, the export service shall include totals, taxes, etc.": None,
+            "The export service shall retry where possible and/or log the failure.": ["where possible", "and/or"],
+            "The export service shall return \"fast\" as the mode label.": [],
+            "The export service shall return `appropriate` as the reason code.": [],
+            "The export service shall reject breakfast-order identifiers.": [],
+            "The export service shall keep a steadfast audit trail.": [],
+        }
+        for statement, expected in cases.items():
+            with self.subTest(statement=statement):
+                result = self.scan_text(self.document(statement))
+                warnings = [f for f in result.findings if f.code == "vague-term"]
+                if expected is None:
+                    # "etc." also breaks the one-sentence rule; the warning still names the term.
+                    self.assertEqual(len(warnings), 1)
+                    self.assertIn("'etc'", warnings[0].message)
+                    continue
+                self.assertEqual(len(warnings), 1 if expected else 0, result.findings)
+                for term in expected:
+                    self.assertIn(repr(term), warnings[0].message)
+                if expected:
+                    self.assertEqual(warnings[0].line, 5)
+                    self.assertEqual(result.exit_code(), 0)
+                    self.assertEqual(result.exit_code(strict=True), 1)
+
     def test_accepts_all_ordered_clause_combinations(self) -> None:
         statements = (
             "The alarm service shall stop.",

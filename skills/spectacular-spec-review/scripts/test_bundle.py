@@ -14,10 +14,20 @@ import spec_lint  # noqa: E402
 
 REVIEW = Path(__file__).resolve().parents[1]
 SKILLS = REVIEW.parent
-SIBLINGS = ("spectacular-bdd-gherkin", "spectacular-spec-grilling", "spectacular-spec-writing")
-# Each skill must resolve its references inside its own directory, so these are
-# copied rather than linked.
+SIBLINGS = ("spectacular-spec-grilling", "spectacular-spec-implementation", "spectacular-spec-writing")
+# The skills ship together in one plugin, so shared references have one home and
+# siblings link to it instead of carrying copies that can drift.
+SHARED_HOME = "spectacular-spec-writing"
 SHARED_REFERENCES = ("references/ears.md", "references/mismatch.md")
+MARKDOWN_LINK = re.compile(r"\]\(([^)\s]+)\)")
+SKILL_DIR = "${CLAUDE_SKILL_DIR}/"
+HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.MULTILINE)
+
+
+def anchors(document: Path) -> set[str]:
+    # GitHub-style slugs: lowercase, punctuation dropped, spaces become hyphens.
+    text = document.read_text(encoding="utf-8")
+    return {re.sub(r"[^\w\- ]", "", title.lower()).replace(" ", "-") for title in HEADING.findall(text)}
 LINTABLE_FENCE = re.compile(r"^```markdown spec-lint\n(.*?)^```$", re.MULTILINE | re.DOTALL)
 # Any recognised field that still contains a bracket is unfilled template text.
 UNFILLED_FIELD = re.compile(r"^(?:Status|Statement|Basis|References|Covers|Expected): .*\[")
@@ -39,14 +49,30 @@ class BundleTests(unittest.TestCase):
         unlisted = {path.name for path in SKILLS.glob("spectacular-*")} - {REVIEW.name, *SIBLINGS}
         self.assertEqual(unlisted, set(), "spectacular skills whose shared references are not compared")
 
-    def test_shared_references_are_identical_across_skills(self) -> None:
+    def test_shared_references_have_one_home(self) -> None:
         for reference in SHARED_REFERENCES:
-            canonical = (REVIEW / reference).read_bytes()
-            for name in SIBLINGS:
+            self.assertTrue((sibling(SHARED_HOME) / reference).is_file(), f"{SHARED_HOME}/{reference} is missing")
+            for name in {REVIEW.name, *SIBLINGS} - {SHARED_HOME}:
                 with self.subTest(reference=reference, skill=name):
-                    copy = sibling(name) / reference
-                    self.assertTrue(copy.is_file(), f"{copy} is missing")
-                    self.assertEqual(copy.read_bytes(), canonical, f"{copy} differs from {REVIEW / reference}")
+                    copy = SKILLS / name / reference
+                    self.assertFalse(copy.exists(), f"{copy} duplicates {SHARED_HOME}/{reference}; link to it instead")
+
+    def test_local_links_resolve(self) -> None:
+        for name in (REVIEW.name, *SIBLINGS):
+            skill = sibling(name)
+            for document in skill.rglob("*.md"):
+                for target in MARKDOWN_LINK.findall(document.read_text(encoding="utf-8")):
+                    path, _, anchor = target.partition("#")
+                    if not path or "://" in path or path.startswith("mailto:"):
+                        continue
+                    if path.startswith(SKILL_DIR):
+                        resolved = skill / path[len(SKILL_DIR):]
+                    else:
+                        resolved = document.parent / path
+                    with self.subTest(document=str(document.relative_to(SKILLS)), link=target):
+                        self.assertTrue(resolved.exists(), f"{document}: link {target} resolves to missing {resolved}")
+                        if anchor and resolved.suffix == ".md":
+                            self.assertIn(anchor, anchors(resolved), f"{document}: link {target} names a missing heading")
 
     def test_worked_examples_lint_clean_together_under_strict(self) -> None:
         examples = sibling("spectacular-spec-writing") / "examples"

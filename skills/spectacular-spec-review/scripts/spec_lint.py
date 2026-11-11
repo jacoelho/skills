@@ -34,6 +34,17 @@ TABLE_STATEMENT = re.compile(r"Statement[ \t]*(?::|$)", re.IGNORECASE)
 TABLE_SEPARATOR = re.compile(r":?-+:?")
 SETEXT_UNDERLINE = re.compile(r"(?:-+|=+)")
 PLACEHOLDER = re.compile(r"\[[^\[\]]*\]")
+# Words that let two competent implementations disagree on acceptance. Quote a
+# term with double quotes or backticks when it is defined data, not judgement.
+VAGUE_TERMS = (
+    "fast", "quickly", "slow", "promptly", "timely", "soon", "efficient", "efficiently",
+    "user-friendly", "easy", "simple", "intuitive", "seamless", "seamlessly", "flexible",
+    "robust", "appropriate", "appropriately", "adequate", "adequately", "sufficient",
+    "reasonable", "reasonably", "optimal", "minimal", "normally", "usually", "generally",
+    "typically", "several", "many", "few", "etc", "and/or", "as needed", "as necessary",
+    "if possible", "where possible", "as far as possible",
+)
+VAGUE_TERM = re.compile(r"(?<![\w-])(?:" + "|".join(re.escape(t) for t in VAGUE_TERMS) + r")(?![\w-])", re.IGNORECASE)
 TABLE_BREAK = re.compile(r" {0,3}(?:>[ \t]?|[-+*][ \t]+|\d+[.)][ \t]+|(?:\*[ \t]*){3,}$|(?:_[ \t]*){3,}$|(?:-[ \t]*){3,}$)")
 
 
@@ -179,6 +190,13 @@ def mask_literals(text: str) -> str | None:
             masked[position] = " " if position in {index, end} or text[position].isspace() else "_"
         index = end + 1
     return "".join(masked)
+
+
+def vague_terms(statement: str) -> list[str]:
+    masked = mask_literals(statement)
+    if masked is None:
+        return []
+    return list(dict.fromkeys(match.group(0).lower() for match in VAGUE_TERM.finditer(masked)))
 
 
 def ears_error(statement: str, *, invariant: bool) -> str | None:
@@ -573,6 +591,11 @@ def scan(inputs: Iterable[Path]) -> Result:
                 if error:
                     result.add("error", "invalid-ears", block.path, block.fields["Statement"][1],
                                f"{block.identifier}: {error}")
+                terms = vague_terms(block.value("Statement"))
+                if terms:
+                    result.add("warning", "vague-term", block.path, block.fields["Statement"][1],
+                               f"{block.identifier}: replace {', '.join(repr(t) for t in terms)} with a "
+                               "measurable bound or a defined term, or quote it as literal data.")
             if "Status" not in block.placeholders and block.value("Status") not in {"proposed", "accepted"}:
                 result.add("error", "invalid-status", block.path, block.line,
                            f"{block.identifier} needs Status: proposed or Status: accepted.")

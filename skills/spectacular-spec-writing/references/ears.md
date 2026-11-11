@@ -13,7 +13,7 @@ examples are different kinds of material and need not use EARS.
 | --- | --- |
 | Requirement | An authoritative obligation that distinguishes acceptable from unacceptable behaviour within its scope. |
 | Contract | The maintained requirements for a bounded capability, with their governing definitions, sources, and acceptance basis. |
-| Bounded commitment | The next unit of authorised work that can be accepted on its own: one capability change, investigation, or correction with stated inclusions and exclusions. "Increment" means the same. |
+| Bounded commitment | The next unit of authorised work that can be accepted on its own: one capability change, investigation, or correction with stated inclusions and exclusions. |
 | Consequential | Describes a question, gap, or obligation whose plausible answers would change a promised observable outcome, violate a shared invariant, break a consumer, or invalidate dependent work in the current bounded commitment. Anything else is recorded as a limit or a deferred or excluded question, not a finding or blocker for that commitment. |
 | Normative | Governing what must hold; descriptive observations and illustrative examples are not normative. |
 | System | The named component, service, or capability responsible for satisfying the requirement. |
@@ -31,12 +31,14 @@ examples are different kinds of material and need not use EARS.
 | Invariant | An obligation that remains true throughout its applicable scope; it may have configuration or state clauses, but no event or unwanted-condition activation clause. |
 | Permission | An outcome or implementation choice that is allowed, without requiring it to occur. |
 | Implementation discretion | Authorised freedom over mechanisms or choices; it does not settle an unanswered product decision. |
+| Structural commitment | A recorded design decision that binds boundary-crossing types, module boundaries, signatures, or permitted dependencies, held as source-language declarations. It refines requirements by identifier and is not a second authority for behaviour. |
 | Basis | The authorised decision or binding source that justifies a requirement, with rationale kept separate from its statement. |
 | Authority | The person, decision, or binding external contract entitled to establish or change the obligation. |
 | Oracle | An independently justified basis for an expected result, rather than a value derived from the implementation being assessed. |
 | Acceptance criterion | A case or property with an expected observation, governing requirement, oracle, and verification boundary. |
 | Example / scenario | A concrete illustration of a requirement; it is neither an exhaustive definition nor a second authority. |
 | Evidence | An observation or inspected artifact supporting a claim within identified source, environment, and execution limits. Planned checks are not executed evidence. |
+| Vague term | A word or phrase in a requirement that lets two competent implementations both claim conformance while producing different observable outcomes, because no bound, definition, or governing source in scope settles it. "Fast" is vague until a bound or a referenced target fixes it; a term defined in the contract's glossary is not. Test it with a behavioural fork. |
 | Counterexample | A concrete input, outcome, or execution trace that exposes a violation or distinguishes competing interpretations. |
 
 ## Keywords

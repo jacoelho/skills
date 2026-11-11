@@ -13,7 +13,7 @@ Keep one capability in one document when its rules have the same purpose, owner,
 - A genuinely shared invariant or interface has several consumers.
 - A capability can change independently without rewriting another capability's contract.
 - An external contract has its own authority or version lifecycle.
-- A document has become too broad to retrieve and review reliably as one increment.
+- A document has become too broad to retrieve and review reliably as one change.
 
 Do not create a shared abstraction for a single speculative use. Do not organise behavioural specifications solely by source-code class, service, or private module. One user-visible capability may cross several components.
 
@@ -27,6 +27,7 @@ Do not create a shared abstraction for a single speculative use. Do not organise
 | Domain term | Smallest genuinely shared glossary scope | Reference; define a qualified local term only when its meaning differs. |
 | Rejected or superseded decision | Decision history | A brief reference from current text where necessary. |
 | Implementation setup | Test or design code | Location reference, not copied selectors or private helper inventories. |
+| Feature-spec obligation | The feature spec, until its discard gate ([lifecycle](lifecycle.md)) | Nowhere lasting: anchored contracts and other lasting artefacts never reference a feature-spec ID. |
 
 A navigational index owns no additional behaviour. An illustrative summary is explicitly non-normative and must not carry a unique exception. If a test owns a canonical executable example, the contract points to it rather than maintaining another editable expected value. With the bundled declaration layout, that pointer is an AC whose `Covers:` names the rule and whose `Expected:` names the scenario or test.
 

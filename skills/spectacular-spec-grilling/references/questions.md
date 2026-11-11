@@ -2,19 +2,7 @@
 
 Select a question because it removes an important behavioural ambiguity, not because it completes a questionnaire.
 
-Use [EARS terms and patterns](ears.md) to distinguish configuration, ongoing state, activating event, unwanted condition, responsible system, and response. The questions below clarify those meanings; they are not alternative requirement forms.
-
-## Select the next mode
-
-“What decision could this work prevent, and what evidence is missing?”
-
-- Unclear need or outcome: observe a representative workflow and test the proposed outcome.
-- Clear value, uncertain feasibility or current behaviour: run a bounded prototype, benchmark, or trace.
-- Existing contract with a defect: reproduce the failure, identify whether the rule or implementation is wrong, then repair the applicable boundary.
-- Clear, bounded behaviour: implement and assess the increment.
-- Mechanical local correction: make the focused change and check its result.
-
-Several situations may apply. Choose the next commitment whose answer prevents the greatest dependent rework; this is a routing aid, not a mandatory sequence.
+Use [EARS terms and patterns](../../spectacular-spec-writing/references/ears.md) to distinguish configuration, ongoing state, activating event, unwanted condition, responsible system, and response. The questions below clarify those meanings; they are not alternative requirement forms.
 
 ## Need and useful outcome
 
@@ -48,7 +36,7 @@ Treat a request already in progress as a separate decision when its outcome diff
 
 ## Scope versus prohibitions
 
-“Is automatic retry absent from this increment, or is the caller prohibited from retrying?”
+“Is automatic retry absent from this change, or is the caller prohibited from retrying?”
 
 Keep those commitments distinct. An excluded delete feature also leaves side effects of other operations to be decided explicitly.
 
@@ -93,12 +81,6 @@ Use the answer to decide when evidence is needed. Preserving an option may simpl
 Example of a dependent batch: “Is identity per account or global?” and “How long should the global identity registry retain entries?”
 
 Settle identity scope first. The second question presupposes a global registry and its mechanism before either is justified.
-
-## Investigation boundary
-
-“What is the smallest check, under which limit, that could change this decision?”
-
-State the question or claim, scope or timebox, actual boundary, input and environment state, expected observation, deliverable, limits, and next decision. Identify whether the result is a supplied report, an inspected artifact, or a check executed here; a supplied report of an execution is not a check run or inspected by the current agent. Include a check or command reference only for an execution that actually occurred. Keep findings separate from a recommendation. A passing fixture establishes only the exercised case; it does not establish every concurrent execution, failure mode, or production guarantee.
 
 ## Observed behaviour versus promise
 

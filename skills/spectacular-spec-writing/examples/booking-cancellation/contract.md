@@ -1,10 +1,11 @@
 <!-- spec-lint: active -->
 # Booking cancellation
 
-> Worked example for the Spectacular skills. The capability, owner, and decisions are illustrative. It follows `assets/capability.md`; [decisions.md](decisions.md) is the working record behind it, [cancellation.feature](cancellation.feature) holds the executable examples its ACs point to, and [the stock contract](../stock/contract.md) owns the invariant it preserves. Lint it with that contract by passing `examples/`; alone it reports the invariant reference as dangling.
+> Worked example for the Spectacular skills. The capability, owner, and decisions are illustrative. It follows `assets/capability.md`; [decisions.md](decisions.md) is the decision record behind it, [cancellation.feature](cancellation.feature) holds the executable examples its ACs point to, and [the stock contract](../stock/contract.md) owns the invariant it preserves. Lint it with that contract by passing `examples/`; alone it reports the invariant reference as dangling.
 
 Contract revision: example-1
 Decision owner: booking product owner
+Lifecycle: anchored
 Effective scope: booking service, target version
 
 ## Intent and boundary
@@ -39,7 +40,7 @@ References: INV-STOCK-001
 
 Status: accepted
 Statement: If the owner of a confirmed booking requests its cancellation, then the booking service shall reject the request as a conflict without changing the booking or stock.
-Basis: Q-BOOK-001, resolved by the booking product owner; refunds are outside this increment.
+Basis: Q-BOOK-001, resolved by the booking product owner; refunds are outside this change.
 
 ## Acceptance
 
