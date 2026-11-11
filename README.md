@@ -4,6 +4,16 @@ A Claude Code plugin with my personal skills, subagents, workflows and hooks. Th
 
 Skills live in `skills/`, agents in `agents/`, workflows in `workflows/`, hooks modules in `hooks/`, and tests in `tests/`. Everything is namespaced by the plugin name: skills and workflows run as `/jacoelho:<name>` and agents are `jacoelho:<agent>`.
 
+## Prompt intake
+
+The plugin's `prompt.submit` hook (`hooks/prompt-intake/`) sorts a message before it is sent, when you ask for it: start a message typed at the terminal with `intake:`. Every other message is sent as typed.
+
+1. It holds the message and makes one call to the session's current model to sort it into Goal, Facts and Asks and list every ambiguity.
+2. It asks about up to 4 ambiguities in the question dialog, the option the rest of your message best supports first and marked (Recommended), then makes one more call to work your answers in. Questions still open are kept under Facts, marked `[unresolved]`; content that fits no section is marked `[unsorted]`. A question the model could not offer options for is kept as `[unresolved]` too.
+3. It drops the original and puts the clean version in the prompt box, keeping anything you typed meanwhile. Edit it and press Enter to send.
+
+Fenced blocks (```` ``` ```` or `~~~`) are pasted content: the model sees a `[[paste-N]]` placeholder instead, and the clean version gets each block back unchanged where the model placed it, or under a closing Pasted section if it placed none. A long log in a fence costs intake nothing. When the text outside fences is over 8,000 characters, intake sends the message as typed, without the marker, and says so; so it does for a message with attachments. Slash commands, Remote Control and other sessions' messages, and `-p` runs pass through. Set `intake_effort` in `/config` (`low` by default; `medium`, `high`, `xhigh` or `max`) for how hard the model thinks while sorting. Thinking counts toward the reply cap, so the cap grows with effort: 4,096 tokens at `low`, 8,192 at `medium`, 16,384 above. The API reserves the cap against your output-token rate limit when the request starts, so higher levels are slower and more likely to hit a 429. If you dismiss a question, press Esc, or the model call fails (a rate limit included), the message goes back in the prompt box without the marker, so Enter sends it as typed.
+
 ## Context handoff
 
 `hooks/handoff/` writes a handoff of a long chat so the work can continue in a fresh context instead of a compacted one. The model that writes it is a fork of the main thread: it sees the whole conversation and reads it from the prompt cache. It re-sends the last request, so it does not see the final assistant reply.
