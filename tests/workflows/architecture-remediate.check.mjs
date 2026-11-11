@@ -496,6 +496,17 @@ describe('critic review regressions', () => {
     assert.equal(out.ledger.find((e) => e.findingId === 'l1').status, 'unchecked')
     assert.deepEqual(out.unresolvedFindings, [])
   })
+  test('every ledger status a later review sees comes with how to treat it', async () => {
+    const { out, calls } = await run({ findings: [finding('x1'), finding('l1', 'Low'), finding('r1')], items: [item('x1', { findingIds: ['x1', 'l1'] }), item('r1', { disposition: 'reject', acceptance: [] })] })
+    const later = calls.filter((c) => /^review r[2-9]: scope/.test(c.label))
+    assert.ok(later.length > 0, 'expected a review after round 1')
+    for (const c of later) {
+      const shown = [...c.prompt.matchAll(/"status":"([a-z]+)"/g)].map((m) => m[1])
+      assert.deepEqual([...new Set(shown)].sort(), ['rejected', 'resolved', 'unchecked'])
+      for (const st of shown) assert.ok(c.prompt.includes(`status ${st}: `), `${c.label} shows status ${st} without explaining it`)
+    }
+    assert.deepEqual(out.ledger.map((e) => [e.findingId, e.status]).sort(), [['l1', 'unchecked'], ['r1', 'rejected'], ['x1', 'resolved']])
+  })
   test('a check proven only by a build failure on the old tree is called out', async () => {
     const { out } = await run({ findings: [finding('x1')], items: [item('x1')], accept: () => ({ beforeFailure: 'build' }) })
     assert.deepEqual(out.weakFindings, ['x1'])

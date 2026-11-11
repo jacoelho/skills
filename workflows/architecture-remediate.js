@@ -343,16 +343,46 @@ const CONSULTANT_LENSES = [
 const SOLO_LENS = { key: 'all-lenses', text: CONSULTANT_LENSES.map((l) => l.text).join(' ') }
 
 // ---------- state ----------
+// The one list of ledger statuses. `open`: the finding still needs a fix, so the loop carries it
+// forward. `reviewer`: how a later review treats it; the review prompt is built from these, so a
+// status cannot reach a reviewer unexplained. `planned` has none: a round that stops before
+// acceptance stops the run, so no later review sees it.
+const LEDGER_STATUS = {
+  planned: { open: true, reviewer: null },
+  unresolved: { open: true, reviewer: 'still open; the workflow carries it forward, so raise it only with new evidence' },
+  resolved: { open: false, reviewer: 'its acceptance check failed before the fix and passes now; re-raise it only by naming, with evidence, what that check does not cover' },
+  unchecked: { open: false, reviewer: 'a Low finding its plan item fixed with no acceptance check; re-raise it only with evidence the defect remains' },
+  rejected: { open: false, reviewer: 're-raise only with evidence rebutting the rationale' },
+}
+const LEDGER_GUIDE = Object.entries(LEDGER_STATUS).filter(([, v]) => v.reviewer).map(([k, v]) => `status ${k}: ${v.reviewer}.`).join(' ')
 // Latest disposition per finding id; earlier rounds' entries for the same id are superseded, not kept.
+// Written only by planFinding and settleFinding, the two transitions a round makes.
 const ledger = new Map()
 const ledgerText = () => (ledger.size ? j([...ledger.values()]) : 'none')
+const knownStatus = (entry) => {
+  if (!Object.hasOwn(LEDGER_STATUS, entry.status)) throw new Error(`architecture-remediate: unknown ledger status ${JSON.stringify(entry.status)} for ${entry.findingId}`)
+  return entry
+}
+// A round's plan opens a fresh entry for each finding it answers or omits: planned, rejected or unresolved.
+const planFinding = (entry) => {
+  if (!['planned', 'rejected', 'unresolved'].includes(entry.status)) throw new Error(`architecture-remediate: a plan cannot record ${entry.findingId} as ${entry.status}`)
+  ledger.set(entry.findingId, knownStatus(entry))
+}
+// Acceptance settles what this round's plan recorded; it never touches an entry from an earlier round.
+const settleFinding = (fid, round, verdict) => {
+  const entry = ledger.get(fid)
+  if (!entry || entry.round !== round || !['planned', 'rejected'].includes(entry.status)) {
+    throw new Error(`architecture-remediate: acceptance of ${fid} in round ${round} found ${entry ? `${entry.status} from round ${entry.round}` : 'no plan entry'}`)
+  }
+  ledger.set(fid, knownStatus({ ...entry, ...verdict }))
+}
 // Latest version of every finding any review raised, so an unresolved one can be carried forward.
 const findingById = new Map()
 // Blocking findings a round planned but did not prove fixed. They stay open whether or not the
 // next review raises them again: a fresh review is no evidence the defect is gone.
 // 'planned' counts as open: a round that stopped before acceptance (verify failing, an error) proved nothing.
 const isBlocking = (fid) => findingById.has(fid) && BLOCKING.includes(findingById.get(fid).severity)
-const unproven = () => [...ledger.values()].filter((e) => (e.status === 'unresolved' || e.status === 'planned') && isBlocking(e.findingId))
+const unproven = () => [...ledger.values()].filter((e) => LEDGER_STATUS[e.status].open && isBlocking(e.findingId))
 const carried = () => unproven().map((e) => findingById.get(e.findingId))
 const openFindings = (report) => {
   const own = blockingOf(report.findings)
@@ -376,7 +406,7 @@ const PARTITION = `Your selection budget is ${8 * REVIEWERS} boundaries (eight p
 async function review(round, scope, focus) {
   phase('Review')
   const ctx = `Repository: current working directory.${focus ? ` ${focus}` : ''}
-Prior dispositions ledger. status resolved: its acceptance check failed before the fix and passes now; re-raise it only by naming, with evidence, what that check does not cover. status rejected: re-raise only with evidence rebutting the rationale. status unresolved: still open; the workflow carries it forward, so raise it only with new evidence. Ledger: ${ledgerText()}
+Prior dispositions ledger. ${LEDGER_GUIDE} Ledger: ${ledgerText()}
 ${AUTHORITY_STANCE}
 ${EVIDENCE}${INSTRUCTIONS}`
 
@@ -813,11 +843,11 @@ try {
     implRounds++
     for (const fid of new Set(p.items.flatMap((it) => it.findingIds))) {
       const it = active(p).find((x) => x.findingIds.includes(fid)) || p.items.find((x) => x.findingIds.includes(fid))
-      ledger.set(fid, { round: implRounds, findingId: fid, disposition: it.disposition, status: it.disposition === 'reject' ? 'rejected' : 'planned', rationale: it.disposition === 'reject' ? it.authorityAnalysis : it.change.slice(0, 300) })
+      planFinding({ round: implRounds, findingId: fid, disposition: it.disposition, status: it.disposition === 'reject' ? 'rejected' : 'planned', rationale: it.disposition === 'reject' ? it.authorityAnalysis : it.change.slice(0, 300) })
     }
     // The planner must answer every open blocking finding; one it left out stays open and returns next round.
     const omitted = open.filter((f) => !p.items.some((it) => it.findingIds.includes(f.id)))
-    for (const f of omitted) ledger.set(f.id, { round: implRounds, findingId: f.id, disposition: 'none', status: 'unresolved', reason: 'no plan item' })
+    for (const f of omitted) planFinding({ round: implRounds, findingId: f.id, disposition: 'none', status: 'unresolved', reason: 'no plan item' })
     if (omitted.length) log(`plan r${implRounds}: no item for ${omitted.map((f) => f.id).join(', ')}; carried to the next round`)
     const snap = await snapshot(implRounds)
     next = followUp('round', implRounds, snap)
@@ -831,7 +861,7 @@ try {
     tree = last.passed ? 'verified' : 'failing'
     // Acceptance runs on the final tree of the round; a failing tree stops the run before it.
     const acc = tree === 'verified' ? await accept(implRounds, p, snap) : null
-    if (acc) for (const [fid, v] of acc.byFinding) ledger.set(fid, Object.assign(ledger.get(fid), v))
+    if (acc) for (const [fid, v] of acc.byFinding) settleFinding(fid, implRounds, v)
     // History is returned to the calling session, so it records outcomes, not full plans and transcripts.
     history.push({
       round: implRounds,
