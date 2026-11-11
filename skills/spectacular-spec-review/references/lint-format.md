@@ -1,6 +1,6 @@
 # Declaration and EARS linter
 
-The linter is a small, standard-library-only Python tool. It enforces the declaration layout, [EARS lexical grammar](../../spectacular-spec-writing/references/ears.md), and local traceability in explicitly active Markdown documents. Every REQ/INV statement is checked, whether proposed or accepted; there is no switch to bypass EARS checks. Requirement meaning and implementation conformance still require review.
+The linter is a small, standard-library-only Python tool. It enforces the declaration layout ([declarations](../../spectacular-spec-writing/references/declarations.md) lists the fields and which are required), the EARS lexical grammar below, and local traceability in explicitly active Markdown documents. Every REQ/INV statement is checked, whether proposed or accepted; there is no switch to bypass EARS checks. Requirement meaning and implementation conformance still require review.
 
 ## Run
 
@@ -45,9 +45,10 @@ References: INV-BOOK-001
 Covers: REQ-BOOK-001, INV-BOOK-001
 Situation: Booking B is pending and holds one reserved unit of stock S.
 Expected: B is cancelled and the available stock of S rises by exactly one.
+Verification: Planned at the booking service API.
 ```
 
-`Basis` is prose and is not resolved as a reference; declare a `DEC` locally and list it in `References:` when the link should be checked. A heading such as `## REQ-BOOK-001: Title` or `# REQ-BOOK-001 Title` is a `malformed-id` error; the message names the fix, and the section's fields are not reported again as orphans.
+The recognised fields are `Status`, `Statement`, `Basis`, and `References` on REQ and INV, and `Covers`, `Situation`, `Expected`, `Oracle`, `Verification`, and `Counterexample` on AC; an AC field on another declaration kind is an error. `Rationale` is ordinary prose to the linter. `Basis` is prose and is not resolved as a reference; declare a `DEC` locally and list it in `References:` when the link should be checked. A heading such as `## REQ-BOOK-001: Title` or `# REQ-BOOK-001 Title` is a `malformed-id` error; the message names the fix, and the section's fields are not reported again as orphans.
 
 When the executable example lives in a Gherkin scenario or a test, keep a pointer AC: `Covers:` names the rule and `Expected:` names the scenario or test, for example `Expected: Scenario "Cancel a pending booking" in features/cancellation.feature passes.` The linter does not read `.feature` files or tests, so the pointer AC is what records coverage.
 
@@ -69,20 +70,33 @@ A field value that is entirely one bracketed template placeholder, such as `Basi
 
 Use `Status: proposed` or `Status: accepted` for REQ and INV declarations. Other statuses should be represented in non-active history or translated explicitly before opting in. Never relabel a rule accepted just to satisfy the checker.
 
+## EARS lexical grammar
+
+The linter checks this deterministic form of the [EARS patterns](../../spectacular-spec-writing/references/ears.md#patterns) for every `REQ` and `INV` statement in an active document, whether proposed or accepted:
+
+- Put the complete statement on one line and end it with an unquoted full stop.
+- Use exactly one unquoted, lowercase, whole-word `shall`, separated from the named system and non-empty response by whitespace. A prohibition needs an effect after `shall not`. Coupled effects share the same `shall`.
+- Separate leading applicability clauses and the system with a comma followed by spaces or tabs. A comma followed by `where`, `while`, `when`, `if`, `then`, or `the` is a reserved delimiter in the text before `shall`. Keyword casing follows the patterns: title case first, lowercase thereafter. Use `then the` only after an `if` clause; otherwise use `the`, or `The` for a ubiquitous statement.
+- Supply a non-empty value for every included clause, system, and response. Each applicability clause occurs at most once, in the stated order. An invariant permits `Where`, `While`, or both, with no `When` or `If` activation.
+- Quote literal data containing reserved delimiters or sentence punctuation with balanced double quotes or single backticks. A backslash escapes the next character inside a literal. Apostrophes in possessives are ordinary text.
+- Outside literals, a dot is internal token punctuation only when both adjacent characters are ASCII letters or digits. This permits `1.5`, `v1.2.3`, and `https://example.test/v1`. Other internal full stops, question marks, and exclamation marks require quoting; for example use `"e.g."` for an ambiguous abbreviation and backticks for a URL containing query punctuation.
+
+The parser checks leading clauses and the obligation boundary; response prose remains opaque. Words such as `if` or `may` inside a response do not themselves create another clause or obligation. These lexical rules make enforcement predictable, not a proof that a noun phrase, outcome, or interpretation is valid.
+
 ## Checks
 
 - Duplicate IDs, including duplicate definitions in one file.
 - Malformed declared IDs and malformed reference lists in supported fields.
 - Dangling local references and references to ambiguously duplicated IDs.
-- `Covers:` on a non-AC block or covering something other than REQ/INV.
+- An AC field (`Covers`, `Situation`, `Expected`, `Oracle`, `Verification`, `Counterexample`) on a non-AC block, or `Covers:` naming something other than REQ/INV.
 - REQ/INV declarations missing their statement, status, or accepted decision basis.
 - Field values left as a bracketed template placeholder.
 - REQ/INV statements violating the EARS lexical grammar: casing, clause order, empty slots, obligation boundary, balanced literals, or sentence punctuation.
 - INV statements containing a When or If activation clause; configuration and state scopes are permitted.
 - Unsupported declaration/field forms, orphan fields, Statement continuations, or Statement on another declaration kind.
-- AC declarations missing a coverage link or an expected result.
+- AC declarations missing a coverage link, an expected result, or a verification line.
 - An accepted REQ/INV with no AC declaration pointing to it: warning only.
-- A REQ/INV statement using a vague term, such as `fast`, `appropriate`, `robust`, `etc`, `and/or`, or `if possible`, outside a quoted literal: warning only. The full list is `VAGUE_TERMS` in `scripts/spec_lint.py`. The list only finds candidates: whether a term is vague is decided by the definition in the EARS reference's Terms table. Replace a vague term with a measurable bound or a defined term; quote it when it is literal data, such as a returned label. A listed word that the contract defines is not vague: write it in backticks, as a reference to the defined term, which also clears the warning.
+- A REQ/INV statement using a vague term, such as `fast`, `appropriate`, `robust`, `etc`, `and/or`, or `if possible`, outside a quoted literal: warning only. The full list is `VAGUE_TERMS` in `scripts/spec_lint.py`. The list only finds candidates: whether a term is vague is decided by the definition in [terms](../../spectacular-spec-writing/references/terms.md). Replace a vague term with a measurable bound or a defined term; quote it when it is literal data, such as a returned label. A listed word that the contract defines is not vague: write it in backticks, as a reference to the defined term, which also clears the warning.
 - A symbolic link skipped during traversal whose target was not checked: warning only.
 - Duplicate recognised fields within a block.
 - An opted-in document with no supported declarations, a malformed backtick fence opener, or an unclosed code fence.

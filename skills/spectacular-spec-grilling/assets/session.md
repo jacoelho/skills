@@ -3,9 +3,9 @@
 Use this shape only when no existing decision record already captures the scope, evidence, answers, and handoff. Update that record instead of starting a second one.
 
 Session status: [active / handed off / stopped / awaiting evidence]
-Scope: [next bounded commitment]
+Scope: [the increment]
 Source state: [current contract/history, supplied decisions, accessible evidence; label each origin]
-Workspace state: [repository/workspace and relevant code or document revisions; note local changes when they affect the assignment]
+Workspace state: [repository/workspace and relevant code or document revisions; note local changes when they affect the increment]
 
 ## Established context
 

@@ -1,7 +1,7 @@
 <!-- spec-lint: active -->
 # Booking cancellation
 
-> Worked example for the Spectacular skills. The capability, owner, and decisions are illustrative. It follows `assets/capability.md`; [decisions.md](decisions.md) is the decision record behind it, [cancellation.feature](cancellation.feature) holds the executable examples its ACs point to, and [the stock contract](../stock/contract.md) owns the invariant it preserves. Lint it with that contract by passing `examples/`; alone it reports the invariant reference as dangling.
+> Worked example for the Spectacular skills. The capability, owner, and decisions are illustrative. It follows `assets/capability.md`; [booking-cancellation.decisions.md](booking-cancellation.decisions.md) is the decision record behind it, [cancellation.feature](cancellation.feature) holds the executable examples its ACs point to, and [the stock contract](../stock/contract.md) owns the invariant it preserves. Lint it with that contract by passing `examples/`; alone it reports the invariant reference as dangling.
 
 Contract revision: example-1
 Decision owner: booking product owner
@@ -18,7 +18,7 @@ Preserved: INV-STOCK-001.
 
 ## Governing context and basis
 
-The boundary is the booking service's cancellation request, observed through the booking and stock read endpoints. A booking's owner is the customer who made it. Decisions Q-BOOK-001 and Q-BOOK-002 in [the decision record](decisions.md) settle the outcomes below.
+The boundary is the booking service's cancellation request, observed through the booking and stock read endpoints. A booking's owner is the customer who made it. Decisions Q-BOOK-001 and Q-BOOK-002 in [the decision record](booking-cancellation.decisions.md) settle the outcomes below.
 
 ## Contract
 

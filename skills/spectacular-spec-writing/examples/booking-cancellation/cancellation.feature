@@ -1,6 +1,6 @@
 Feature: Booking cancellation
   # Contract: contract.md, revision example-1
-  # Oracle: decisions Q-BOOK-001 and Q-BOOK-002 in decisions.md; INV-STOCK-001 in ../stock/contract.md
+  # Oracle: decisions Q-BOOK-001 and Q-BOOK-002 in booking-cancellation.decisions.md; INV-STOCK-001 in ../stock/contract.md
   # Boundary: booking service cancellation request; booking and stock read endpoints
   # Evidence: proposed examples; not executed
   # Rule: needs Gherkin 6 or later; the @REQ and @INV tags keep traceability without it.

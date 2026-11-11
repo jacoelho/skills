@@ -26,7 +26,7 @@ When target and deployed contracts differ, name each applicable version and any 
 
 List which earlier results are invalidated and which remain relevant. An unchanged test name does not preserve evidence after its expectation, implementation, fixture, or environment changes.
 
-## Reconcile the assignment
+## Reconcile the increment
 
 Identify the contract revision in the next handoff. Communicate changed obligations and cancelled work to affected implementers, and point them to the evidence they must refresh. Independent work can continue when it does not depend on the changed decision.
 

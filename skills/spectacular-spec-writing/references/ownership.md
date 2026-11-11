@@ -23,11 +23,11 @@ Do not create a shared abstraction for a single speculative use. Do not organise
 | --- | --- | --- |
 | Capability obligation | Capability contract | Requirement-ID reference. |
 | Cross-capability invariant | Existing shared contract, or justified shared section/file | Applicability reference and any extra local obligation. |
-| Agreed acceptance case | Spec section or an owned executable example | Link to that case. |
+| Agreed acceptance case | The contract's Acceptance section or an owned executable example | Link to that case. |
 | Domain term | Smallest genuinely shared glossary scope | Reference; define a qualified local term only when its meaning differs. |
 | Rejected or superseded decision | Decision history | A brief reference from current text where necessary. |
 | Implementation setup | Test or design code | Location reference, not copied selectors or private helper inventories. |
-| Feature-spec obligation | The feature spec, until its discard gate ([lifecycle](lifecycle.md)) | Nowhere lasting: anchored contracts and other lasting artefacts never reference a feature-spec ID. |
+| Feature-contract obligation | The feature contract, until its discard gate ([lifecycle](lifecycle.md)) | Nowhere lasting: anchored contracts and other lasting artefacts never reference a feature-contract ID. |
 
 A navigational index owns no additional behaviour. An illustrative summary is explicitly non-normative and must not carry a unique exception. If a test owns a canonical executable example, the contract points to it rather than maintaining another editable expected value. With the bundled declaration layout, that pointer is an AC whose `Covers:` names the rule and whose `Expected:` names the scenario or test.
 

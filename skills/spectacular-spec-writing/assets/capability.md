@@ -1,22 +1,20 @@
 <!-- spec-lint: active -->
 # [Capability or behavioural change]
 
-> Keep unresolved questions, hypotheses, and proposed changes awaiting authority in the decision record. This template is for the current contract and its settled obligations.
+> Keep unresolved questions, hypotheses, and proposed changes awaiting authority in the decision record. This template is for the current contract and its settled obligations. The skill's `references/declarations.md` defines every line and field below, which are required, and what makes a rule accepted; `references/ears.md` gives the statement syntax. The bracketed placeholders are layout guidance, not another requirement syntax. The linter rejects a recognised field whose value is still an untouched bracketed placeholder; it cannot see partially edited placeholders such as a leftover `<event>`, so replace those by review. Keep the first-line marker so this contract is checked.
 
-> Write each requirement and invariant as one EARS sentence using the skill's `references/ears.md`. The placeholders below are layout guidance, not another requirement syntax. The linter rejects a `Status`, `Statement`, `Basis`, `References`, `Covers`, or `Expected` value that is still an untouched bracketed placeholder. It cannot see partially edited placeholders, such as a leftover `<event>`, or bracketed text in other fields; replace those by review. Keep the first-line marker so this contract is checked.
-
-Contract revision: [identifier or recorded workspace state]
-Decision owner: [known authority; otherwise unassigned]
-Lifecycle: [anchored | feature; see the skill's `references/lifecycle.md`]
-Effective scope: [target version, deployed state, or workspace boundary when relevant]
+Contract revision: [tag, commit, ADR number, or `workspace <date>`]
+Decision owner: [role or person who can accept rules; otherwise unassigned]
+Lifecycle: [anchored | feature]
+Effective scope: [version, deployment, or workspace governed; target and deployed named separately when they differ]
 
 ## Intent and boundary
 
 [Who needs this change, the problem it addresses, and how its usefulness will be observed.]
 
-Included: [the next bounded outcome].
-Excluded: [work deliberately absent from this change].
-Preserved: [existing promises that the change must retain].
+Included: [the increment].
+Excluded: [work deliberately absent, with the Q ID of any open decision that excludes it].
+Preserved: [IDs of existing obligations the increment keeps, or none].
 
 ## Governing context and basis
 
@@ -28,24 +26,25 @@ Preserved: [existing promises that the change must retain].
 
 Status: proposed
 Statement: [When <event>, the <responsible system> shall <observable response, including coupled effects and relevant bounds or prohibitions>.]
-Basis: [Authorised decision or binding source and rationale.]
+Basis: [Resolved Q or DEC with its authority, an ADR or merged PR, or a SRC.]
+References: [Local IDs this rule depends on, such as a shared INV; omit the line when none.]
 
-[Change Status to accepted only when Basis names the authorising decision or binding source; never to satisfy the linter. Select the applicable EARS pattern; the event-driven shape above is only an example. Add further requirements only when needed. Refer to shared obligations instead of repeating their definitions. Tables and diagrams are illustrative and reference governing requirements.]
+[The event-driven shape above is only an example; select the applicable EARS pattern. Add further requirements only when needed. Refer to shared obligations instead of repeating their definitions. Tables and diagrams are illustrative and reference governing requirements.]
 
 ## Acceptance
 
 ### AC-CAP-001 - [Distinguishing case or property]
 
 Covers: REQ-CAP-001
-Situation: [Input, relevant state, and triggering event.]
-Expected: [Observable accepted result and prohibited result where relevant.]
-Basis: [Why this expectation is justified independently of the proposed implementation.]
-Verification: [Boundary, method, revision, and environment; mark planned versus executed.]
-Counterexample: [A relevant violation this check must detect.]
+Situation: [Input, relevant state, and triggering event; or omit for a pointer AC.]
+Expected: [Observable accepted result and prohibited result where relevant; or the scenario or test that owns them.]
+Oracle: [Why this expectation is justified independently of the proposed implementation; or omit when the pointed-to scenario or test names it.]
+Verification: [Boundary and method; planned, or executed <test name or run>.]
+Counterexample: [A violation this check must detect; required for a consequential rule.]
 
 ## Structural commitments
 
-[Optional. Location and revision of the committed declarations that bind structure, and the verifiability or integration reason for binding it. Omit when structure is open or existing code already fixes it. The declarations cite requirement IDs and add no behaviour.]
+[Optional. Location and revision of the committed declarations that bind structure, and the verifiability or integration reason for binding it; see the skill's `references/structure.md`. Omit when structure is open or existing code already fixes it.]
 
 ## Implementation discretion
 

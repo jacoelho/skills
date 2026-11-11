@@ -67,14 +67,14 @@ A run is costly, and the cost follows the number of rounds, not the size of the 
 3. **Implement**: run units in waves, in parallel when they are in different modules and edit different paths. A failing unit gets more attempts, then one on the planner's model, then is blocked; a unit needing a decision outside its rights is blocked at once. Blocked units stop only their dependants.
 4. **Verify**: run the repository's checks; a change is accepted when its tests, red after they were written, now pass.
 5. **Conform**: check the contract with spec-review and the code against the recorded design; one round of fix units, then the user decides what remains.
-6. **Close**: an anchored contract's ACs name their tests; a feature spec goes through its discard gate.
+6. **Close**: an anchored contract's ACs name their tests; a feature contract goes through its discard gate.
 
 ### Before you start
 
 - The contract lints clean with `jacoelho:spectacular-spec-review` and has no open product decisions. Settle those first with `jacoelho:spectacular-spec-grilling`. A requirement with a defect the planner finds while mapping it against the code is left out of the plan as spec-blocked; a case the contract leaves open is recorded as an open question and carried into the decision record at close.
 - Commit or stash your own edits. The workflow never commits, and its review reads every uncommitted change against HEAD, so edits you leave in the tree are reviewed as part of the run.
 - When you call `/jacoelho:spec-implement` directly, use a session started after installing or updating the plugin. A session whose skill list predates the skill cannot load the method, and the run stops at once with an error; start a new session or pass `skillPath`. When the skill launches the workflow it passes `skillPath` itself.
-- Expect roughly 6 to 8 agents per change before its units, each starting from a fresh context. One change of two units took 10 agents and about 316k subagent tokens. A normal session following `/jacoelho:spectacular-spec-implementation` runs the same method without starting agents.
+- Expect roughly 6 to 8 agents per change before its units, each starting from a fresh context, so the cost follows the number of changes rather than the size of the diff. A normal session following `/jacoelho:spectacular-spec-implementation` runs the same method without starting agents.
 
 ### Start a run
 
@@ -107,7 +107,7 @@ A unit interrupted mid-run starts again on resume.
 | `contract-changed` | A contract changed during the run. | Rerun with the record path; the planner re-plans only the affected changes, and may stop at `plan-ready` again when the new design adds a seam, module or dependency. |
 | `spec-blocked` | Every requirement is blocked by a defect in the contract. | Fix the contract with `jacoelho:spectacular-spec-writing`, then start again with the contract path. |
 | `budget` | The token budget set for the turn (such as `+500k`) cannot cover the next change. | Rerun with the record path and a larger budget. |
-| `discard-ready` | A feature spec is fully implemented. | Rerun with the record path to approve discarding it. |
+| `discard-ready` | A feature contract is fully implemented. | Rerun with the record path to approve discarding it. |
 | `error` | A step could not run, for example no check command or a planner that could not load the method. | Do what `next` says, such as passing `verify` or starting a new session, then rerun. |
 | `done` | Every change is accepted and closed. | Review and commit the tree. Open questions were carried into the capability's decision record, and requirements left out as spec-blocked are listed in the result's `specBlocked`. |
 

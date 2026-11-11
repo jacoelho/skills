@@ -2,7 +2,7 @@
 
 Select a question because it removes an important behavioural ambiguity, not because it completes a questionnaire.
 
-Use [EARS terms and patterns](../../spectacular-spec-writing/references/ears.md) to distinguish configuration, ongoing state, activating event, unwanted condition, responsible system, and response. The questions below clarify those meanings; they are not alternative requirement forms.
+Use [EARS patterns](../../spectacular-spec-writing/references/ears.md) and [terms](../../spectacular-spec-writing/references/terms.md) to distinguish configuration, ongoing state, activating event, unwanted condition, responsible system, and response. The questions below clarify those meanings; they are not alternative requirement forms.
 
 ## Need and useful outcome
 
