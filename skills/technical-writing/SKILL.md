@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: Write, improve, reorganise, review or lint READMEs, guides, tutorials, runbooks, articles, blog posts and PR descriptions, from notes, a diff or existing text. Use when asked to draft, edit or restructure one of these documents, or to check it with Vale. Not for requirements or acceptance criteria (use jacoelho:spectacular-spec-writing), API reference, or commit messages.
+description: Write, improve, reorganise, review or lint READMEs, guides, tutorials, runbooks, articles, blog posts, PR descriptions and commit messages, from notes, a diff or existing text. Use when asked to draft, edit or restructure one of these documents, or to check it with Vale. Not for requirements or acceptance criteria (use jacoelho:spectacular-spec-writing), or API reference.
 argument-hint: "[document path | notes | diff]"
 ---
 
@@ -38,6 +38,7 @@ Text about a reader-facing subject is not leakage: a scope statement that helps 
    - [Guide](references/guide.md)
    - [Article](references/article.md)
    - [PR description](references/pr-description.md)
+   - [Commit message](references/commit-message.md)
 
    If the document is none of these, use the organisation rules alone and say so.
 2. **Inventory the source.** Identify the reader, their task, the claims and their kinds, and what is missing or in conflict. Keep this inventory out of the document.

@@ -6,94 +6,37 @@ argument-hint: "[spec | requirement]"
 
 # Spectacular spec grilling
 
-Settle the next consequential decision needed for a bounded commitment. Keep clarification evidence-led and proportionate: a settled contract or a mechanical correction can proceed without an interview.
+Settle the open product decisions that block the next piece of work, one question at a time, and keep the answers in a decision record. `jacoelho:spectacular-spec-writing` turns that record into the contract; this skill never edits contract text.
 
-The user's explicit task and decisions take precedence over this workflow. Surface binding constraints when they conflict with a proposed choice.
+Scale the interview to the work. A settled contract or a mechanical, local fix needs no interview: say so and stop. For a small change, one or two questions are normal.
 
-Before analysing a requirement or framing a proposed obligation, read the Keywords and Patterns sections of [EARS requirements and terms](references/ears.md); consult its Terms table for exact meanings, such as consequential and bounded commitment. Use its single syntax to identify configuration, state, trigger, responsible system, and response. Questions and decision records remain working material; the writer owns the maintained EARS requirements.
+Read the Keywords and Patterns sections of [EARS](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/references/ears.md) first, and its Terms table when a word such as consequential or bounded commitment needs its exact meaning. EARS clauses (configuration, state, event, system, response) show which part of a requirement is missing.
 
-## Choose the work
+## Steps
 
-Identify the next commitment before asking a question. The next action may be:
+1. **Find the open decisions.** Read only what bears on the next piece of work: the request, the current contract, affected code and tests, and governing sources. Look facts up instead of asking for them. Classify each uncertainty as a missing fact (look it up), an empirical question (investigate, step 4), or a product choice (ask). Keep only consequential ones: a plausible wrong answer would change an observable outcome, break a consumer, or invalidate dependent work.
+2. **Pick the next question.** Choose by cost of a wrong answer, then by how much other work waits on it. Ask a question only after the decisions it depends on are settled. Batch questions only when they are independent.
+3. **Ask with a distinguishing case.** Give a small input, timeline, or failure that separates the plausible answers, say why it matters, and offer materially different observable outcomes. Recommend one only when evidence supports it. Use the structured question tool (AskUserQuestion in Claude Code) when available: decision ID, case, and why it matters in the question; one observable outcome per option; a supported recommendation first. It allows four options, so ask in text when there are more.
+4. **Investigate instead of asking** when the answer is a fact or a measurement nobody has. Define the smallest check: the question, its limit, the observation that would change the decision, and what it delivers. Report what was observed and whether you executed it, inspected an artefact, or were told about it.
+5. **Record and recompute.** Write the answer, its conditions, and who decided it into the decision record, with the requirements it affects. Then repeat from step 2. A changed answer reopens only the decisions that depend on it. When an answer changes existing behaviour, classify the conflict with [the mismatch classes](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/references/mismatch.md) and leave full reconciliation to `jacoelho:spectacular-spec-review`.
 
-- discovery, when the need or expected outcome is still unclear;
-- a bounded investigation, when value is clear but feasibility or current behaviour needs evidence;
-- implementation under an existing contract, when the behaviour is settled;
-- a focused correction and check, when the change is mechanical and local.
-
-Use grilling for unresolved product decisions that affect the next commitment. A user who explicitly authorises an investigation or prototype has authorised that bounded work; preserve its question, limit, observation, and decision impact. Do not turn silence or a temporary experiment into a product commitment.
-
-## Outcome
-
-Return the current scope, settled decisions and their basis, unresolved questions with a disposition, affected requirements or examples, and the next action. Keep unresolved decisions in the existing task or decision record until their basis is settled. The specification writer or maintainer owns normative edits; this skill owns clarification and its record.
-
-When handing work to another context, identify retrievable source and workspace states, completed and remaining work, and executed checks with results and limits where relevant. The recipient compares the record with current sources and reopens only decisions or evidence affected by a changed premise.
-
-## Start from available evidence
-
-Read only evidence tied to the next decision: the request, relevant current contract and history, shared constraints or consumers, affected code or tests, and accessible governing sources. Inspect retrievable facts directly rather than asking the user to supply them. Classify uncertainty as a missing fact, product choice, or empirical question.
-
-Separate observed behaviour, required behaviour, inference, and proposed change. When an existing contract or authoritative source already answers a question, verify its authority before asking the user. If sources disagree, present the concrete conflict as the question instead of asking the user to rediscover it.
-
-Use the applicable EARS pattern to expose a missing clause or undefined term only when it changes acceptance. Distinguish an event from an ongoing state, and a configured feature from a permitted outcome. Clarify allowed behaviour without turning a permission into a completion guarantee. Syntax defects in an existing source do not erase its binding meaning or require a product interview by themselves.
-
-## Record only consequential dependencies
-
-For each consequential question, record:
-
-- decision needed and current state;
-- prerequisites and known evidence;
-- affected requirements or work;
-- authority able to decide it;
-- evidence that would resolve an empirical question.
-
-Use states open, resolved, needs-evidence, deferred, delegated, and excluded. Map dependencies when one answer gates another; keep independent questions separate. When evidence is missing, state the smallest investigation that could resolve it and the observation that would change the decision.
-
-## Ask the next useful question
-
-Prioritise decisions by consequence of a wrong answer, dependent work, reversibility, and available evidence. Ask one question when answers are sequential; batch only genuinely independent questions when doing so helps the user.
-
-Use a distinguishing case:
+Prefer observable questions:
 
 ```text
-Decision Q-…: <one concrete question>
+Decision Q-EXPORT-002: Two requests carry the same idempotency key but different content.
 
-Case: <small input, timeline, or failure separating plausible answers>
-Why it matters: <observable consequence or blocked work>
-Options: <materially different outcomes, without a false forced choice>
-Recommendation: <only when evidence supports one; state the trade-off>
+Case: request A creates invoice 17; request B arrives with A's key and a different amount.
+Why it matters: decides whether retries can silently change an invoice.
+Options: reject B with a conflict | return invoice 17 unchanged | treat B as a new request
+Recommendation: reject B; the API contract already treats keys as identity.
 ```
 
-When the host provides a structured question tool, such as AskUserQuestion in Claude Code, ask through it: put the decision ID, case, and why it matters in the question; make each option one materially different observable outcome; and list a supported recommendation first. The tool's free-text answer keeps the choice open. It offers at most four options, so use the text form above when a decision has more outcomes or the tool is unavailable.
+Not "Should retries be robust?". More patterns: [question patterns](references/questions.md).
 
-Prefer observable questions such as “What should the caller receive after a retry?” over quality adjectives such as “Should retries be robust?”.
+## Stop
 
-After the answer, record its exact conditions, authority, and affected requirement or example references, then recompute the eligible questions. If a proposed requirement statement helps the handoff, use EARS and label it non-governing until the writer adopts it. Keep unresolved clauses in the question record. A changed premise reopens only the decisions that depend on it.
+Stop when no consequential decision blocks the next piece of work, or each remaining one has a disposition: investigate (with an owner and the observation), exclude the dependent scope, defer independent work, or proceed within discretion the user delegated. Silence is not an answer. If the user asks to proceed early, hand over the record and name the consequences of what is still open.
 
-## Run a bounded investigation
+## Decision record
 
-When a missing fact or empirical question could change the next commitment, define the smallest authorised investigation with:
-
-- the question it must answer;
-- scope, time or resource limit, and accessible boundary;
-- the observation that would change the decision;
-- the deliverable and the next decision it informs.
-
-Use the actual boundary and an independently agreed expected result where practical. Report the named question or claim, observed result, input and environment state, and limits. Identify whether each item is a supplied report, an inspected artifact, or a check executed here; include a check or command reference only when it was actually executed. Keep observations separate from recommendations. Temporary fixtures, formats, or implementation scaffolding create no external contract by themselves.
-
-## Reconcile answers with current sources
-
-When an answer changes existing behaviour, compare it with active specifications, shared contracts, relevant code paths, and tests. Present the concrete conflicting case and classify it with [the source mismatch classes](references/mismatch.md), typically deliberate change, specification or implementation defect, or unresolved conflict. Hand full reconciliation to `jacoelho:spectacular-spec-review`, and record the conflict, authorities, affected requirements or examples, proposed disposition, and unresolved owner in the existing task or decision record.
-
-## Stopping condition
-
-Stop when the next bounded commitment has no unresolved consequential product decision, or every remaining uncertainty has an explicit disposition: investigate it with an owner and observation, exclude dependent scope, defer independent work, or proceed within explicitly delegated discretion.
-
-Treat silence as an open question until a disposition is recorded. If the user asks to draft or proceed earlier, return the best available decision record and identify the unresolved consequences rather than filling them implicitly.
-
-## Supporting material
-
-- Read [question patterns](references/questions.md) when selecting the question type or shaping a distinguishing case.
-- Use the existing task or decision record when one exists. Otherwise start one from [session.md](assets/session.md) at the repository's existing decision location, or beside the contract it informs as `<capability>.decisions.md`, and report its path. Update one record instead of creating a second ledger. The record is working material: do not add the spec-lint active marker.
-- `spectacular-spec-writing` ships a worked example, `examples/booking-cancellation/decisions.md`, showing a handed-off record and the contract written from it.
-- Background: [without waterfall](https://www.jacoelho.com/blog/2026/09/spec-driven-development-without-waterfall/), [writing specifications](https://www.jacoelho.com/blog/2026/09/writing-specifications-for-coding-agents/), and [the invoice walkthrough](https://www.jacoelho.com/blog/2026/09/spec-driven-development-an-invoice-export-walkthrough/).
+Use the existing decision record when there is one. Otherwise start one from [session.md](assets/session.md) at the repository's decision location, or as `<capability>.decisions.md` beside the contract, and report its path. Keep one record per capability, without the spec-lint marker. Its Handoff section lists what a later session needs. For a feature spec, the record is discarded with the spec and lasting decisions move to an ADR or the PR description ([lifecycle](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/references/lifecycle.md)). A filled example: `spectacular-spec-writing/examples/booking-cancellation/decisions.md`.

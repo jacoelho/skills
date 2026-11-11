@@ -51,6 +51,84 @@
       "title": "Handoff: save folder",
       "description": "Where handoffs and handoff.log are saved (~ allowed). Empty: ~/.claude/handoffs.",
       "default": ""
+    },
+    "implement_model_planner": {
+      "type": "string",
+      "title": "Spec implementation: planner model",
+      "description": "Model for the planner, which plans, resumes, closes, and takes a unit's last attempt. inherit: the session's model.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "inherit"
+      ],
+      "default": "opus"
+    },
+    "implement_model_test_writer": {
+      "type": "string",
+      "title": "Spec implementation: test writer model",
+      "description": "Model for the test writer, which writes each change's failing tests. inherit: the session's model.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "inherit"
+      ],
+      "default": "sonnet"
+    },
+    "implement_model_implementer": {
+      "type": "string",
+      "title": "Spec implementation: implementer model",
+      "description": "Model for the implementer, which implements units and fixes failing checks. inherit: the session's model.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "inherit"
+      ],
+      "default": "sonnet"
+    },
+    "implement_model_runner": {
+      "type": "string",
+      "title": "Spec implementation: runner model",
+      "description": "Model for the runner, which hashes contracts and runs checks. inherit: the session's model.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "inherit"
+      ],
+      "default": "haiku"
+    },
+    "implement_model_reviewer": {
+      "type": "string",
+      "title": "Spec implementation: reviewer model",
+      "description": "Model for the reviewer, which checks conformance to the contracts and the design. inherit: the session's model.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "inherit"
+      ],
+      "default": "opus"
+    },
+    "implement_model_recorder": {
+      "type": "string",
+      "title": "Spec implementation: recorder model",
+      "description": "Model for the recorder, which writes the implementation record. inherit: the session's model.",
+      "options": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "fable",
+        "inherit"
+      ],
+      "default": "sonnet"
     }
   }
 }

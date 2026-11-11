@@ -114,6 +114,8 @@ Two products on one style must not share a face.
 Build the empty shell first: nav, top bar if any, canvas, title row ([layout.md](references/layout.md)). View it at 1440
 and 390. Write the grid arithmetic in a comment: column count, gutter, and the sum proving cards land on the canvas
 edges. Then add blocks from [patterns.md](references/patterns.md) and [components.md](references/components.md).
+Build overlays, menus, form fields and tables on the native elements in [platform.md](references/platform.md), keeping
+its fallback wherever a target browser lacks a feature.
 
 Motion is feedback only: press, hover, focus, a menu opening, a row arriving. Nothing on the screen performs an entrance.
 
@@ -135,6 +137,8 @@ Build and view every state ([components.md](references/components.md)):
 
 - **Each block:** empty, zero, loading, error.
 - **Each row and control:** hover, selected, focus, disabled.
+- **Each overlay and form field:** opening, closing, invalid after interaction, and reduced motion
+  ([platform.md](references/platform.md)).
 
 ### 8. Check
 
@@ -166,6 +170,8 @@ Answer these in writing:
 6. Does every legend swatch match its mark? Does any label collide with a line or another label?
 7. On the phone, is the nav folded away, and does each block still answer its question?
 8. Does every block the brief names show on the first screen, with the most frequent job one click away?
+9. Does every overlay close with Escape, and with an outside click where intended, and return focus to the control that
+   opened it?
 
 Then check against [tells.md](references/tells.md). Fix the worst three and look again, three rounds at most.
 

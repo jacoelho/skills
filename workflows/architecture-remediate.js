@@ -638,7 +638,7 @@ Wait for every run to finish before you return: this result is final and nothing
 // The commit is unreferenced; git gc prunes it after its expiry window.
 async function snapshot(round) {
   phase('Implement')
-  const cmd = `T=$(mktemp) && cp "$(git rev-parse --git-path index)" "$T" && GIT_INDEX_FILE="$T" git add -A && git commit-tree "$(GIT_INDEX_FILE="$T" git write-tree)" -p HEAD -m "architecture-remediate: before round ${round}"; S=$?; rm -f "$T"; exit $S`
+  const cmd = `T=$(mktemp) && cp -p "$(git rev-parse --git-path index)" "$T" && GIT_INDEX_FILE="$T" git add -A && git commit-tree "$(GIT_INDEX_FILE="$T" git write-tree)" -p HEAD -m "architecture-remediate: before round ${round}"; S=$?; rm -f "$T"; exit $S`
   const r = await agent(`Run exactly this shell command from the repository root and return the commit id it prints as sha. Do not edit files or run anything else.\n${cmd}`,
     { label: `snapshot r${round}`, phase: 'Implement', schema: SNAPSHOT, model: RUN_MODEL, effort: 'low' })
   const sha = r && String(r.sha).trim()
@@ -649,7 +649,7 @@ async function snapshot(round) {
 // The current tree as a tree object, built the same way as the snapshot. Plain \`git diff <snap>\`
 // compares only paths in the user's index, so files that were untracked at the snapshot (every
 // earlier round's new files) would read as deleted.
-const CURRENT_TREE = `$(T=$(mktemp) && cp "$(git rev-parse --git-path index)" "$T" && GIT_INDEX_FILE="$T" git add -A && GIT_INDEX_FILE="$T" git write-tree; rm -f "$T")`
+const CURRENT_TREE = `$(T=$(mktemp) && cp -p "$(git rev-parse --git-path index)" "$T" && GIT_INDEX_FILE="$T" git add -A && GIT_INDEX_FILE="$T" git write-tree; rm -f "$T")`
 const roundDiff = (snap, flags) => `git diff${flags ? ' ' + flags : ''} ${snap} "${CURRENT_TREE}"`
 
 // ---------- acceptance ----------

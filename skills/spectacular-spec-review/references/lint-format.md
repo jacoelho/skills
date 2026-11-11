@@ -1,6 +1,6 @@
 # Declaration and EARS linter
 
-The linter is a small, standard-library-only Python tool. It enforces the declaration layout, [EARS lexical grammar](ears.md), and local traceability in explicitly active Markdown documents. Every REQ/INV statement is checked, whether proposed or accepted; there is no switch to bypass EARS checks. Requirement meaning and implementation conformance still require review.
+The linter is a small, standard-library-only Python tool. It enforces the declaration layout, [EARS lexical grammar](../../spectacular-spec-writing/references/ears.md), and local traceability in explicitly active Markdown documents. Every REQ/INV statement is checked, whether proposed or accepted; there is no switch to bypass EARS checks. Requirement meaning and implementation conformance still require review.
 
 ## Run
 
@@ -13,7 +13,7 @@ python3 "$skill_dir/scripts/spec_lint.py" ./specs
 
 The spec roots are arguments to the command and are resolved from the process current working directory; use absolute paths when that directory is not the repository root. Pass the relevant active spec roots, including the canonical homes of locally referenced identifiers. The program does not fetch external sources. It accepts Python 3.10 or later. Only regular Markdown files are read.
 
-A supplied path states intent, so symbolic links in it, including in its ancestors, are followed, and the resolved target decides eligibility: `notes.md -> notes.txt` is rejected. Findings in a followed file name its resolved path; a rejected input is named as supplied. Symbolic links met during directory traversal are never followed, and each is counted. A `skipped-symlink` warning names a link only when its target may hold Markdown this run did not check: the target is dangling or loops, is neither a regular file nor a directory, is a Markdown file that was not scanned, or is a directory that was not traversed. A link to a scanned file or a traversed directory, such as `CLAUDE.md -> AGENTS.md`, or to a regular non-Markdown file, is counted without a warning. Coverage is decided after all inputs are collected, so input order does not matter; it compares resolved path spellings, as the deduplication note under Output and exit codes describes. Under `--strict` a warning fails the run until its target is passed explicitly or the link is removed. A dangling or looping input link is an input error. Explicit non-Markdown files and unsupported input types are rejected; regular non-Markdown files encountered under a directory are skipped and counted. Special files, such as named pipes, are rejected and counted even during traversal. Hidden files and directories are skipped only when encountered during directory traversal, and the hidden check comes first, so a hidden link counts as hidden, not as a symlink. An explicitly supplied hidden Markdown file is eligible for scanning.
+Symbolic links you pass are followed; links met while walking a directory are skipped and counted, with a `skipped-symlink` warning when the target may hold Markdown that was not checked. Hidden entries, unmarked documents, and non-Markdown files met while walking are skipped and counted; explicit non-Markdown inputs, special files, and dangling or looping input links are rejected. Pass a skipped target explicitly when it should be checked.
 
 ## Opt in
 
@@ -82,6 +82,7 @@ Use `Status: proposed` or `Status: accepted` for REQ and INV declarations. Other
 - Unsupported declaration/field forms, orphan fields, Statement continuations, or Statement on another declaration kind.
 - AC declarations missing a coverage link or an expected result.
 - An accepted REQ/INV with no AC declaration pointing to it: warning only.
+- A REQ/INV statement using a vague term, such as `fast`, `appropriate`, `robust`, `etc`, `and/or`, or `if possible`, outside a quoted literal: warning only. The full list is `VAGUE_TERMS` in `scripts/spec_lint.py`. The list only finds candidates: whether a term is vague is decided by the definition in the EARS reference's Terms table. Replace a vague term with a measurable bound or a defined term; quote it when it is literal data, such as a returned label. A listed word that the contract defines is not vague: write it in backticks, as a reference to the defined term, which also clears the warning.
 - A symbolic link skipped during traversal whose target was not checked: warning only.
 - Duplicate recognised fields within a block.
 - An opted-in document with no supported declarations, a malformed backtick fence opener, or an unclosed code fence.
