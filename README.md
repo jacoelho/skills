@@ -69,14 +69,47 @@ A run is costly, and the cost follows the number of rounds, not the size of the 
 5. **Conform**: check the contract with spec-review and the code against the recorded design; one round of fix units, then the user decides what remains. The review reads every uncommitted change against HEAD, so edits you had before the run are reviewed with it.
 6. **Close**: an anchored contract's ACs name their tests; a feature spec goes through its discard gate.
 
+### Before you start
+
+- The contract lints clean with `jacoelho:spectacular-spec-review` and has no open product decisions. Settle those first with `jacoelho:spectacular-spec-grilling`; a requirement the planner finds ambiguous is left out of the plan as spec-blocked.
+- Commit or stash your own edits. The workflow never commits, and its review reads every uncommitted change against HEAD, so edits you leave in the tree are reviewed as part of the run.
+- After installing or updating the plugin, start a new session. A session whose skill list predates the skill cannot load the method, and the run stops at once with an error.
+- Expect roughly 6 to 8 agents per change before its units. For one small change, asking a normal session to follow `/jacoelho:spectacular-spec-implementation` costs less.
+
+### Start a run
+
+Pass one contract path, or an object for several contracts and options:
+
 ```text
 /jacoelho:spec-implement specs/booking/contract.md
 /jacoelho:spec-implement {"contracts": ["specs/booking/contract.md", "specs/stock/contract.md"], "concurrency": 4, "gates": []}
-/jacoelho:spec-implement specs/booking/booking.implementation.md
 /jacoelho:spec-implement help
 ```
 
-The record is the only state, so a run can stop and resume in any later session: rerun with the record path. That also approves the gate the run stopped at: `plan` (only when the design adds a seam, module or dependency), `change` (after each change, off by default) and `discard` (feature specs). After a `blocked` stop, settle each reason (a decision in the decision record, a change to the record's Design, or a note in the record) and rerun; the planner reopens the units whose reason is settled, and a unit interrupted mid-run starts again. Other options set `instructions` for every agent, `concurrency` (units per wave, default 3), `models` per role (planner, testWriter, implementer, runner, reviewer, recorder; a model name, or `inherit` for the session model), `maxAttempts`, the `verify` command and `keepRecord`. The result reports the turn's token spend, which includes anything else spent in the same turn.
+The planner writes the record to `<capability>.implementation.md` next to the first contract: `specs/booking/contract.md` gives `specs/booking/booking.implementation.md`. With the default gates, the run stops for approval after planning only when the design adds a seam, module or dependency; `"gates": []` runs unattended to the end.
+
+### Stops and how to continue
+
+Every stop returns a `stopKind` and a `next` line saying what to do. The record is the only state, so you can continue in any later session by rerunning with the record path, which also approves the gate the run stopped at:
+
+```text
+/jacoelho:spec-implement specs/booking/booking.implementation.md
+```
+
+| `stopKind` | What happened | What to do |
+| --- | --- | --- |
+| `plan-ready` | The design adds a seam, module or dependency. | Read the plan in the record, then rerun with the record path to approve it. |
+| `change-ready` | A change was accepted and the `change` gate is on. | Review the diff, then rerun with the record path. |
+| `blocked` | A unit needs a decision outside its rights, failed every attempt, or conformance found something for you. | Settle each reason in `next`: a product decision in the decision record, a design change in the record's Design, or a note in the record. Rerun with the record path; the planner reopens the units whose reason is settled. |
+| `verify-failing` | The repository's checks still fail after fixes. | Fix the cause or record a decision, then rerun with the record path. |
+| `contract-changed` | A contract changed during the run. | Rerun with the record path; the planner re-plans only the affected changes. |
+| `spec-blocked` | Every requirement is blocked by a defect in the contract. | Fix the contract with `jacoelho:spectacular-spec-writing`, then start again with the contract path. |
+| `budget` | The turn's token target cannot cover the next change. | Rerun with the record path and a larger target. |
+| `discard-ready` | A feature spec is fully implemented. | Rerun with the record path to approve discarding it. |
+| `error` | A step could not run, for example no check command or a planner that could not load the method. | Do what `next` says, usually pass `verify` or start a new session, then rerun. |
+| `done` | Every change is accepted and closed. | Review and commit the tree. Open questions were carried into the capability's decision record. |
+
+A unit interrupted mid-run starts again on resume. Other options set `instructions` for every agent, `concurrency` (units per wave, default 3), `models` per role (planner, testWriter, implementer, runner, reviewer, recorder; a model name, or `inherit` for the session model), `maxAttempts`, the `verify` command and `keepRecord` (keep the record after close instead of deleting it). The result reports the turn's token spend, which includes anything else spent in the same turn.
 
 To set role models once instead of per run, set the `implement_model_*` options in `/config`; they start at the workflow's defaults (planner and reviewer `opus`, runner `haiku`, the rest `sonnet`), and `inherit` uses the session's model. Plugin settings do not reach workflow scripts, so the skill passes the ones you have set as `models` when it launches the workflow; `models` given for a run takes precedence, and invoking `/jacoelho:spec-implement` directly uses only the `models` you pass.
 
