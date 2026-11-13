@@ -45,7 +45,7 @@ A feature contract may reference anchored IDs. An anchored contract never refere
 Before a feature contract is discarded:
 
 1. Every accepted REQ and INV has an executable check that passes. The check, not the contract, now records the behaviour; name it after the behaviour, not the feature-contract ID.
-2. Each decision with lasting consequence is recorded in an ADR or the PR description. The decision record from grilling is discarded with the contract.
+2. Each decision with lasting consequence is recorded, with its rejected options and their reasons, in an ADR or the PR description. The decision record from grilling is discarded with the contract.
 3. Nothing lasting references a feature-contract ID.
 
 Discard by deleting the folder. When the user wants it kept as read-only history, remove its spec-lint marker and add a first line saying it is superseded history, so it is no longer linted or treated as a source.

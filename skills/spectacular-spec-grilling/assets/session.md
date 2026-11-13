@@ -13,9 +13,9 @@ Workspace state: [repository/workspace and relevant code or document revisions; 
 
 ## Decision record
 
-| ID | Question or decision | State | Basis / answer / authority | Prerequisites | Affected work | Resolution condition |
+| ID | Question or decision | State | Basis / answer / rejected options / authority | Prerequisites | Affected work | Resolution condition |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-CAP-001 | [one decision] | open | [evidence or gap; answer and authority when resolved] | [IDs or observation] | [scope/requirement IDs] | [who or what settles it] |
+| Q-CAP-001 | [one decision] | open | [evidence or gap; when resolved, the answer, each rejected option with its reason, and the authority] | [IDs or observation] | [scope/requirement IDs] | [who or what settles it] |
 
 Allowed states: open, resolved, needs-evidence, deferred, delegated, excluded.
 

@@ -16,10 +16,10 @@ Workspace state: illustrative; no code revision
 
 ## Decision record
 
-| ID | Question or decision | State | Basis / answer / authority | Prerequisites | Affected work | Resolution condition |
+| ID | Question or decision | State | Basis / answer / rejected options / authority | Prerequisites | Affected work | Resolution condition |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-BOOK-001 | Which bookings can a customer cancel? | resolved | Pending only; a confirmed booking is rejected as a conflict because refunds are out of scope. Booking product owner. | none | REQ-BOOK-001, REQ-BOOK-003 | Answered |
-| Q-BOOK-002 | What does cancelling an already cancelled booking return? | resolved | Success with no change, so client retries are safe. Booking product owner. | Q-BOOK-001 | REQ-BOOK-002 | Answered |
+| Q-BOOK-001 | Which bookings can a customer cancel? | resolved | Pending only; a confirmed booking is rejected as a conflict because refunds are out of scope. Rejected: cancelling confirmed bookings too, because that needs refunds. Booking product owner. | none | REQ-BOOK-001, REQ-BOOK-003 | Answered |
+| Q-BOOK-002 | What does cancelling an already cancelled booking return? | resolved | Success with no change, so client retries are safe. Rejected: a conflict error, because clients would treat a retried success as a failure. Booking product owner. | Q-BOOK-001 | REQ-BOOK-002 | Answered |
 | Q-BOOK-003 | When cancellation and confirmation of one booking race, which wins? | excluded | No answer yet; plausible answers differ on whether stock is released. Excluded from this change. | Q-BOOK-001 | concurrent cancel and confirm | Booking product owner decides before concurrency work starts |
 | Q-BOOK-004 | What does a cancellation request from anyone other than the booking's owner, or for an unknown booking, return? | excluded | No answer yet; plausible answers differ on whether a booking's existence is disclosed. Excluded from this change, so every requirement is scoped to the owner. | none | non-owner and unknown-booking requests | Booking product owner decides before access-control work starts |
 

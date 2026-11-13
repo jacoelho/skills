@@ -9,6 +9,7 @@ Reviewed state: [document revisions or workspace state].
 Sources inspected: [current contracts, shared interfaces, decisions, relevant checks].
 Limits: [inaccessible sources, excluded domains, unexecuted checks, sampling].
 Review execution: [self-review or actual named reviewer runs; never implied independence].
+Paraphrase reader: [who paraphrased and the inputs given, or skipped and why].
 Execution evidence: [code/configuration state, commands, fixtures, boundaries, and results; distinguish runtime observations from static inference].
 
 ## Assessments

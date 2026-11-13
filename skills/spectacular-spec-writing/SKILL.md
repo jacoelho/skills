@@ -39,12 +39,23 @@ Read [EARS](references/ears.md) before writing a statement; it is the only requi
 
    Fix each error and rerun until it exits 0. Resolve each `vague-term` warning with the fork test: add a bound, backtick a defined term, or quote literal data. If the linter cannot run, or the repository uses another layout, say so; reading the file yourself is not an executed check.
 
+## Review findings
+
+The review is read-only; you decide what happens to each finding from `jacoelho:spectacular-spec-review` or any other reviewer, and give it exactly one outcome:
+
+- **Fix:** edit the contract with the steps above, then lint (step 8).
+- **Contest:** the finding is wrong. Cite evidence the reviewer could read: a contract ID, a decision record entry, or a file and symbol. "This was intentional" is not evidence, and having written the contract, your wish to contest is not evidence either. A divergence found by the review's paraphrase reader cannot be contested: the contract failed to say what was meant.
+- **Escalate:** settling it needs a product decision or knowledge no file holds. Record it as step 3 directs, or as an `unresolved conflict` ([mismatch classes](references/mismatch.md)) when authority is missing, and keep dependent behaviour out of the ready scope.
+- **Decline:** only for a finding the report marks minor; record the reason.
+
+Do not change a finding's severity; contest it with evidence instead. When a finding asks for missing context, reference that context's home ([ownership](references/ownership.md)) rather than copying it into the contract; add normative text only when an obligation changes. On the next review, pass your contests with their evidence.
+
 ## Return
 
 - The contract or patch, and its scope.
 - Open decisions and blocked work, in the decision record.
-- When present: structural commitments the implementer must keep, reconciliation findings, and the open discard-gate items of a feature contract.
-- The next action: implement, investigate, revise, or no change. Recommend implementing only when [the readiness criteria](${CLAUDE_SKILL_DIR}/../spectacular-spec-review/SKILL.md#steps) in step 8 of `jacoelho:spectacular-spec-review` hold; implementation follows `jacoelho:spectacular-spec-implementation`.
+- When present: structural commitments the implementer must keep, reconciliation findings, review findings contested, escalated, or declined with their evidence or reason, and the open discard-gate items of a feature contract.
+- The next action: implement, investigate, revise, or no change. Recommend implementing only when [the readiness criteria](${CLAUDE_SKILL_DIR}/../spectacular-spec-review/SKILL.md#steps) in the Readiness step of `jacoelho:spectacular-spec-review` hold; implementation follows `jacoelho:spectacular-spec-implementation`.
 
 For a handoff to another session, update the decision record's Handoff section; point to obligations rather than restating them.
 
