@@ -13,7 +13,7 @@ Use these to find gaps. The order is advisory.
 5. What is the shortest working use, and what output should they see?
 6. Where do they go next: reference docs, configuration, contributing, licence?
 
-Lead with the first answer. Status or maturity belongs near the top when the project is experimental, deprecated or unmaintained.
+Lead with the first answer. Write out "do not" and "cannot": contractions are harder to scan for readers who skim or read in a second language. Status or maturity belongs near the top when the project is experimental, deprecated or unmaintained.
 
 ## Traps
 

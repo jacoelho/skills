@@ -1,0 +1,28 @@
+extends: existence
+message: "Split at the semicolon into two sentences, keeping each condition with the claim it limits."
+level: suggestion
+scope: sentence & ~heading & ~table
+nonword: true
+tokens:
+- ';'
+tests:
+- name: flags a semicolon joining two claims
+  input: The reader writes the paraphrase; it never sees the code.
+  contains: Clarity.Semicolon
+- name: ignores inline code
+  input: Run `make build; make test` first.
+  want: ''
+- name: ignores fenced code
+  input: '```go
+
+    for i := 0; i < n; i++ {}
+
+    ```'
+  want: ''
+- name: ignores tables
+  input: '| Command |
+
+    | --- |
+
+    | a; b |'
+  want: ''

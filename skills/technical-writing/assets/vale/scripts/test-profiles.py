@@ -26,7 +26,9 @@ We delve into the design, which plays a pivotal role. Written by [YOUR NAME].
 
 See [the docs](https://go.dev/doc?utm_source=chatgpt.com).
 
-""" + " ".join(["word"] * 41) + ".\n"
+The worker stops; the queue drains. This means the backlog clears.
+
+""" + " ".join(["word"] * 31) + ".\n"
 
 # Wording the profile must leave alone.
 # The last paragraph is a positive control, so a guard cannot pass because Register failed to load.
@@ -124,7 +126,8 @@ def main() -> None:
         "Technical.HeadingCase", "Technical.Spelling", "Vale.Repetition", "Clarity.LongSentence",
         "Clarity.PlainLanguage", "Clarity.UnsupportedQuality", "Requirements.VagueRequirement",
         "Workflow.ProcessLeakage", "Workflow.GeneratedMarkup", "Workflow.Placeholder",
-        "Register.StockVocabulary", "Register.Significance",
+        "Register.StockVocabulary", "Register.Significance", "Clarity.Semicolon",
+        "Clarity.AmbiguousReference",
     }
     assert expected <= checks, expected - checks
     assert code == 0 and not any(a["Severity"] == "error" for a in alerts), alerts

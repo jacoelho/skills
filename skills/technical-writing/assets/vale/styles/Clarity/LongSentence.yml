@@ -1,20 +1,16 @@
 extends: occurrence
-message: 'More than 40 whitespace-separated tokens: inspect the structure, not just the length. Preserve
+message: 'More than 30 whitespace-separated tokens: inspect the structure, not just the length. Preserve
   actors, conditions and requirement strength.'
 level: suggestion
 scope: sentence & ~heading & ~table
-max: 40
+max: 30
 token: \S+
 tests:
-- name: flags more than the initial review threshold
-  input: word word word word word word word word word word word word word word word word word word word
-    word word word word word word word word word word word word word word word word word word word word
-    word word.
+- name: flags more than the review threshold
+  input: word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word.
   contains: Clarity.LongSentence
 - name: does not flag the threshold itself
-  input: word word word word word word word word word word word word word word word word word word word
-    word word word word word word word word word word word word word word word word word word word word
-    word.
+  input: word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word.
   want: ''
 - name: does not aggregate several short sentences
   input: The worker reads the message and checks the key. The worker reads the message and checks the
@@ -24,9 +20,7 @@ tests:
 - name: ignores long fenced code
   input: '```text
 
-    word word word word word word word word word word word word word word word word word word word word
-    word word word word word word word word word word word word word word word word word word word word
-    word word word word word
+    word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word
 
     ```'
   want: ''
@@ -35,12 +29,8 @@ tests:
 
     | --- |
 
-    | word word word word word word word word word word word word word word word word word word word word
-    word word word word word word word word word word word word word word word word word word word word
-    word word word word word. |'
+    | word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word. |'
   want: ''
 - name: does not count a heading as a prose sentence
-  input: '# word word word word word word word word word word word word word word word word word word
-    word word word word word word word word word word word word word word word word word word word word
-    word word word word word word word'
+  input: '# word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word'
   want: ''

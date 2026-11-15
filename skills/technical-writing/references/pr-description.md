@@ -1,6 +1,6 @@
 # PR description profile
 
-A PR description tells a reviewer what changed, why, and what to trust. A repository's PR template and contribution guide take precedence over this structure.
+A PR description tells a reviewer what changed, why, and what to trust. A repository's PR template and contribution guide take precedence over this structure, and so does a user or repository rule on what to leave out, such as verification.
 
 ## Sources
 
@@ -16,12 +16,14 @@ Read the actual diff, not just the commit messages or the author's summary. Use 
 
 Keep it proportionate. A one-line fix can take two sentences. Omit sections with nothing to say. Don't write "N/A" unless the template requires it.
 
+Give each paragraph one change, and open it with what changes for the reviewer or user before the mechanism. Explain a new or renamed term before using it. A large PR gets more paragraphs, not denser ones.
+
 The title is a scan surface: lead with the specific change, in the repository's convention when it has one.
 
 ## Traps
 
 - **Narrating the diff.** "Changed `foo` to `bar` in three files" repeats what the reviewer can already see. State the effect.
-- **Claiming verification that didn't happen.** "Tests pass" requires evidence that they ran. Tests added to the diff are not tests that passed. When verification is unknown, say what is unknown; never infer it from the code. A CI-config change is not proof of a CI result.
+- **Claiming verification that didn't happen.** "Tests pass" requires evidence that they ran. Tests added to the diff are not tests that passed. When verification is unknown, say what is unknown. Never infer it from the code. A CI-config change is not proof of a CI result.
 - **Omitting known limitations.** A TODO in the diff, a skipped case or a limit stated in the notes belongs in the description, stated plainly.
 - **Invented motivation.** If the reason for the change isn't in the sources, report it as missing rather than deducing a plausible one.
 - **Upgraded impact.** "Fixes the timeouts" needs evidence the timeouts stopped. If the change is expected to help, say "expected to reduce".
