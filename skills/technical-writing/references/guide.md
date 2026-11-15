@@ -15,7 +15,8 @@ Use these to find gaps. The order is advisory.
 
 ## Rules
 
-- Give each step one action. Number steps that must happen in order.
+- Give each step one action. Number steps that must happen in order. Write each step as an imperative of 20 words or fewer.
+- Write out "do not" and "cannot". Contractions are harder to scan for readers who skim or read in a second language.
 - Put the condition or warning before the action it governs: "Before deleting the volume, stop the service."
 - Give the expected output or observable state after any step whose failure would otherwise be silent.
 - Mark steps that are destructive or hard to reverse, and say how to undo them, or that they can't be undone.
@@ -25,7 +26,7 @@ Use these to find gaps. The order is advisory.
 ## Traps
 
 - **Hidden assumptions.** A step that needs a login, a running service or an earlier step's output needs that stated first.
-- **Order from the notes, not the task.** Notes record what someone did; the guide records what must happen first. Reorder only when the source supports the dependency. When the true order is unclear, report it.
+- **Order from the notes, not the task.** Notes record what someone did. The guide records what must happen first. Reorder only when the source supports the dependency. When the true order is unclear, report it.
 - **Resolved conflicts.** When sources give different values or steps, show the conflict in the guide and report it. Do not choose one because it looks newer or more plausible unless the source says it supersedes the other.
 - **Invented recovery.** A failure path comes from the source. When there isn't one, report the gap rather than writing a generic fix.
 - **Happy path only.** Known failure modes in the source stay in the guide.

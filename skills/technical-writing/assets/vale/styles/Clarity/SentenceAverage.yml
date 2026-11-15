@@ -1,0 +1,16 @@
+# Document-level: Vale reports it once, at the first line. Fewer than three sentences is too small a sample.
+extends: metric
+message: "Sentences average %s words, above the 22-word review threshold: look for sentences that carry more than one new idea."
+level: suggestion
+formula: "sentences >= 3 ? words / sentences : 0.0"
+condition: "> 22"
+tests:
+- name: flags a document of long sentences
+  input: The worker reads the message from the queue, checks the idempotency key against the store, and acknowledges the message only after the write commits. The planner splits each change into units, runs them in parallel waves when their modules are disjoint, and records progress in a file that any later session can resume. The reviewer compares the paraphrase against the intent, the governing context and the decision record, and reports each divergence as a finding.
+  contains: Clarity.SentenceAverage
+- name: accepts short sentences
+  input: The worker reads the message. It checks the key. Then it acknowledges the message. It stops.
+  want: ''
+- name: ignores a document with fewer than three sentences
+  input: The worker reads each message from the queue and then checks the idempotency key before it writes the new record to the store today.
+  want: ''

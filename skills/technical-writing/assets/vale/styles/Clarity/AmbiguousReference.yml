@@ -1,0 +1,22 @@
+extends: existence
+message: "Name what '%s' refers to, unless the previous sentence has exactly one candidate."
+level: suggestion
+scope: sentence & ~heading & ~table
+tokens:
+- '^(?:This|These)(?=\s+(?:is|are|was|were|means|mean|makes|make|catches|catch|causes|cause|lets|let|keeps|keep|allows|allow|gives|give|ensures|ensure|matters|helps|help|shows|show|avoids|avoid|prevents|prevent|breaks|break|fixes|fix|changes|change|removes|remove)\b)'
+tests:
+- name: flags a bare demonstrative subject
+  input: The rules lint clean. This catches a contract that drifted.
+  contains: Clarity.AmbiguousReference
+- name: flags a plural demonstrative subject
+  input: The checks run in parallel. These make the review faster.
+  contains: Clarity.AmbiguousReference
+- name: accepts a demonstrative before its noun
+  input: The rules lint clean. This check catches a contract that drifted.
+  want: ''
+- name: accepts a demonstrative mid-sentence
+  input: The worker reads this value before the key.
+  want: ''
+- name: accepts it as an expletive
+  input: It is safe to retry with the same key.
+  want: ''

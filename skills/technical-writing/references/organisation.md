@@ -21,8 +21,10 @@ Read for every draft, improvement, reorganisation and review. The contract in `S
 
 A paragraph break is a claim: the blank line tells the reader one unit of thought ended. Make it true.
 
+- Build an explanation in layers. Start from what the reader sees or does, then add one new concept per sentence. Link each step to the one before with a word that states the relationship, such as "because", "so" or "however". Use one only when the source supports that relationship.
+- Introduce a new term in its own sentence before a sentence uses it. A paragraph that introduces more than two new terms usually covers more than one job.
 - Give each paragraph one job, not necessarily one idea or one sentence shape.
-- Start a new paragraph when the paragraph's job, actor, time, alternative, certainty or normative status changes. Break only at such a turn, never just to shorten a block; a break inside one argument tells the reader it ended.
+- Start a new paragraph when the paragraph's job, actor, time, alternative, certainty or normative status changes. Break only at such a turn, never just to shorten a block. A break inside one argument tells the reader it ended.
 - Let length follow weight. The paragraph carrying the decision or the risk may be the longest.
 - Put a warning or decision the reader must not miss at the start of a paragraph or in its own paragraph, never buried mid-paragraph. Keep its condition in the same sentence.
 - In Markdown files a single newline joins lines, so separate paragraphs with a blank line. GitHub PR and issue bodies render a single newline as a line break, so do not hard-wrap prose there.
@@ -34,10 +36,13 @@ A paragraph break is a claim: the blank line tells the reader one unit of though
 
 - Name the actor when ownership or mechanism matters.
 - Prefer direct verbs to abstract-noun chains: "evaluate", not "perform an evaluation of".
-- Use passive voice when the actor is genuinely irrelevant or the outcome is the point.
-- Keep one principal claim per sentence. Split when a second claim needs separate evidence.
-- Keep a long sentence when it expresses one relationship more accurately than fragments would.
-- Avoid pronouns with more than one plausible antecedent.
+- Give each sentence one idea. Keep descriptive sentences to 25 words or fewer and instructions to 20 or fewer, as a ceiling rather than a target. A number, an identifier, a code span or a quoted phrase counts as one word.
+- Split without detaching a qualifier. Put the condition first ("When no reader is available, the review skips the check"), or repeat the subject or condition in the next sentence. Keep a longer sentence only when it holds one inseparable condition or a quoted identifier.
+- Use a full stop, not a semicolon, between two claims.
+- Prefer active voice. Use passive voice only when the actor is unknown or irrelevant, or the outcome is the point.
+- Replace "it", "this" or "these" with the noun when the previous sentence offers more than one candidate. Keep "that" after verbs such as "show", "ensure" and "recommend".
+- Keep technical terms to three words or fewer. Restructure a longer one with "of", "for" or "on". Spell out a long official name on first use, then use one short form.
+- Prefer short, literal words. Avoid idioms and figurative phrasal verbs ("roll out", "spin up") when a direct verb ("release", "start") fits.
 - Use one term for one concept. Do not vary technical nouns for style.
 - Introduce an acronym on first use unless the audience already treats it as a standard term.
 - Replace unsupported adjectives such as "robust", "seamless", "scalable" or "simple" with the mechanism or consequence the source gives. If it gives none, cut the adjective.
@@ -66,8 +71,8 @@ When these rules conflict:
 1. A safety condition may precede the differentiator, even in a scan surface. "Before deleting the volume, stop the service" keeps its order.
 2. Never drop a qualifier to make peers parallel. Never force mixed evidence into one polarity.
 3. Scan-surface rules do not apply to paragraphs. Uniform paragraphs read as a template.
-4. Do not manufacture variety or uniformity. Repetition that carries meaning stays; variation that carries none goes.
+4. Do not manufacture variety or uniformity. Repetition that carries meaning stays. Variation that carries none goes.
 
 ## Remove
 
-Throat-clearing, sales language, rhetorical questions, decorative emphasis, forced groups of three, artificial conclusions, and transitions that assert a relationship the text has not established. Keep drawbacks, dissent, exceptions and open questions visible: they are not noise.
+Throat-clearing, sales language, rhetorical questions, decorative emphasis, forced groups of three, artificial conclusions, and transitions that assert a relationship the text has not established. Also remove reports of checks that found nothing and need no action from the reader. Keep drawbacks, dissent, exceptions and open questions visible: they are not noise.

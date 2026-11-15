@@ -8,7 +8,7 @@ Read the diff being committed, not a summary of it. Use the linked issue, review
 
 ## Questions it must answer
 
-1. What changed, in terms of behaviour? The title answers this; the body adds what the title can't hold.
+1. What changed, in terms of behaviour? The title answers this. The body adds what the title can't hold.
 2. Why was the change needed? The diff can't say.
 3. What breaks for a caller or operator: removed options, changed defaults, changed output, migrations?
 
@@ -20,13 +20,16 @@ The title is a scan surface: lead with the specific change, in the repository's 
 
 ## Body
 
-Separate the body from the title with a blank line. Give each paragraph one area of the change. Follow the repository's history for line wrapping, trailers and whether lists are used.
+Separate the body from the title with a blank line. Give each paragraph one change. Open it with what changes for the user or caller, then give the mechanism, then the edge cases. A large commit gets more paragraphs, not denser ones. Follow the repository's history for line wrapping, trailers and whether lists are used.
+
+When the change introduces or renames a term, explain the term in one sentence before the paragraph relies on it. A list of three or more parallel items, such as renamed fields or removed options, reads better as a list than as one sentence, when the convention allows lists.
 
 A measured effect of the change is a claim about the change and keeps its conditions: "allocations per element start fall from 5 to 1".
 
 ## Traps
 
 - **Narrating the diff.** "Changed `foo` to `bar` in three files" repeats what the reader can already see. State the effect.
+- **Packing a paragraph.** One paragraph that covers three changes, with several new terms per sentence, forces the reader to reread. Split it by change.
 - **Narrating the work.** How the change was developed, reviewed or revised is not part of the change.
 - **Invented motivation.** If the reason for the change isn't in the sources, report it as missing rather than deducing a plausible one.
 - **Upgraded impact.** "Fixes the timeouts" needs evidence the timeouts stopped. If the change is expected to help, say "expected to reduce".
