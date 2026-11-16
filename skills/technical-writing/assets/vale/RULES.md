@@ -43,6 +43,7 @@ These rules flag phrasing that makes PR descriptions, issues and articles read a
 | Absolute claims ("the only way to") | They are legitimate in technical prose. |
 | Curly quotes, title case | Curly quotes are correct British typography; `Technical.HeadingCase` owns title case. |
 | Elegant variation, cut-offs, citation validity | Vale cannot see them. |
+| Negative restatement after "and" ("and nobody…", "and no longer…") | Such a clause can add a fact ("and never fail a run"). `references/organisation.md` owns the prose rule. |
 
 ## Readability rules
 
