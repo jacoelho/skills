@@ -39,6 +39,7 @@ A paragraph break is a claim: the blank line tells the reader one unit of though
 - Give each sentence one idea. Keep descriptive sentences to 25 words or fewer and instructions to 20 or fewer, as a ceiling rather than a target. A number, an identifier, a code span or a quoted phrase counts as one word.
 - Split without detaching a qualifier. Put the condition first ("When no reader is available, the review skips the check"), or repeat the subject or condition in the next sentence. Keep a longer sentence only when it holds one inseparable condition or a quoted identifier.
 - Use a full stop, not a semicolon, between two claims.
+- When a change replaces something the reader need not act on, name the old state in a phrase: "the scheduler reads limits from the config file instead of environment variables".
 - Prefer active voice. Use passive voice only when the actor is unknown or irrelevant, or the outcome is the point.
 - Replace "it", "this" or "these" with the noun when the previous sentence offers more than one candidate. Keep "that" after verbs such as "show", "ensure" and "recommend".
 - Keep technical terms to three words or fewer. Restructure a longer one with "of", "for" or "on". Spell out a long official name on first use, then use one short form.
@@ -75,4 +76,4 @@ When these rules conflict:
 
 ## Remove
 
-Throat-clearing, sales language, rhetorical questions, decorative emphasis, forced groups of three, artificial conclusions, and transitions that assert a relationship the text has not established. Also remove reports of checks that found nothing and need no action from the reader. Keep drawbacks, dissent, exceptions and open questions visible: they are not noise.
+Throat-clearing, sales language, rhetorical questions, decorative emphasis, forced groups of three, artificial conclusions, and transitions that assert a relationship the text has not established. Also remove reports of checks that found nothing and need no action from the reader. Also remove a clause the reader could infer from the one before, such as "…, and nobody restarts them manually" after "failed workers restart automatically". Keep a clause that adds a fact or limits scope, such as a removed flag, and a subject or condition repeated after a split. Keep drawbacks, dissent, exceptions and open questions visible: they are not noise.
