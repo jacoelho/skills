@@ -51,7 +51,7 @@ Prefer the model that serves all three. When they conflict, users win, and the c
 
 ## Design check
 
-Run after each change and once over the whole stack, on the whole working tree's changes against HEAD, untracked files included, with the edit paths of that change (or of every change for the whole stack) as the planned scope. Edits you had before the run are reviewed too. Report a finding, with file and line, for each:
+Run after each change and once over the whole stack, on the whole working tree's changes against HEAD, untracked files included, with the edit paths of that change (or of every change for the whole stack) as the planned scope; the evidence maps beside the contracts are always in scope, because test writers add rows to them. Edits you had before the run are reviewed too. Report a finding, with file and line, for each:
 
 1. Code that implements a requirement, state, or invariant outside its owner module.
 2. A call into another module other than through a recorded seam.

@@ -1,6 +1,6 @@
 {
   "name": "jacoelho",
-  "description": "Personal skills, subagents and hooks (prompt intake, context handoff): Go API design and performance, testing, specs, architecture review, technical writing.",
+  "description": "Personal skills, subagents and hooks (prompt intake, context handoff, spec lint): Go API design and performance, testing, specs, architecture review, technical writing.",
   "author": {
     "name": "José Coelho"
   },
@@ -129,6 +129,16 @@
         "inherit"
       ],
       "default": "sonnet"
+    },
+    "spec_lint": {
+      "type": "string",
+      "title": "Spec lint",
+      "description": "on: at the end of each turn, every spectacular contract in the repository is linted with the bundled linter, and findings the turn introduced are sent back to fix. Needs git and python3. off: no check.",
+      "options": [
+        "on",
+        "off"
+      ],
+      "default": "on"
     }
   }
 }

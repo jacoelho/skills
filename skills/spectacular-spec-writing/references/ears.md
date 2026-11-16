@@ -48,7 +48,20 @@ The linter enforces a lexical form of these patterns: one line, one `shall`, com
 
 Write one complete EARS sentence per requirement or invariant. Split obligations that can change independently and retain coupled effects when the promise is an indivisible transition. EARS allows multiple responses; sentence count does not justify losing atomicity or preservation guarantees.
 
-Define domain terms, units, identity, clocks, quantifiers, and verification boundaries where needed. A referenced definition gives a term its meaning; it does not independently prescribe behaviour. Outcome mappings, transition rules, exceptions, and limits belong in EARS requirements. Tables and diagrams may illustrate those requirements by ID, but do not supply additional obligations.
+Define domain terms, units, identity, clocks, quantifiers, and verification boundaries where needed. A referenced definition gives a term its meaning; it does not independently prescribe behaviour. Outcome mappings, transition rules, exceptions, and limits belong in EARS requirements. Tables and diagrams may illustrate those requirements by ID, but do not supply additional obligations; the one exception is a rule table, below.
+
+## Keep each statement short
+
+A statement past 60 words usually hides one of four shapes; the linter warns at that length. Rewrite by shape:
+
+- **Several independent effects.** Split them into separate requirements, as above.
+- **A list of recognised forms**, such as the words that join a range or the spellings of a degree sign, or a union of input classes that all get the same treatment. Define the list once as a TERM and backtick the term in the statement. Give that TERM a `Basis:` line, because changing the list changes behaviour.
+- **An ordered choice**: the first applicable of several outcomes, such as a label taken from the step name, else a clause, else a default. Write it as a [rule table](declarations.md#rule-tables). Splitting an ordered choice into requirements that each negate the earlier branches gives the order several homes, which drift apart.
+- **A mapping from cases to outcomes** whose cases do not overlap, such as one unit per measurement system. Write it as a rule table too; its rows must then be disjoint, and the order matters only where a later change makes two rows overlap.
+
+A statement that fits none of these shapes and stays long is a finding for review, not a target for rewording: name it in the change so the shape list can grow from evidence.
+
+Rationale explains why a rule exists. It never holds a list, limit, mapping, exception, or accepted limit; each of those is an obligation and needs a home with a Basis: a statement, a rule table, or a TERM with a Basis. A case-table row then illustrates it.
 
 ## Preserve permission without adding a guarantee
 

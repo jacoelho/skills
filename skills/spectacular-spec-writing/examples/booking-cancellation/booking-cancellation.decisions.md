@@ -14,20 +14,30 @@ Workspace state: illustrative; no code revision
 - Available units of each stock stay between zero and its total units (INV-STOCK-001, owned by the inventory product owner).
 - A booking's owner is the customer who made it (booking product owner).
 
-## Decision record
+## Open
 
-| ID | Question or decision | State | Basis / answer / rejected options / authority | Prerequisites | Affected work | Resolution condition |
-| --- | --- | --- | --- | --- | --- | --- |
-| Q-BOOK-001 | Which bookings can a customer cancel? | resolved | Pending only; a confirmed booking is rejected as a conflict because refunds are out of scope. Rejected: cancelling confirmed bookings too, because that needs refunds. Booking product owner. | none | REQ-BOOK-001, REQ-BOOK-003 | Answered |
-| Q-BOOK-002 | What does cancelling an already cancelled booking return? | resolved | Success with no change, so client retries are safe. Rejected: a conflict error, because clients would treat a retried success as a failure. Booking product owner. | Q-BOOK-001 | REQ-BOOK-002 | Answered |
-| Q-BOOK-003 | When cancellation and confirmation of one booking race, which wins? | excluded | No answer yet; plausible answers differ on whether stock is released. Excluded from this change. | Q-BOOK-001 | concurrent cancel and confirm | Booking product owner decides before concurrency work starts |
-| Q-BOOK-004 | What does a cancellation request from anyone other than the booking's owner, or for an unknown booking, return? | excluded | No answer yet; plausible answers differ on whether a booking's existence is disclosed. Excluded from this change, so every requirement is scoped to the owner. | none | non-owner and unknown-booking requests | Booking product owner decides before access-control work starts |
+### Q-BOOK-003 - Cancellation racing confirmation
+
+When cancellation and confirmation of one booking race, which wins? Left out of this change, because plausible answers differ on whether stock is released. Needs the booking product owner before concurrency work starts; builds on Q-BOOK-001.
+
+### Q-BOOK-004 - Requests from others or for unknown bookings
+
+What does a cancellation request from anyone other than the booking's owner, or for an unknown booking, return? Left out of this change, so every requirement is scoped to the owner; plausible answers differ on whether a booking's existence is disclosed. Needs the booking product owner before access-control work starts.
+
+## Decided
+
+### Q-BOOK-001 - Cancellable bookings
+
+Which bookings can a customer cancel? Pending only; a confirmed booking is rejected as a conflict, because refunds are out of scope. Decided by the booking product owner.
+
+Rejected: cancelling confirmed bookings too, because that needs refunds.
+
+### Q-BOOK-002 - Repeated cancellation
+
+What does cancelling an already cancelled booking return? Success with no change, so client retries are safe. Decided by the booking product owner; builds on Q-BOOK-001.
+
+Rejected: a conflict error, because clients would treat a retried success as a failure.
 
 ## Handoff
 
-Settled decisions: Q-BOOK-001, Q-BOOK-002 (booking product owner).
-Reopened decisions: none.
-Remaining questions: Q-BOOK-003 and Q-BOOK-004, owner booking product owner; they block only concurrent cancel and confirm, and non-owner or unknown-booking requests, which are excluded.
-Next action: write bounded contract.
-Unblocked scope: REQ-BOOK-001 to REQ-BOOK-003 in [contract.md](contract.md).
-Executed checks: none; all evidence is planned.
+Next action: implement the contract; Q-BOOK-003 and Q-BOOK-004 block only the excluded work.

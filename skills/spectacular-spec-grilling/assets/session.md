@@ -11,15 +11,33 @@ Workspace state: [repository/workspace and relevant code or document revisions; 
 
 [Only facts, decisions, and constraints that affect the interview. Label their origins.]
 
-## Decision record
+## Policies
 
-| ID | Question or decision | State | Basis / answer / rejected options / authority | Prerequisites | Affected work | Resolution condition |
-| --- | --- | --- | --- | --- | --- | --- |
-| Q-CAP-001 | [one decision] | open | [evidence or gap; when resolved, the answer, each rejected option with its reason, and the authority] | [IDs or observation] | [scope/requirement IDs] | [who or what settles it] |
+### Q-CAP-001 - [Short title]
 
-Allowed states: open, resolved, needs-evidence, deferred, delegated, excluded.
+[A standing rule about who or what decides, such as a delegation to an agent or which source wins when two disagree.]
 
-A change to an answer updates the existing entry and records the earlier answer's supersession. Do not maintain multiple current answers.
+## Open
+
+### Q-CAP-002 - [Short title]
+
+[The question in one sentence. Who or what settles it, and what it blocks. A recommendation, if there is one.]
+
+## Decided
+
+### Q-CAP-003 - [Short title]
+
+[The question and its answer, with the reason. Who decided, naming the policy when it was decided under one, and the entries it builds on.]
+
+[Rejected options, each with its reason, when any were offered.]
+
+[Evidence the answer rests on, each item pinned to the commit or source it was taken from.]
+
+The section is the state. An entry under Decided can be a rule's Basis; an entry under Open or Policies cannot, so an open question or a policy alone never accepts a rule. Resolving a question moves its entry from Open to Decided and writes the answer. A decision taken under a policy is its own entry under Decided that names the policy. A choice left to the implementer is decided, and the answer says so. Scope deliberately left out is an open entry the contract's `Excluded:` line cites.
+
+Entries are prose: a reader needs no field list. Write every ID in full, never as a list or range such as `REQ-CAP-001 to 004`, so a search finds every mention. An entry holds no dates, implementation notes, or review history; git has them. A changed answer edits the entry; an entry replaced by another is deleted and every Basis that cited it is repointed, so there is never more than one current answer.
+
+Place an entry by its question's scope when it is created, and keep it in that file: the capability's record (`<capability>.decisions.md`), the vertical's record (`<vertical>/<vertical>.decisions.md`), or the repository's root record (`specs/specs.decisions.md`).
 
 ## Next question
 
@@ -43,16 +61,7 @@ Deliverable: [findings and recommendation, kept separate]
 
 ## Handoff
 
-Settled decisions: [IDs and sources; do not relabel recommendations as decisions].
-Reopened decisions: [what changed and which dependent answers need review].
-Investigation findings: [observed results and their evidence; keep recommendations separate].
-Remaining questions: [owner, evidence, blocked work, disposition].
-Next action: [write bounded contract / investigate / revise / stop].
-Unblocked scope: [if any].
-Completed work: [artifacts or decisions already produced; link their current homes].
-Remaining work: [bounded action, owner, and dependency].
-Executed checks: [existing evidence reference, or actual command, source/configuration state, result, and limits; mark unrun checks as planned].
-Restart: [retrieve the named sources, compare their current state with this record, and refresh only affected decisions or observations].
+Only what no entry holds: the next action, unblocked scope, remaining work with its owner, executed checks with their commands and results, and how to restart. Do not list settled or open decisions here; their sections say it.
 
 This record is an input to the maintained specification, not a second normative specification or evidence that implementation passed.
 
