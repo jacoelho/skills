@@ -1,0 +1,40 @@
+id: javascript-comment
+language: javascript
+rule:
+  kind: comment
+---
+# Names of exported declarations, and of the members of exported classes and
+# interfaces, whose JSDoc convention expects a doc comment. The name node keeps
+# the scan output small; decorators between a doc and its declaration are
+# matched by javascript-attribute.
+id: javascript-public-decl
+language: javascript
+rule:
+  all:
+    - any:
+        - kind: identifier
+        - kind: property_identifier
+    - inside:
+        field: name
+        any:
+          - kind: function_declaration
+          - kind: generator_function_declaration
+          - kind: class_declaration
+          - kind: variable_declarator
+          - kind: method_definition
+    - inside:
+        kind: export_statement
+        stopBy: end
+    # A name declared in a function or namespace body, or in an object literal, is local.
+    - not:
+        inside:
+          any:
+            - kind: statement_block
+            - kind: object
+          stopBy: end
+---
+# Decorators sit between a doc comment and its declaration.
+id: javascript-attribute
+language: javascript
+rule:
+  kind: decorator

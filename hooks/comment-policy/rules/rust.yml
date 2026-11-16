@@ -1,0 +1,65 @@
+id: rust-comment
+language: rust
+rule:
+  any:
+    - kind: line_comment
+    - kind: block_comment
+---
+# Names of `pub` items, of the variants of a `pub` enum and of the items of a
+# `pub` trait, whose doc comment rustdoc convention expects. The name node keeps
+# the scan output small.
+id: rust-public-decl
+language: rust
+rule:
+  all:
+    - any:
+        - kind: identifier
+        - kind: type_identifier
+        - kind: field_identifier
+    - any:
+        - inside:
+            field: name
+            all:
+              - any:
+                  - kind: function_item
+                  - kind: function_signature_item
+                  - kind: struct_item
+                  - kind: enum_item
+                  - kind: union_item
+                  - kind: trait_item
+                  - kind: type_item
+                  - kind: const_item
+                  - kind: static_item
+                  - kind: mod_item
+                  - kind: macro_definition
+                  - kind: field_declaration
+              - has:
+                  kind: visibility_modifier
+        - inside:
+            field: name
+            kind: enum_variant
+            inside:
+              kind: enum_variant_list
+              inside:
+                kind: enum_item
+                has:
+                  kind: visibility_modifier
+        - inside:
+            field: name
+            any:
+              - kind: function_signature_item
+              - kind: function_item
+              - kind: const_item
+              - kind: associated_type
+            inside:
+              kind: declaration_list
+              inside:
+                kind: trait_item
+                has:
+                  kind: visibility_modifier
+---
+# Attributes sit between a doc comment and its item.
+id: rust-attribute
+language: rust
+rule:
+  kind: attribute_item

@@ -1,6 +1,6 @@
 {
   "name": "jacoelho",
-  "description": "Personal skills, subagents and hooks (prompt intake, context handoff, spec lint): Go API design and performance, testing, specs, architecture review, technical writing.",
+  "description": "Personal skills, subagents and hooks (prompt intake, context handoff, comment policy, spec lint): Go API design and performance, testing, specs, architecture review, technical writing.",
   "author": {
     "name": "José Coelho"
   },
@@ -129,6 +129,17 @@
         "inherit"
       ],
       "default": "sonnet"
+    },
+    "comment_policy": {
+      "type": "string",
+      "title": "Comment policy",
+      "description": "on: the comment policy is added to every session's and subagent's context, and the comments Claude's turns and subagents add are checked at the end of each main-loop turn (rules, then Haiku) and sent back to fix; your own edits between prompts are not. review: the check only, for setups that already load the policy, such as a rules file. Both require git and ast-grep (brew install ast-grep, or npm i -g @ast-grep/cli); without ast-grep, on adds only the context. off: neither.",
+      "options": [
+        "on",
+        "review",
+        "off"
+      ],
+      "default": "off"
     },
     "spec_lint": {
       "type": "string",
