@@ -12,9 +12,50 @@
 
 Each brief opens with the decision-rights text from SKILL.md, then gives the unit, the IDs it serves with the `spec.py show` command that prints them ([tools](../../spectacular-spec-review/references/tools.md)), its design rows (owner, seams, consumers, allowed dependencies), the paths it may edit, the record path, and the repository's check command. Ask for a structured result: what changed, decisions taken, decisions returned, and commands run with exit codes.
 
+## Record states
+
+The record's `Status:` line and each unit's marker are the run's state; resume starts from them. Change them only with `record.py apply` ([below](#changing-the-record)), which refuses any move these tables do not list.
+
+| Status | Holds while | Next |
+| --- | --- | --- |
+| planning | The plan's design waits for the user's approval: a fresh plan, or a re-plan after a contract changed. | approved, when the user approves. |
+| approved | The plan stands and no change has started. | implementing; blocked or discard-ready, when only the whole-stack check is left; accepted, at close; planning, on a re-plan that needs approval. |
+| implementing | A change's tests are recorded red and its units run. | blocked; discard-ready; accepted, at close; planning, on a re-plan that needs approval. |
+| blocked | A unit is blocked, the repository's checks fail, or the whole-stack check left work for the user. | implementing, on resume once the reason is settled; discard-ready; accepted, at close; planning, on a re-plan that needs approval. |
+| discard-ready | Every change of a feature contract is accepted and its discard gate waits for the user. | accepted, at close; implementing or blocked, after a re-plan added work; planning, on a re-plan that needs approval. |
+| accepted | The run closed and the user kept the record. | implementing, after a re-plan added work; blocked or discard-ready, when a rerun finds only the whole-stack check left; planning, on a re-plan that needs approval. |
+
+At close the record is deleted unless the user keeps it, which sets accepted.
+
+| Unit | Marker | Next |
+| --- | --- | --- |
+| pending | `[ ]` | in-progress; done, once its tests are recorded red or its run finished; blocked. |
+| in-progress | `[~]` | done; blocked; pending, when a resumed run finds it unfinished. |
+| done | `[x]` | accepted, with its change; pending, when resume finds its evidence no longer holds. |
+| blocked | `[!]`, reason in Notes | pending, on resume once the reason is settled. |
+| accepted | `[a]` | pending, when a re-plan reopens its change. |
+
+A wave marks its units in progress only while it runs and writes the record once it ends, so the record usually shows a unit go from pending straight to done or blocked.
+
+## Changing the record
+
+The planner writes the record from [the template](../assets/implementation.md), then runs `record.py show` on it, which fails on a line it cannot read: a change heading that is not `## C-<n>` or `## STACK`, or a unit line outside one. After that, status, unit markers, blocked reasons, fix units, the STACK change and notes change only through `record.py apply`, run from the repository root with one JSON object on standard input:
+
+```sh
+record="${CLAUDE_SKILL_DIR}/scripts/record.py"
+python3 "$record" show specs/booking/booking.implementation.md
+python3 "$record" apply specs/booking/booking.implementation.md <<'RECORD_JSON'
+{"status": "implementing", "units": [{"id": "U-1.2", "state": "blocked", "reason": "needs a new seam"}], "notes": [{"change": "C-1", "text": "C-1 red after U-1.1: TestCancel (assertion)"}]}
+RECORD_JSON
+```
+
+A unit the record does not hold is added to the change the payload names, with its `kind`, `title`, `after`, `owner` and `edits`; `apply` adds only the `STACK` change, after the last one, and refuses any other change the record does not hold. A blocked unit's `reason` becomes a note. `apply` checks every move before writing anything, prints the record's state afterwards as one line of JSON, and changes nothing when the same payload is applied again.
+
+A re-plan is the planner's: it rewrites the change sections it re-plans by hand (their units, owners, edits, Seams and Tests lines, or a new change), then runs `record.py show` until it exits 0.
+
 ## The record has one writer
 
-The coordinating session writes the record; in the workflow, one record step between waves does. Unit agents read it and return results to the writer. Parallel writers lose updates.
+The coordinating session writes the record; in the workflow, one record step between waves does, by running `record.py apply`. Unit agents read it and return results to the writer. Parallel writers lose updates.
 
 ## Waves
 

@@ -1,4 +1,8 @@
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, test } from 'node:test'
 import assert from 'node:assert/strict'
 
@@ -8,6 +12,27 @@ import assert from 'node:assert/strict'
 
 const SOURCE = readFileSync(new URL('../../workflows/spec-implement.js', import.meta.url), 'utf8').replace('export const meta', 'const meta')
 const inputOf = (prompt) => JSON.parse(prompt.split('INPUT (JSON):\n')[1])
+const RECORD_PY = fileURLToPath(new URL('../../skills/spectacular-spec-implementation/scripts/record.py', import.meta.url))
+const MARKER = { pending: ' ', 'in-progress': '~', done: 'x', accepted: 'a', blocked: '!' }
+
+// What the planner writes from the template: the parts record.py reads.
+const renderRecord = (plan) => [
+  '# Implementation: booking', '', 'Contracts: specs/booking.md sha256:abc', `Lifecycle: ${plan.lifecycle}`, `Status: ${plan.status}`, `Checks: ${plan.verify}`, '',
+  ...plan.changes.flatMap((c) => [`## ${c.id} ${c.title} - after: -`, '',
+    ...c.units.map((u) => `- [${MARKER[u.state]}] ${u.id} unit - owner: ${u.owner} - edits: ${u.edits.join(', ')}`), '', 'Notes:', '']),
+].join('\n')
+
+// The record step runs the workflow's own command against a real record.py and a real record.
+const runRecordCommand = (dir, command) => {
+  const [, script, record, sum, payload] = command.match(/^python3 '([^']+)' apply '([^']+)' --sum ([0-9a-f]{8}) <<'RECORD_JSON'\n(.*)\nRECORD_JSON$/s)
+  assert.match(script, /\/spectacular-spec-implementation\/scripts\/record\.py$/)
+  try {
+    const output = execFileSync('python3', [RECORD_PY, 'apply', record, '--sum', sum], { cwd: dir, input: payload, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
+    return { exitCode: 0, output }
+  } catch (e) {
+    return { exitCode: e.status ?? 1, output: `${e.stdout || ''}${e.stderr || ''}` }
+  }
+}
 
 const unit = (id, o = {}) => ({ id, kind: 'impl', after: [], owner: 'booking/', edits: ['booking/'], state: 'pending', blockedReason: '', ...o })
 const change = (id, units, o = {}) => ({ id, title: id, kind: 'feature', requirements: [`REQ-${id}`], accepted: false, units, ...o })
@@ -21,16 +46,36 @@ const basicPlan = (o = {}) => ({
 async function run(s = {}) {
   const calls = []
   const records = []
+  const rejections = []
+  const dir = mkdtempSync(join(tmpdir(), 'spec-implement-'))
+  const writeRecordFile = (plan) => {
+    if (!plan || !plan.record || !plan.changes) return plan
+    mkdirSync(join(dir, dirname(plan.record)), { recursive: true })
+    writeFileSync(join(dir, plan.record), renderRecord(s.onDisk ? s.onDisk(structuredClone(plan)) : plan))
+    return plan
+  }
   const logs = []
   let inFlight = []
   let maxInFlight = 0
   const agent = async (prompt, o) => {
+    const result = await scripted(prompt, o)
+    return o.label === 'plan' || o.label === 'resume' ? writeRecordFile(result) : result
+  }
+  const scripted = async (prompt, o) => {
     calls.push({ label: o.label, prompt, model: o.model })
-    if (o.label.startsWith('record')) records.push(inputOf(prompt))
     const L = o.label
+    if (L.startsWith('record')) {
+      const { command } = inputOf(prompt)
+      records.push(JSON.parse(command.split('\n')[1]))
+    }
     if (s.agent) { const r = s.agent(L, prompt, o); if (r !== undefined) return r }
     if (L === 'plan' || L === 'resume') return structuredClone(s.plan ?? basicPlan())
-    if (L.startsWith('record')) return s.recordDead ? null : { written: true }
+    if (L.startsWith('record')) {
+      if (s.recordDead) return null
+      const r = runRecordCommand(dir, inputOf(prompt).command)
+      if (r.exitCode !== 0) rejections.push(`${L}: ${r.output}`)
+      return r
+    }
     if (L.startsWith('hash')) return { changed: !!s.hashChanged, files: s.hashChanged ? ['specs/booking.md'] : [] }
     if (L.startsWith('tests')) return { outcome: 'done', summary: 'tests', decisions: [], returned: [], output: '' }
     if (L.startsWith('red')) return { tests: s.redTests ?? [{ name: 'TestCancel', reason: s.redReason ?? 'assertion' }], output: '' }
@@ -57,7 +102,10 @@ async function run(s = {}) {
   const budget = s.budget ?? { total: null, spent: () => 0, remaining: () => Infinity }
   const main = new Function('args', 'agent', 'parallel', 'phase', 'log', 'budget', `return (async () => {${SOURCE}\n})()`)
   const out = await main('args' in s ? s.args : { contracts: ['specs/booking.md'] }, agent, parallel, () => {}, (m) => logs.push(m), budget)
-  return { out, calls, records, labels: calls.map((c) => c.label), logs, maxInFlight }
+  rmSync(dir, { recursive: true, force: true })
+  // Every scripted run is a path the workflow really takes, so record.py must accept every write it makes.
+  if (!s.allowRejections) assert.deepEqual(rejections, [])
+  return { out, calls, records, rejections, labels: calls.map((c) => c.label), logs, maxInFlight }
 }
 
 describe('refusals start no agents', () => {
@@ -69,7 +117,7 @@ describe('refusals start no agents', () => {
     ['concurrency out of range', { contracts: ['a.md'], concurrency: 0 }, 'bad-option'],
     ['unknown gate', { contracts: ['a.md'], gates: ['merge'] }, 'bad-option'],
     ['unknown model role', { contracts: ['a.md'], models: { critic: 'opus' } }, 'bad-option'],
-    ['unsubstituted plugin setting', { contracts: ['a.md'], models: { planner: '${user_config.implement_model_planner}' } }, 'bad-option'],
+    ['malformed plugin setting', { contracts: ['a.md'], models: { planner: '${user_config.implement_model_planner' } }, 'bad-option'],
     ['bad json', '{nope', 'bad-args'],
   ]) {
     test(name, async () => {
@@ -199,7 +247,7 @@ describe('attempts and blocking', () => {
   test('some tests passing before implementation is reported, not blocking', async () => {
     const { out, records } = await run({ redTests: [{ name: 'TestA', reason: 'assertion' }, { name: 'TestB', reason: 'passed' }] })
     assert.equal(out.stopKind, 'done')
-    assert.ok(records.some((r) => r.notes.some((n) => n.includes('TestB'))))
+    assert.ok(records.some((r) => r.notes.some((n) => n.text.includes('TestB'))))
   })
 
   test('units are told not to run repository-wide checks or rewrite files outside their paths', async () => {
@@ -230,7 +278,7 @@ describe('the record', () => {
 
   test('each red test and its failure reach the record', async () => {
     const { records } = await run({ redTests: [{ name: 'TestCancel', reason: 'assertion' }, { name: 'TestRefund', reason: 'not-implemented' }] })
-    const notes = records.flatMap((r) => r.notes).join('\n')
+    const notes = records.flatMap((r) => r.notes.map((n) => n.text)).join('\n')
     assert.match(notes, /TestCancel \(assertion\)/)
     assert.match(notes, /TestRefund \(not-implemented\)/)
   })
@@ -262,7 +310,7 @@ describe('agent count', () => {
   test('items a finished unit returns still reach the record', async () => {
     const agent = (L) => (L === 'tests U-1.1' ? { outcome: 'done', summary: 'tests', decisions: [], returned: ['stub panics abort the run'], output: '' } : undefined)
     const { records } = await run({ agent })
-    assert.match(records.flatMap((r) => r.notes).join('\n'), /returned: stub panics abort the run/)
+    assert.match(records.flatMap((r) => r.notes.map((n) => n.text)).join('\n'), /returned: stub panics abort the run/)
   })
 })
 
@@ -322,8 +370,8 @@ describe('stops', () => {
     assert.deepEqual(labels, ['plan'])
   })
 
-  test('a planner that returns no scripts folder or spec root stops the run before any change', async () => {
-    for (const missing of [{ scripts: '' }, { specRoot: '' }]) {
+  test('a planner that returns no scripts folder, the wrong one, or no spec root stops the run before any change', async () => {
+    for (const missing of [{ scripts: '' }, { scripts: '/repo/scripts' }, { specRoot: '' }]) {
       const { out, labels } = await run({ plan: basicPlan(missing) })
       assert.equal(out.stopKind, 'error')
       assert.deepEqual(labels, ['plan'])
@@ -378,6 +426,13 @@ describe('stops', () => {
     assert.ok(calls.filter((c) => c.label.startsWith('record')).every((c) => c.model === 'opus'))
   })
 
+  test('a role setting the user never set arrives as its placeholder and runs on the default model', async () => {
+    const { out, calls, logs } = await run({ args: { contracts: ['a.md'], models: { planner: '${user_config.implement_model_planner}' } } })
+    assert.equal(out.started, true)
+    assert.ok(logs.some((l) => l.includes('planner')))
+    assert.equal(calls.find((c) => c.label === 'plan').model, 'opus')
+  })
+
   test('inherit runs a role on the session model', async () => {
     const { calls } = await run({ args: { contracts: ['a.md'], models: { recorder: 'inherit' } } })
     const records = calls.filter((c) => c.label.startsWith('record'))
@@ -407,6 +462,65 @@ describe('stops', () => {
     const { out } = await run({ recordDead: true })
     assert.equal(out.stopKind, 'error')
     assert.match(out.next, /booking\.implementation\.md/)
+  })
+
+  test('a resume whose record still differs from the returned plan is settled before any work runs', async () => {
+    const onDisk = (p) => ({ ...p, status: 'planning', changes: p.changes.map((c) => ({ ...c, units: c.units.map((u) => ({ ...u, state: 'blocked' })) })) })
+    const { out, labels, rejections } = await run({ args: { record: 'r.implementation.md' }, plan: basicPlan({ status: 'approved' }), onDisk })
+    assert.equal(out.stopKind, 'done')
+    assert.deepEqual(rejections, [])
+    assert.equal(labels[1], 'record: plan')
+  })
+
+  test('a returned plan the record cannot reach stops before any unit runs', async () => {
+    const onDisk = (p) => ({ ...p, changes: p.changes.map((c) => ({ ...c, units: c.units.map((u) => ({ ...u, state: 'accepted' })) })) })
+    const plan = basicPlan({ status: 'approved', changes: [change('C-1', [unit('U-1.1', { kind: 'tests', state: 'done' }), unit('U-1.2')])] })
+    const { out, labels } = await run({ args: { record: 'r.implementation.md' }, plan, onDisk, allowRejections: true })
+    assert.equal(out.stopKind, 'error')
+    assert.match(out.next, /accepted and cannot become done/)
+    assert.ok(!labels.some((l) => l.startsWith('unit') || l.startsWith('tests')), labels.join(', '))
+  })
+
+  test('a record write sends every unit once, then only the units that changed since the last write', async () => {
+    const { records } = await run({})
+    assert.deepEqual(records[0].units.map((u) => u.id).sort(), ['U-1.1', 'U-1.2'])
+    const last = new Map()
+    for (const r of records) {
+      for (const u of r.units) {
+        assert.notDeepEqual(last.get(u.id), u, `${u.id} was sent again unchanged`)
+        last.set(u.id, u)
+      }
+    }
+    assert.ok(records.slice(1).some((r) => r.units.length < records[0].units.length))
+  })
+
+  test('a record step that retypes the command wrongly is run again', async () => {
+    let first = true
+    const agent = (L) => (L.startsWith('record') && first ? (first = false, { exitCode: 1, output: "error: the payload's checksum is 00000000, not 12345678" }) : undefined)
+    const { out, labels } = await run({ agent })
+    assert.equal(out.stopKind, 'done')
+    assert.ok(labels.some((l) => /^record: .* #2$/.test(l)), labels.join(', '))
+  })
+
+  test('a record write that record.py refuses is an error stop that quotes the refusal', async () => {
+    const agent = (L) => (L.startsWith('record') ? { exitCode: 1, output: 'error: nothing written: unit U-1.2 is blocked and cannot become done' } : undefined)
+    const { out } = await run({ agent })
+    assert.equal(out.stopKind, 'error')
+    assert.match(out.next, /cannot become done/)
+  })
+
+  test('a record step that reports success without the written state is an error stop', async () => {
+    const agent = (L) => (L.startsWith('record') ? { exitCode: 0, output: 'done' } : undefined)
+    const { out } = await run({ agent })
+    assert.equal(out.stopKind, 'error')
+  })
+
+  test('the record payload survives non-ASCII text and shell characters in notes', async () => {
+    const summary = "naïve 'quote' $HOME `tick` RECORD_JSON \\ end"
+    const agent = (L) => (L.startsWith('unit') ? { outcome: 'done', summary, decisions: [], returned: [], output: '' } : undefined)
+    const { out, rejections } = await run({ agent })
+    assert.equal(out.stopKind, 'done')
+    assert.deepEqual(rejections, [])
   })
 
   test('a dependency on an unknown unit blocks with its id instead of hanging', async () => {
@@ -508,8 +622,8 @@ describe('resume and lifecycle', () => {
     const { out, labels, records } = await run({ plan, findings })
     assert.equal(out.stopKind, 'done')
     assert.ok(labels.includes('unit STACK-F1'))
-    const last = records.at(-1).changes.find((c) => c.id === 'STACK')
-    assert.equal(last.accepted, true)
+    const stack = records.at(-1).units.filter((u) => u.change === 'STACK')
+    assert.ok(stack.length && stack.every((u) => u.state === 'accepted'))
   })
 
   test('done units are not run again', async () => {
@@ -526,6 +640,36 @@ describe('resume and lifecycle', () => {
     const accepted = basicPlan({ lifecycle: 'feature', status: 'discard-ready', changes: [change('C-1', [unit('U-1.1', { kind: 'tests', state: 'accepted' })], { accepted: true })] })
     const second = await run({ args: { record: 'r.implementation.md' }, plan: accepted })
     assert.equal(second.out.stopKind, 'done')
-    assert.deepEqual(second.labels, ['resume', 'close'])
+    assert.deepEqual(second.labels, ['resume', 'record: plan', 'close'])
   })
+})
+
+describe('record states', () => {
+  const skill = (path) => readFileSync(new URL(`../../skills/spectacular-spec-implementation/${path}`, import.meta.url), 'utf8')
+  const tableColumn = (header) => {
+    const section = skill('references/execution.md').split('## Record states\n')[1]
+    assert.ok(section, 'references/execution.md has no Record states section')
+    const table = section.split('\n## ')[0].split(header)[1]
+    assert.ok(table, `the Record states section has no table headed ${header}`)
+    return table.split('\n\n')[0].split('\n').slice(2).map((row) => row.split('|').map((c) => c.trim()))
+  }
+  const sorted = (values) => [...values].sort()
+
+  test('the workflow, the record template and the execution reference name the same record statuses', () => {
+    const workflow = SOURCE.match(/status: \{ type: 'string', enum: \[([^\]]+)\]/)[1].match(/'([^']+)'/g).map((v) => v.slice(1, -1))
+    const template = skill('assets/implementation.md').match(/^Status: \[([^\]]+)\]/m)[1].split('|').map((v) => v.trim())
+    const reference = tableColumn('| Status |').map((cells) => cells[1])
+    assert.deepEqual(sorted(template), sorted(workflow))
+    assert.deepEqual(sorted(reference), sorted(workflow))
+  })
+
+  test('the record template and the execution reference give each unit state the workflow uses the same marker', () => {
+    const pairs = (text) => sorted([...text.matchAll(/\[(.)\] ([a-z-]+)/g)].map((m) => `${m[2]} ${m[1]}`))
+    const template = pairs(skill('assets/implementation.md').match(/^Unit markers: (.+)$/m)[1].replace(/`/g, ''))
+    const reference = sorted(tableColumn('| Unit |').map((cells) => `${cells[1]} ${cells[2].match(/`\[(.)\]`/)[1]}`))
+    const states = SOURCE.match(/UNIT_STATE = \{ type: 'string', enum: \[([^\]]+)\]/)[1].match(/'([^']+)'/g).map((v) => v.slice(1, -1))
+    assert.deepEqual(reference, template)
+    assert.deepEqual(sorted(template.map((p) => p.split(' ')[0])), sorted(states))
+  })
+
 })

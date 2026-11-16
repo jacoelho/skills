@@ -241,6 +241,125 @@ class SpecToolTests(SpecTree):
                 self.assertEqual(self.record.read_text(encoding="utf-8"), RECORD)
 
 
+    def test_decide_keeps_the_sections_in_record_order_when_open_still_has_entries(self) -> None:
+        second_open = "### Q-ALM-003 - Snooze limit\n\nHow many snoozes? Waiting on the alarm owner.\n\n"
+        record = RECORD.replace("## Decided", second_open + "## Decided")
+        self.record.write_text(record.split("## Decided")[0] + "## Handoff\n\nNext action: none.\n", encoding="utf-8")
+
+        self.run_tool("decide", "Q-ALM-002", stdin="Five minutes.\n")
+
+        record = self.record.read_text(encoding="utf-8")
+        self.assertLess(record.index("## Policies"), record.index("## Open"))
+        self.assertLess(record.index("## Open"), record.index("## Decided"))
+        self.assertLess(record.index("## Decided"), record.index("## Handoff"))
+
+    def test_reopen_moves_a_decided_entry_to_open_and_names_the_rules_that_cite_it(self) -> None:
+        question = "Does stopping silence the alarm? Reopened: the owner now wants a fade-out.\n"
+
+        code, out, _ = self.run_tool("reopen", "Q-ALM-001", stdin=question)
+
+        self.assertEqual(code, 0)
+        record = self.record.read_text(encoding="utf-8")
+        self.assertNotIn("## Decided", record)
+        self.assertIn("fade-out", record)
+        sections = spec_lint.outline(record.splitlines())
+        opened = next(s for s in sections if s.title == "Open")
+        entry = next(s for s in sections if s.token == "Q-ALM-001")
+        self.assertTrue(opened.start < entry.start <= opened.end)
+        self.assertTrue(any("REQ-ALM-001 mentions Q-ALM-001; drop the citation from its Basis" in line
+                            for line in out.splitlines()))
+        self.assertIn("basis-not-deciding", {f.code for f in spec_lint.scan([self.root]).findings})
+
+    def test_reopen_creates_the_open_section_between_policies_and_decided(self) -> None:
+        self.run_tool("decide", "Q-ALM-002", stdin="Five minutes.\n")
+
+        self.run_tool("reopen", "Q-ALM-001", stdin="Does stopping silence the alarm? Reopened.\n")
+
+        record = self.record.read_text(encoding="utf-8")
+        self.assertLess(record.index("## Policies"), record.index("## Open"))
+        self.assertLess(record.index("## Open"), record.index("## Decided"))
+        self.assertLess(record.index("Q-ALM-001"), record.index("## Decided"))
+
+    def test_reopen_refuses_without_changing_the_record(self) -> None:
+        cases = {
+            "still open": ("Q-ALM-002", "Why?"),
+            "a policy": ("Q-ALM-009", "Why?"),
+            "unknown": ("Q-ALM-404", "Why?"),
+            "not a question": ("REQ-ALM-001", "Why?"),
+            "no question": ("Q-ALM-001", "  \n"),
+        }
+        for name, (identifier, question) in cases.items():
+            with self.subTest(name):
+                code, _, err = self.run_tool("reopen", identifier, stdin=question)
+                self.assertEqual(code, 1)
+                self.assertTrue(err.startswith("error:"))
+                self.assertEqual(self.record.read_text(encoding="utf-8"), RECORD)
+
+    def test_moves_keep_the_sections_in_record_order_in_a_record_without_policies(self) -> None:
+        handoff = "## Handoff\n\nNext action: none.\n"
+        cases = {
+            "decide": ("Q-ALM-002", "## Decided", "## Open",
+                       "# Alarm decisions\n\n## Open\n\n### Q-ALM-002 - Snooze length\n\nHow long?\n\n" + handoff),
+            "reopen": ("Q-ALM-001", "## Open", "## Decided",
+                       "# Alarm decisions\n\n## Decided\n\n### Q-ALM-001 - Stopping stops\n\nYes.\n\n" + handoff),
+        }
+        for command, (identifier, moved_to, emptied, record) in cases.items():
+            with self.subTest(command):
+                self.record.write_text(record, encoding="utf-8")
+
+                self.run_tool(command, identifier, stdin="Text.\n")
+
+                after = self.record.read_text(encoding="utf-8")
+                self.assertNotIn(emptied, after)
+                self.assertLess(after.index(moved_to), after.index(identifier))
+                self.assertLess(after.index(identifier), after.index("## Handoff"))
+
+    def test_reopen_asks_to_reconsider_a_decision_that_mentions_the_entry_instead_of_editing_a_basis(self) -> None:
+        self.record.write_text(RECORD.replace("Yes. Decided by the alarm owner.",
+                                              "Yes. Decided by the alarm owner.\n\n### Q-ALM-003 - Stop sound\n\n"
+                                              "Silent, given Q-ALM-001."), encoding="utf-8")
+
+        _, out, _ = self.run_tool("reopen", "Q-ALM-001", stdin="Does stopping silence it? Reopened.\n")
+
+        line = next(l for l in out.splitlines() if "Q-ALM-003 mentions Q-ALM-001" in l)
+        self.assertIn("reopen it too", line)
+        self.assertNotIn("Basis", line)
+
+    def test_new_ac_nests_after_the_rules_existing_acs_with_the_next_free_id(self) -> None:
+        code, out, _ = self.run_tool("new", "AC", "REQ-ALM-001", "Stopping twice is harmless")
+
+        self.assertEqual(code, 0)
+        contract = self.contract.read_text(encoding="utf-8")
+        sections = spec_lint.outline(contract.splitlines())
+        added = next(s for s in sections if s.token == "AC-ALM-003")
+        rule = next(s for s in sections if s.token == "REQ-ALM-001")
+        existing = next(s for s in sections if s.token == "AC-ALM-001")
+        self.assertEqual(added.level, rule.level + 1)
+        self.assertTrue(existing.end < added.start <= rule.end)
+        self.assertIn(f"{self.contract}:{added.start}-", out)
+        for field in ("Situation", "Expected", "Oracle", "Boundary", "Counterexample"):
+            self.assertIn(f"\n{field}: [", contract[contract.index("AC-ALM-003"):])
+
+    def test_a_new_ac_fails_lint_until_its_placeholders_are_replaced(self) -> None:
+        self.run_tool("new", "AC", "REQ-ALM-001", "Stopping twice is harmless")
+
+        findings = [f for f in spec_lint.scan([self.root]).findings if "AC-ALM-003" in f.message]
+
+        self.assertTrue(any(f.severity == "error" for f in findings), findings)
+
+    def test_new_ac_refuses_without_changing_the_contract(self) -> None:
+        cases = {
+            "not a rule": ("AC-ALM-001", "A title"),
+            "unknown rule": ("REQ-ALM-404", "A title"),
+            "empty title": ("REQ-ALM-001", "   "),
+        }
+        for name, (rule, title) in cases.items():
+            with self.subTest(name):
+                code, _, err = self.run_tool("new", "AC", rule, title)
+                self.assertEqual(code, 1)
+                self.assertTrue(err.startswith("error:"))
+                self.assertEqual(self.contract.read_text(encoding="utf-8"), CONTRACT)
+
 class SpecToolEdgeTests(SpecTree):
     def test_outline_of_a_file_outside_the_root_still_lists_it_and_its_next_ids(self) -> None:
         other = Path(self.directory.name) / "elsewhere.md"

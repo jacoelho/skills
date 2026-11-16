@@ -18,7 +18,7 @@ For a full review or a readiness question, check first that the contract says wh
 
 ## Steps
 
-1. **Fix the basis.** Name the capability and change under review, the contracts and their revisions, settled decisions, the code revision, tests, and governing external contracts. Inspect them directly; for a change, read its rules with `spec.py show --cited-by` ([tools](references/tools.md)) rather than whole contracts. Label each observation by source, and call behaviour observed only when a check was executed; reading code is inference. When the writer supplies earlier contests ([review findings](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/SKILL.md#review-findings)), check their cited evidence instead of raising the same finding again; re-raise one only with evidence the contest did not address.
+1. **Fix the basis.** Name the capability and change under review, the contracts and their revisions, settled decisions, the code revision, tests, and governing external contracts. Inspect them directly; for a change, read its rules with `spec.py show --cited-by` ([tools](references/tools.md)) rather than whole contracts. Label each observation by source, and call behaviour observed only when a check was executed; reading code is inference. Read earlier contests from the decision record's Handoff ([review findings](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/SKILL.md#review-findings)) or from the writer, and check their cited evidence instead of raising the same finding again; re-raise one only with evidence the contest did not address, and list every contest you checked under the report's Basis.
 2. **Lint.** Find active documents with `grep -rlF --include='*.md' -- '<!-- spec-lint: active -->' .` (it also matches markers in fenced examples; the linter's counts are authoritative) and run:
 
    ```sh
@@ -38,7 +38,7 @@ For a full review or a readiness question, check first that the contract says wh
 7. **Reconcile.** For each new or changed decision, compare outcomes on a concrete input against contracts, binding interfaces, code paths, and tests. Classify each mismatch with [the mismatch classes](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/references/mismatch.md); the class decides which source to repair. For a deliberate change, trace consumers, stored data, and migrations only when the changed promise makes them relevant. For a feature contract, check the discard gate in [the lifecycle rules](${CLAUDE_SKILL_DIR}/../spectacular-spec-writing/references/lifecycle.md) before recommending it be discarded.
 8. **Readiness.** This step owns the readiness criteria; the writing skill applies the same ones. A scope is ready to implement when all four hold:
    - no consequential product decision is open for it;
-   - every rule in it has a Basis (no proposed rule remains) and an AC with an oracle;
+   - every rule in it has a Basis (no proposed rule remains) and an AC with an oracle: step 2's run shows none of `proposed-rule`, `basis-not-deciding`, `unlinked-acceptance` or `missing-oracle` on an ID in scope (most are warnings, so read the findings, not the exit code), and whether each oracle is independent stays a judgement;
    - its binding constraints and referenced contracts are retrievable;
    - evidence can be produced at the named boundary, or a structural commitment closes the gap.
 

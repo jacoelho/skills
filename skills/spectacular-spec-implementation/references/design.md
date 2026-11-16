@@ -18,7 +18,8 @@ The planner applies these rules once, with every gap in view, before any unit ru
 ```markdown
 ## Design
 | Owner (path) | Owns | Seams it exposes | Consumers | May depend on |
-| booking/ | REQ-BOOK-001..003, booking state | CancelBooking | api/cancel_handler.go | stock/ |
+| --- | --- | --- | --- | --- |
+| booking/ | REQ-BOOK-001, REQ-BOOK-002, REQ-BOOK-003, booking state | CancelBooking | api/cancel_handler.go | stock/ |
 | stock/ | INV-STOCK-001, stock counts | StockReserver.Release | booking/service.go | - |
 Decisions: extract StockReserver from booking/service.go before C-1, because booking writes stock counts directly today.
 ```

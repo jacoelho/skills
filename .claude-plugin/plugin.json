@@ -120,7 +120,7 @@
     "implement_model_recorder": {
       "type": "string",
       "title": "Spec implementation: recorder model",
-      "description": "Model for the recorder, which writes the implementation record. inherit: the session's model.",
+      "description": "Model for the record step, which runs record.py to update the implementation record. inherit: the session's model.",
       "options": [
         "opus",
         "sonnet",
@@ -128,7 +128,7 @@
         "fable",
         "inherit"
       ],
-      "default": "sonnet"
+      "default": "haiku"
     },
     "comment_policy": {
       "type": "string",
