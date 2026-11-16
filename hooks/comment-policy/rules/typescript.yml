@@ -1,0 +1,57 @@
+id: typescript-comment
+language: typescript
+rule:
+  kind: comment
+---
+# Names of exported declarations, and of the members of exported classes and
+# interfaces, whose JSDoc convention expects a doc comment. The name node keeps
+# the scan output small; decorators between a doc and its declaration are
+# matched by typescript-attribute.
+id: typescript-public-decl
+language: typescript
+rule:
+  all:
+    - any:
+        - kind: identifier
+        - kind: type_identifier
+        - kind: property_identifier
+    - inside:
+        field: name
+        any:
+          - kind: function_declaration
+          - kind: generator_function_declaration
+          - kind: function_signature
+          - kind: class_declaration
+          - kind: abstract_class_declaration
+          - kind: interface_declaration
+          - kind: type_alias_declaration
+          - kind: enum_declaration
+          - kind: internal_module
+          - kind: variable_declarator
+          - kind: method_definition
+          - kind: method_signature
+          - kind: abstract_method_signature
+          - kind: property_signature
+          - kind: public_field_definition
+    - inside:
+        kind: export_statement
+        stopBy: end
+    # A name declared in a function or namespace body, or in an object literal, is local.
+    - not:
+        inside:
+          any:
+            - kind: statement_block
+            - kind: object
+          stopBy: end
+    # A private member is not public API, whatever its class.
+    - not:
+        inside:
+          has:
+            kind: accessibility_modifier
+            regex: '^private$'
+---
+# Decorators sit between a doc comment and its declaration.
+id: typescript-attribute
+language: typescript
+rule:
+  kind: decorator

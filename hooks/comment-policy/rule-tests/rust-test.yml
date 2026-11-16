@@ -1,0 +1,21 @@
+id: rust-public-decl
+valid:
+  - "fn helper() {}"
+  - "struct S { count: u8 }"
+  - "enum E { V }"
+  - "trait T { fn m(&self); }"
+invalid:
+  - "pub fn parse() {}"
+  - "pub(crate) struct S;"
+  - "struct S { pub name: String }"
+  - "pub trait T {}"
+  - "pub const N: u8 = 1;"
+---
+id: rust-comment
+valid:
+  - 'let s = "// no";'
+  - 'let s = r"/* no */";'
+invalid:
+  - "// a"
+  - "/// doc"
+  - "/* block */"

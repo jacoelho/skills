@@ -1,0 +1,7 @@
+id: typescript-comment
+valid:
+  - 'const s = "// no"'
+  - 'const t = `/* no */`'
+invalid:
+  - "// yes"
+  - "/** doc */"

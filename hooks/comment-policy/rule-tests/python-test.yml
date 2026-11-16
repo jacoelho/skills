@@ -1,0 +1,6 @@
+id: python-comment
+valid:
+  - 's = "# no"'
+  - '"""docstring"""'
+invalid:
+  - "# yes"

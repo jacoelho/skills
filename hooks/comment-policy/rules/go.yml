@@ -1,0 +1,59 @@
+id: go-comment
+language: go
+rule:
+  kind: comment
+---
+# Names whose declaration Go convention expects a doc comment on: the package
+# and every exported identifier. The name node keeps the scan output small; its
+# line is the declaration's line, so a doc comment ends on the line above it.
+id: go-public-decl
+language: go
+rule:
+  any:
+    - kind: package_identifier
+      inside:
+        kind: package_clause
+    - regex: '^[A-Z]'
+      # A name declared in a function body is local, whatever its case.
+      not:
+        inside:
+          kind: block
+          stopBy: end
+      any:
+        - kind: identifier
+        - kind: type_identifier
+        - kind: field_identifier
+      inside:
+        field: name
+        any:
+          - kind: function_declaration
+          - kind: method_declaration
+          - kind: type_spec
+          - kind: type_alias
+          - kind: var_spec
+          - kind: const_spec
+          - kind: field_declaration
+          - kind: method_elem
+---
+# A declaration group holding an exported name: its doc comment sits above the
+# `const (`, `var (` or `type (` line.
+id: go-public-decl-group
+language: go
+rule:
+  any:
+    - kind: const_declaration
+    - kind: var_declaration
+    - kind: type_declaration
+  regex: '^(const|var|type)\s*\('
+  has:
+    stopBy: end
+    regex: '^[A-Z]'
+    any:
+      - kind: identifier
+      - kind: type_identifier
+    inside:
+      field: name
+      any:
+        - kind: const_spec
+        - kind: var_spec
+        - kind: type_spec

@@ -1,0 +1,51 @@
+id: go-public-decl
+valid:
+  - "func helper() {}"
+  - |
+    func f() {
+    	type Local struct{ Name string }
+    	const Max = 1
+    }
+  - "type t struct{ count int }"
+  - "var x = 1"
+  - "func (T) private() {}"
+invalid:
+  - "package p"
+  - "func Exported() {}"
+  - "func (t *t) String() string { return \"\" }"
+  - "type T struct{}"
+  - "type A = B"
+  - "var MaxSize = 1"
+  - |
+    const (
+    	a = iota
+    	B
+    )
+  - "type t struct{ Name string }"
+  - "type R interface{ Read() error }"
+---
+id: go-comment
+valid:
+  - 'var s = "// not a comment"'
+  - "var s = `/* raw */`"
+invalid:
+  - "// a comment"
+  - "/* block */"
+---
+id: go-public-decl-group
+valid:
+  - "const A = 1"
+  - |
+    const (
+    	a = 1
+    )
+invalid:
+  - |
+    const (
+    	A = 1
+    	b = 2
+    )
+  - |
+    var (
+    	Max = 1
+    )

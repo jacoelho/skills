@@ -1,0 +1,45 @@
+id: typescript-public-decl
+valid:
+  - "function helper() {}"
+  - "const local = 1"
+  - "class Local { shown() {} }"
+  - "const o = { m() {} }"
+  - "export { helper }"
+invalid:
+  - "export function f() {}"
+  - "export default function main() {}"
+  - "export class A {}"
+  - "export abstract class B {}"
+  - "export const x = 1"
+  - "export interface I {}"
+  - "export type T = string"
+  - "export enum E { A }"
+  - "export declare function d(): void"
+  - "export namespace N {}"
+  - "export class A { shown() {} }"
+  - "export class A { field = 1 }"
+  - "export interface I { p: string }"
+  - "export interface I { m(): void }"
+  - "export abstract class B { abstract am(): void }"
+---
+id: tsx-public-decl
+valid:
+  - "function Local() { return <div /> }"
+invalid:
+  - "export function Page() { return <div /> }"
+---
+id: javascript-public-decl
+valid:
+  - "function helper() {}"
+  - "class Local { shown() {} }"
+invalid:
+  - "export function f() {}"
+  - "export const x = 1"
+  - "export class A { shown() {} }"
+  - "export default function main() {}"
+---
+id: typescript-attribute
+valid:
+  - "export class A {}"
+invalid:
+  - "@Dec() export class A {}"
