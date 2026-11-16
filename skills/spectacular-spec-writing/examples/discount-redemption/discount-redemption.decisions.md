@@ -1,6 +1,5 @@
 # Requirements clarification: discount code redemption
 
-Session status: handed off
 Scope: redeeming a discount code at checkout, and rejecting expired or exhausted codes.
 Source state: illustrative worked example; no code.
 Workspace state: examples folder of the Spectacular skills.

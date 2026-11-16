@@ -1,10 +1,10 @@
 # Implementation: [capability or feature]
 
-> Progress record for `jacoelho:spectacular-spec-implementation`. The contracts own behaviour and coverage; this file only tracks the work and is deleted at close unless kept. It has one writer. Do not add the spec-lint marker.
+> Progress record for `jacoelho:spectacular-spec-implementation`. The contracts own behaviour and coverage; this file only tracks the work and is deleted at close unless kept. It has one writer, and after the planner writes it, its status, unit markers, blocked reasons, fix units and notes change only through `scripts/record.py apply`, and a re-plan must pass `scripts/record.py show` ([record states](../references/execution.md#record-states)). Do not add the spec-lint marker.
 
 Contracts: [path sha256:<hash>, one per contract]
 Lifecycle: [from the contract header]
-Status: [planning | approved | implementing | accepted | blocked]
+Status: [planning | approved | implementing | blocked | discard-ready | accepted]
 Checks: [the repository's check command]
 
 ## Gap map
@@ -27,7 +27,7 @@ Decisions: [design decisions with their reason; changes to the design are added 
 Seams: [declarations this change introduces, or none]
 Tests: checks [AC and INV IDs]; evidence rows: [one per test that checks an AC, added to `<capability>.evidence.md`, and an Unchecked row for any part no test checks]; properties: [input domains]; open: [Q IDs]
 
-Unit markers: `[ ]` pending, `[~]` in progress, `[x]` done, `[a]` accepted, `[!]` blocked (reason in Notes).
+Unit markers: `[ ]` pending, `[~]` in-progress, `[x]` done, `[a]` accepted, `[!]` blocked (reason in Notes).
 
 - [ ] U-1.1 Write failing tests - owner: [module path] - edits: [test paths, plus declarations the tests need]
 - [ ] U-1.2 [unit] - after: U-1.1 - owner: [module path] - edits: [paths]

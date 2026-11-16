@@ -14,12 +14,16 @@ spec="${CLAUDE_SKILL_DIR}/scripts/spec.py"
 python3 "$spec" show REQ-BOOK-001 AC-BOOK-003       # the rules and what a reader needs beside them
 python3 "$spec" show INV-BOOK-001 --cited-by        # also every section that cites it, before changing it
 python3 "$spec" outline specs/booking/contract.md   # headings with lines, proposed rules, next free IDs
+python3 "$spec" new AC REQ-BOOK-002 'Cancelling a confirmed booking is refused'  # AC skeleton under the rule
 python3 "$spec" decide Q-BOOK-005 <<'EOF'           # move an Open entry to Decided with its answer
 Which bookings can a customer cancel? Pending only. Decided by the booking product owner.
 EOF
+python3 "$spec" reopen Q-BOOK-002 <<'EOF'           # move a Decided entry back to Open with its question
+How long is a refund window? Reopened because Q-BOOK-005 changed which bookings can be cancelled.
+EOF
 ```
 
-Every command reads the specs under `specs/`; pass `--root` before the command when they live elsewhere. `show` keeps its output under 16,000 bytes by shrinking supporting blocks to their heading; show those by ID. `decide` refuses an entry that is not under Open and an empty answer, and then writes nothing. Edit evidence maps with `evidence.py`, below.
+`new AC` adds the criterion after the rule's fields, rule table and existing ACs, with the next free AC ID and each required field as a placeholder the linter rejects until it is replaced. Every command reads the specs under `specs/`; pass `--root` before the command when they live elsewhere. `show` keeps its output under 16,000 bytes by shrinking supporting blocks to their heading; show those by ID. `decide` refuses an entry that is not under Open and an empty answer, and `reopen` one that is not under Decided and an empty question; either then writes nothing. `reopen` also lists every section that mentions the entry, with what to do: a rule drops the citation from its Basis, so it is proposed until the entry is decided again; a decision that rests on the entry is reconsidered, and reopened too when its answer depended on it. Edit evidence maps with `evidence.py`, below.
 
 ## Evidence maps
 

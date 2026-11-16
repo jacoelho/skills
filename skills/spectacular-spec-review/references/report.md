@@ -32,6 +32,7 @@ Not inspected or not run: [inaccessible sources, excluded domains, unexecuted ch
 Review execution: [self-review, or named independent reviewer runs; never implied independence].
 Paraphrase reader: [who paraphrased and the inputs given, or skipped and why].
 Execution evidence: [commands, code state, fixtures, and results; distinguish runtime observations from static inference].
+Contests checked: [each earlier contest from the decision record's Handoff, accepted or re-raised as a finding; omit when there were none].
 
 ## Linter run
 

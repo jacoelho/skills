@@ -11,6 +11,11 @@ outline  lists a contract's or decision record's sections and declarations
          number for each kind of ID.
 decide   moves an open decision entry to its record's Decided section with
          the answer read from standard input, in one write.
+reopen   moves a decided entry back to Open with the question read from
+         standard input, and lists every section that cites it.
+new      adds an acceptance criterion under a rule with the next free AC ID
+         and every required field as a placeholder the linter rejects until
+         it is filled.
 
 The section boundaries come from spec_lint's outline, so this tool and the
 linter read headings and fences the same way. Evidence maps are edited with
@@ -271,13 +276,21 @@ def write_atomically(path: Path, text: str) -> None:
         raise
 
 
-def decide(tree: Tree, identifier: str, answer: str) -> str:
-    """Move an Open entry to the end of Decided, replacing its body with the answer."""
+# The record's sections in file order, and the move each command makes between them.
+SECTION_ORDER = spec_lint.DECISION_SECTIONS
+MOVES = {"decide": ("Open", "Decided"), "reopen": ("Decided", "Open")}
+
+
+def move_entry(root: Path, command: str, identifier: str, body: str) -> str:
+    """Move a decision entry along one of MOVES, replacing its body; the section is the entry's state."""
+    source, target = MOVES[command]
     if not identifier.startswith("Q-"):
-        raise SpecError(f"{identifier} is not a decision entry; decide takes a Q ID.")
-    if not answer.strip():
-        raise SpecError("no answer on standard input; write the question, its answer and who decided it.")
-    home = home_of(tree, identifier)
+        raise SpecError(f"{identifier} is not a decision entry; {command} takes a Q ID.")
+    if not body.strip():
+        raise SpecError("nothing on standard input; write the question, its answer and who decided it."
+                        if command == "decide" else
+                        "nothing on standard input; write the question as it now stands and what reopened it.")
+    home = home_of(load_tree(root), identifier)
     with home.path.open(encoding="utf-8", newline="") as handle:
         raw = handle.read()
     newline = "\r\n" if "\r\n" in raw else "\n"
@@ -285,31 +298,94 @@ def decide(tree: Tree, identifier: str, answer: str) -> str:
     sections = spec_lint.outline(lines)
     enclosing = [s for s in sections if s.level == 2 and s.start < home.section.start <= s.end]
     current = enclosing[-1].title.strip() if enclosing else ""
-    if current != "Open":
+    if current != source:
         where = f"under {current}" if current else "outside the record's sections"
-        raise SpecError(f"{identifier} is {where}; only an entry under ## Open can be decided.")
-    entry = [home.heading, "", *answer.strip("\n").splitlines()]
+        verb = "decided" if command == "decide" else "reopened"
+        raise SpecError(f"{identifier} is {where}; only an entry under ## {source} can be {verb}.")
+    entry = [home.heading, "", *body.strip("\n").splitlines()]
     del lines[home.section.start - 1:home.section.end]
+    # The source section stays until the entry is placed, so a missing target always has a neighbour to sit by.
     sections = spec_lint.outline(lines)
-    open_section = next(s for s in sections if s.level == 2 and s.title.strip() == "Open")
-    if not any(s.level > 2 and open_section.start < s.start <= open_section.end for s in sections):
-        del lines[open_section.start - 1:open_section.end]
-        sections = spec_lint.outline(lines)
-    decided = next((s for s in sections if s.level == 2 and s.title.strip() == "Decided"), None)
-    if decided is None:
-        before = next((s for s in sections if s.level == 2 and s.title.strip() in {"Policies", "Open"}), None)
-        start, at = (before.start, before.end) if before else (0, len(lines))
-        entry = ["## Decided", "", *entry]
+    destination = next((s for s in sections if s.level == 2 and s.title.strip() == target), None)
+    if destination is None:
+        earlier = SECTION_ORDER[:SECTION_ORDER.index(target)]
+        later = SECTION_ORDER[SECTION_ORDER.index(target) + 1:]
+        preceding = [s for s in sections if s.level == 2 and s.title.strip() in earlier]
+        following = [s for s in sections if s.level == 2 and s.title.strip() in later]
+        if preceding:
+            start, at = preceding[-1].start, preceding[-1].end
+        else:
+            start = at = following[0].start - 1
+        entry = [f"## {target}", "", *entry]
     else:
-        start, at = decided.start, decided.end
+        start, at = destination.start, destination.end
     while at > start and not lines[at - 1].strip():
         at -= 1
     following_blank = at < len(lines) and not lines[at].strip()
     lines[at:at] = ["", *entry, *([] if following_blank or at == len(lines) else [""])]
+    sections = spec_lint.outline(lines)
+    emptied = next(s for s in sections if s.level == 2 and s.title.strip() == source)
+    if not any(s.level > 2 and emptied.start < s.start <= emptied.end for s in sections):
+        del lines[emptied.start - 1:emptied.end]
     text = newline.join(lines) + (newline if raw.endswith(("\n", "\r")) else "")
     write_atomically(home.path, text)
     moved = next(s for s in spec_lint.outline(text.splitlines()) if s.token == identifier)
-    return f"{home.path}:{moved.start}-{moved.end}: {identifier} is decided."
+    report = [f"{home.path}:{moved.start}-{moved.end}: {identifier} is {'decided' if command == 'decide' else 'open'}."]
+    if command == "reopen":
+        tree = load_tree(root)
+        for c in citing_sections(identifier, tree):
+            basis = " ".join(field_values(own_text(c, tree), "Basis"))
+            if c.identifier.startswith("Q-"):
+                advice = f"reconsider it, and reopen it too when its answer rests on {identifier}"
+            elif re.search(rf"(?<![\w-]){re.escape(identifier)}(?![\w-])", basis):
+                advice = "drop the citation from its Basis until the entry is decided again"
+            else:
+                advice = "check whether its text still holds"
+            report.append(f"{c.path}:{c.section.start}: {c.identifier} mentions {identifier}; {advice}")
+    return "\n".join(report)
+
+
+# The template's order (assets/capability.md); each placeholder fails lint until it is replaced.
+AC_SKELETON = (
+    ("Situation", "[Input, relevant state, and triggering event.]"),
+    ("Expected", "[Observable accepted result and prohibited result where relevant.]"),
+    ("Oracle", "[Why this expectation is justified independently of the implementation.]"),
+    ("Boundary", "[Where the result is observed, in domain terms.]"),
+    ("Counterexample", "[A violation this check must detect.]"),
+)
+ID_SHAPE = re.compile(r"^(REQ|INV|AC|Q|TERM|SRC)-([A-Z0-9]+)-(\d+)$")
+
+
+def new_ac(root: Path, rule: str, title: str) -> str:
+    """Append an AC skeleton at the end of a rule's section, after its fields, rule table and ACs."""
+    title = " ".join(title.split())
+    if not title:
+        raise SpecError("give the AC a title: the case or property it checks.")
+    shape = ID_SHAPE.match(rule)
+    if not shape or shape[1] not in {"REQ", "INV"}:
+        raise SpecError(f"{rule} is not a rule; an AC goes under a REQ or INV shaped like REQ-CAP-001.")
+    tree = load_tree(root)
+    home = home_of(tree, rule)
+    if home.section.level >= 6:
+        raise SpecError(f"{rule} is a level-6 heading, so an AC cannot nest under it; move the rule up a level.")
+    family = f"AC-{shape[2]}"
+    numbers = [int(m[3]) for i in tree.mentioned if (m := ID_SHAPE.match(i)) and f"{m[1]}-{m[2]}" == family]
+    identifier = f"{family}-{max(numbers, default=0) + 1:0{len(shape[3])}d}"
+    with home.path.open(encoding="utf-8", newline="") as handle:
+        raw = handle.read()
+    newline = "\r\n" if "\r\n" in raw else "\n"
+    lines = raw.splitlines()
+    at = home.section.end
+    while at > home.section.start and not lines[at - 1].strip():
+        at -= 1
+    block = ["", f"{'#' * (home.section.level + 1)} {identifier} - {title}"]
+    for name, placeholder in AC_SKELETON:
+        block += ["", f"{name}: {placeholder}"]
+    following = lines[at:at + 1]
+    lines[at:at] = block + ([""] if following and following[0].strip() else [])
+    text = newline.join(lines) + (newline if raw.endswith(("\n", "\r")) or not raw else "")
+    write_atomically(home.path, text)
+    return f"{home.path}:{at + 2}-{at + len(block)}: {identifier} added under {rule}; replace each [placeholder]."
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -325,6 +401,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("file", type=Path)
     p = commands.add_parser("decide", help="Move an Open entry to Decided with the answer read from standard input.")
     p.add_argument("id")
+    p = commands.add_parser("new", help="Add an AC skeleton under a REQ or INV with the next free AC ID.")
+    p.add_argument("kind", choices=["AC"])
+    p.add_argument("rule")
+    p.add_argument("title")
+    p = commands.add_parser("reopen", help="Move a Decided entry back to Open with the question read from standard "
+                                           "input, and list the sections that cite it.")
+    p.add_argument("id")
     args = parser.parse_args(argv)
     try:
         tree = load_tree(args.root)
@@ -336,8 +419,10 @@ def main(argv: list[str] | None = None) -> int:
             return 1 if missing else 0
         if args.command == "outline":
             print(outline_text(args.file, tree))
+        elif args.command == "new":
+            print(new_ac(args.root, args.rule, args.title))
         else:
-            print(decide(tree, args.id, sys.stdin.read()))
+            print(move_entry(args.root, args.command, args.id, sys.stdin.read()))
     except SpecError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

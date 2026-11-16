@@ -58,6 +58,19 @@ With `on`, the policy text, `hooks/comment-policy/policy.md`, is added to the co
 
 Run `ast-grep test --skip-snapshot-tests` in `hooks/comment-policy/` after changing a rule; the rule tests state which code matches, so no output snapshots are kept. After changing the judge's instructions or the policy, run `bun hooks/comment-policy/eval/run.mjs 3`: it sends the labelled comments in `hooks/comment-policy/eval/cases.ts` to Haiku three times through `claude -p` and reports each verdict that differs from its label. It spends tokens, so the test suite does not run it.
 
+## Spectacular specs
+
+Four skills take a behaviour from an open question to tested code. Each owns one file, and each piece of state in it changes through one tool, so a later session can resume from the file alone.
+
+| Skill | Owns | State and the tool that changes it |
+| --- | --- | --- |
+| `spectacular-spec-grilling` | The decision record, `<capability>.decisions.md` | An entry's section (Policies, Open, Decided): `spec.py decide` and `spec.py reopen` |
+| `spectacular-spec-writing` | The contract: EARS rules, invariants and acceptance criteria | A rule is proposed until it has a Basis; `spec.py new AC` adds a criterion |
+| `spectacular-spec-review` | The linter and the review report; it edits nothing | AC evidence in `<capability>.evidence.md`: `evidence.py` |
+| `spectacular-spec-implementation` | The implementation record, `<capability>.implementation.md` | Status and unit markers: `record.py` |
+
+The tools live in each skill's `scripts/` folder; [tools](skills/spectacular-spec-review/references/tools.md) shows how to run them, and the [layout](skills/spectacular-spec-writing/references/lifecycle.md#layout) shows where each file sits.
+
 ## Spec lint
 
 When you send a prompt, the hook lints every spectacular contract in the repository with the bundled linter, passing the decision records too so each basis resolves. At the end of the turn it lints them again and sends back any finding the turn introduced, so a broken reference, a malformed rule table or an untraced basis is fixed in the turn that caused it. Findings that were already there are not reported, and a finding is reported once. It catches edits made through any tool, because it compares lint results rather than watching file writes. It needs git and python3; without them it shows a status line once and stays out of the way.
@@ -144,7 +157,7 @@ A unit interrupted mid-run starts again on resume.
 
 Other options set `instructions` for every agent, `concurrency` (units per wave, default 3), `models` per role (planner, testWriter, implementer, runner, reviewer, recorder; a model name, or `inherit` for the session model), `maxAttempts`, the `verify` command and `keepRecord` (keep the record after close instead of deleting it). The result reports the turn's token spend, which includes anything else spent in the same turn.
 
-To set role models once instead of per run, set the `implement_model_*` options in `/config`; they start at the workflow's defaults (planner and reviewer `opus`, runner `haiku`, the rest `sonnet`), and `inherit` uses the session's model. Plugin settings do not reach workflow scripts, so the skill passes the ones you have set as `models` when it launches the workflow; `models` given for a run takes precedence, and invoking `/jacoelho:spec-implement` directly uses only the `models` you pass.
+To set role models once instead of per run, set the `implement_model_*` options in `/config`; they start at the workflow's defaults (planner and reviewer `opus`, runner and recorder `haiku`, the rest `sonnet`), and `inherit` uses the session's model. Plugin settings do not reach workflow scripts, so the skill passes them as `models` when it launches the workflow, and a setting you have not set keeps the workflow's default; `models` given for a run takes precedence, and invoking `/jacoelho:spec-implement` directly uses only the `models` you pass.
 
 ## Install
 

@@ -2,7 +2,6 @@
 
 Use this shape only when no existing decision record already captures the scope, evidence, answers, and handoff. Update that record instead of starting a second one.
 
-Session status: [active / handed off / stopped / awaiting evidence]
 Scope: [the increment]
 Source state: [current contract/history, supplied decisions, accessible evidence; label each origin]
 Workspace state: [repository/workspace and relevant code or document revisions; note local changes when they affect the increment]
@@ -33,7 +32,7 @@ Workspace state: [repository/workspace and relevant code or document revisions; 
 
 [Evidence the answer rests on, each item pinned to the commit or source it was taken from.]
 
-The section is the state. An entry under Decided can be a rule's Basis; an entry under Open or Policies cannot, so an open question or a policy alone never accepts a rule. Resolving a question moves its entry from Open to Decided and writes the answer. A decision taken under a policy is its own entry under Decided that names the policy. A choice left to the implementer is decided, and the answer says so. Scope deliberately left out is an open entry the contract's `Excluded:` line cites.
+The section is the state. An entry under Decided can be a rule's Basis; an entry under Open or Policies cannot, so an open question or a policy alone never accepts a rule. Resolving a question moves its entry from Open to Decided and writes the answer (`spec.py decide`). A decided entry whose premise a changed answer removes moves back to Open (`spec.py reopen`), and each rule that cited it drops the citation until it is decided again. A decision taken under a policy is its own entry under Decided that names the policy. A choice left to the implementer is decided, and the answer says so. Scope deliberately left out is an open entry the contract's `Excluded:` line cites.
 
 Entries are prose: a reader needs no field list. Write every ID in full, never as a list or range such as `REQ-CAP-001 to 004`, so a search finds every mention. An entry holds no dates, implementation notes, or review history; git has them. A changed answer edits the entry; an entry replaced by another is deleted and every Basis that cited it is repointed, so there is never more than one current answer.
 
@@ -61,7 +60,7 @@ Deliverable: [findings and recommendation, kept separate]
 
 ## Handoff
 
-Only what no entry holds: the next action, unblocked scope, remaining work with its owner, executed checks with their commands and results, and how to restart. Do not list settled or open decisions here; their sections say it.
+Only what no entry holds: the next action, unblocked scope, remaining work with its owner, review contests awaiting the next review, executed checks with their commands and results, and how to restart. Do not list settled or open decisions here; their sections say it.
 
 This record is an input to the maintained specification, not a second normative specification or evidence that implementation passed.
 

@@ -2,7 +2,6 @@
 
 > Worked example of the `spectacular-spec-grilling` record. It is the working input to [contract.md](contract.md), not a second specification, so it carries no spec-lint marker.
 
-Session status: handed off
 Scope: customer cancellation of a single booking in the booking service
 Source state: no prior contract; answers supplied by the booking product owner in this session
 Workspace state: illustrative; no code revision

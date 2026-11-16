@@ -16,7 +16,7 @@ Keep unresolved replacement proposals in the decision record. Challenging an exi
 
 For a defect, deliver a reproduction as an executed observation, the governing REQ or INV (or the `unspecified case` class when none settles it), the behaviour the fix must preserve, and the reproduction as a regression test listed in the evidence map for the governing rule's AC. Change the contract only for a specification defect; an implementation defect leaves it unchanged, and an `unspecified case` waits for its decision.
 
-Until the fix lands, record the behaviour the code misses as the governing AC's Unchecked part, and the defect in the decision record's handoff. The fix closes both: it lists its regression test, clears the Unchecked part (`evidence.py unchecked <contract> <AC> --clear`) or narrows it to what still goes unchecked, and marks the handoff entry fixed. An Unchecked part left behind keeps reporting `partial-ac` after the fix ships.
+Until the fix lands, record the behaviour the code misses as the governing AC's Unchecked part, and the defect in the decision record's handoff. The fix closes both: it lists its regression test, clears the Unchecked part (`evidence.py unchecked <contract> <AC> --clear`) or narrows it to what still goes unchecked, and removes the defect from the handoff, which lists only remaining work. An Unchecked part left behind keeps reporting `partial-ac` after the fix ships.
 
 ## Impact envelope
 
