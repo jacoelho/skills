@@ -1,8 +1,12 @@
-# Generated-text rules
+# Vale rules
+
+This file records why each custom rule exists and what it deliberately leaves alone.
+
+## Generated-text rules
 
 These rules flag phrasing that makes PR descriptions, issues and articles read as machine-written. Each one targets a defect a reader would object to in any text. None of them proves authorship. All are review cues. Only `Workflow.EditorialMarkers` fails a document.
 
-## Kept
+### Kept
 
 | Rule | Level | Flags | Deliberately not flagged |
 | --- | --- | --- | --- |
@@ -25,13 +29,13 @@ These rules flag phrasing that makes PR descriptions, issues and articles read a
 
 `scripts/test-profiles.py` checks four things: a sample of excluded sentences passes the whole profile, each phrase has one owner, `Register` rules stay suggestions, and only `Workflow.EditorialMarkers` is an error.
 
-## Rejected
+### Rejected
 
 | Concept | Reason |
 | --- | --- |
 | Passive voice, adverbs, intensifiers | They fire on human technical writing, and passive is often right there. |
 | Transitions ("However,", "for example"), formal words ("implement") | They are normal technical prose. |
-| Colons, semicolons, tricolons | They are legitimate punctuation and lists. |
+| Colons, semicolons, tricolons | They are legitimate punctuation and lists, so they are no sign of generated text. `Clarity.Semicolon` flags semicolons for a different reason: readability. |
 | Figurative verbs ("stays", "holds", "lands") | They are literal in technical prose. |
 | Negations ("No caller changes"), ", so…" clauses, "a single", "every" | They state scope and mechanism precisely. |
 | Concessive "While X, Y" | It fires on human text only. |
@@ -39,3 +43,18 @@ These rules flag phrasing that makes PR descriptions, issues and articles read a
 | Absolute claims ("the only way to") | They are legitimate in technical prose. |
 | Curly quotes, title case | Curly quotes are correct British typography; `Technical.HeadingCase` owns title case. |
 | Elegant variation, cut-offs, citation validity | Vale cannot see them. |
+| Negative restatement after "and" ("and nobody…", "and no longer…") | Such a clause can add a fact ("and never fail a run"). `references/organisation.md` owns the prose rule. |
+
+## Readability rules
+
+These `Clarity` rules back the sentence rules in `references/organisation.md`. They flag dense prose regardless of who wrote it. All are suggestions.
+
+| Rule | Flags | Deliberately not flagged |
+| --- | --- | --- |
+| `Clarity.LongSentence` | A sentence over 30 tokens. The drafting target is 25. A 25-word threshold would flag about a third of the sentences in recent commit bodies, too many to act on. | Headings, tables, code |
+| `Clarity.SentenceAverage` | A document whose sentences average over 22 words | Single long sentences, which `LongSentence` owns |
+| `Clarity.Semicolon` | A semicolon in a prose sentence | Code spans, fenced code, tables |
+| `Clarity.AmbiguousReference` | "This" or "These" as a bare subject before a common verb: "This catches…" | "This check catches…"; "It is safe to…" (an expletive "it", not a reference) |
+| `Clarity.LongParagraph` | A paragraph over 200 tokens | Tables, headings, the first paragraph of a list item |
+
+Rejected for readability: bans on passive voice, perfect tenses and "-ing" forms, and American spelling. They come from Simplified Technical English, which targets non-native readers of maintenance manuals, and they make developer prose stilted. The organisation rules limit passive voice instead.

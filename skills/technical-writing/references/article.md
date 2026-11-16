@@ -32,11 +32,11 @@ When the material leaves the main point or audience unclear, say so rather than 
 
 ## Voice
 
-When the user asks for a named voice, load that voice skill, such as `jacoelho:voice-practitioner`. If it is unavailable, say so in the findings and continue without it. The contract in `SKILL.md` and this profile outrank any voice. A voice may override the sentence rules and the ban on rhetorical questions in the organisation reference, and Vale's long-sentence alerts.
+When the user asks for a named voice, load that voice skill, such as `jacoelho:voice-practitioner`. If it is unavailable, say so in the findings and continue without it. The contract in `SKILL.md` and this profile outrank any voice. A voice may override the sentence rules, including the sentence-length limit, and the ban on rhetorical questions in the organisation reference. It may also override Vale's sentence-length, semicolon and sentence-average alerts. The layering rule for paragraphs still applies.
 
 Follow supplied samples for cadence, vocabulary, directness and level of explanation. Do not borrow their facts, anecdotes or unusual phrases, and do not let voice strengthen a claim. Without samples, write natural, precise prose and invent no persona.
 
-Scan-surface rules apply only to the article's headings and lists. Vary sentence length when it helps the explanation. Do not chop every sentence short.
+Scan-surface rules apply only to the article's headings and lists. Without a voice, the sentence-length limit in the organisation rules still applies. Vary sentence length below it when that helps the explanation. Do not chop every sentence short.
 
 ## Leakage
 

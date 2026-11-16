@@ -9,7 +9,7 @@ Exact meanings for the words the Spectacular skills use as tests. Look a term up
 | Increment | The next unit of authorised work that can be accepted on its own: one capability change, investigation, or correction with stated inclusions and exclusions. |
 | Contract | The maintained requirements for a bounded capability, with their governing definitions, sources, and acceptance basis. Its lifecycle is anchored or feature ([lifecycle](lifecycle.md)). |
 | Decision record | The working record of open and settled product decisions for a capability, kept by `jacoelho:spectacular-spec-grilling`. It feeds the contract and is never a second authority. |
-| Consequential | Describes a question, gap, or obligation whose plausible answers would change a promised observable outcome, violate a shared invariant, break a consumer, or invalidate dependent work in the current increment. Anything else is recorded as a limit or a deferred or excluded question, not a finding or blocker for that increment. |
+| Consequential | Describes a question, gap, or obligation whose plausible answers would change a promised observable outcome, violate a shared invariant, break a consumer, or invalidate dependent work in the current increment. It scopes questions and gaps; acceptance evidence does not depend on it, since every AC that states its own cases has a counterexample. Anything else is recorded as a limit or a deferred or excluded question, not a finding or blocker for that increment. |
 | Authority | The person, decision, or binding external contract entitled to establish or change an obligation. |
 | Basis | The authorised decision or binding source that justifies a requirement. Rationale stays out of the statement. [Declarations](declarations.md#acceptance) lists the forms a basis may take. |
 | Normative | Governing what must hold; descriptive observations and illustrative examples are not normative. |
@@ -46,8 +46,11 @@ Exact meanings for the words the Spectacular skills use as tests. Look a term up
 
 | Term | Meaning |
 | --- | --- |
-| Acceptance criterion | A case or property with an expected observation, governing requirement, oracle, and verification boundary. |
+| Acceptance criterion | A case, a case table, or a property with an expected observation, governing requirement, oracle, and verification boundary. |
 | Oracle | An independently justified basis for an expected result, rather than a value derived from the implementation being assessed. |
 | Example / scenario | A concrete illustration of a requirement; it is neither an exhaustive definition nor a second authority. |
+| Rule table | The table of an ordered choice inside one REQ: numbered rows, the first that applies decides, the last is Otherwise ([declarations](declarations.md#rule-tables)). The only normative table. |
+| Case table | An AC's table of situations and expected observations for one rule, sharing one oracle and one check ([declarations](declarations.md#case-tables)). Its rows illustrate; they never decide. |
 | Evidence | An observation or inspected artifact supporting a claim within identified source, environment, and execution limits. Planned checks are not executed evidence. |
+| Evidence map | A capability's table of which test checks which AC ([declarations](declarations.md#evidence-map)). The only record of it; an AC with no row is planned. |
 | Counterexample | A concrete input, outcome, or execution trace that exposes a violation or distinguishes competing interpretations. |

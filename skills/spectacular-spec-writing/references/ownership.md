@@ -23,13 +23,13 @@ Do not create a shared abstraction for a single speculative use. Do not organise
 | --- | --- | --- |
 | Capability obligation | Capability contract | Requirement-ID reference. |
 | Cross-capability invariant | Existing shared contract, or justified shared section/file | Applicability reference and any extra local obligation. |
-| Agreed acceptance case | The contract's Acceptance section or an owned executable example | Link to that case. |
+| Agreed acceptance case | The AC nested under the rule it checks | Link to that case. |
 | Domain term | Smallest genuinely shared glossary scope | Reference; define a qualified local term only when its meaning differs. |
-| Rejected or superseded decision | Decision history | A brief reference from current text where necessary. |
+| Rejected option | The decision-record entry that rejected it | A brief reference from current text where necessary. |
 | Implementation setup | Test or design code | Location reference, not copied selectors or private helper inventories. |
 | Feature-contract obligation | The feature contract, until its discard gate ([lifecycle](lifecycle.md)) | Nowhere lasting: anchored contracts and other lasting artefacts never reference a feature-contract ID. |
 
-A navigational index owns no additional behaviour. An illustrative summary is explicitly non-normative and must not carry a unique exception. If a test owns a canonical executable example, the contract points to it rather than maintaining another editable expected value. With the bundled declaration layout, that pointer is an AC whose `Covers:` names the rule and whose `Expected:` names the scenario or test.
+A navigational index owns no additional behaviour. An illustrative summary is explicitly non-normative and must not carry a unique exception. If a scenario or test owns a canonical executable example, the [evidence map](declarations.md#evidence-map) lists it for the AC, and the contract keeps no second editable expected value.
 
 ## Reconcile near-duplicates carefully
 
@@ -49,4 +49,4 @@ Keep an identifier when the same obligation moves. A changed meaning needs an id
 
 A local contract may reference a versioned external requirement. Preserve the external identifier and source; do not mint a second local definition unless the local text deliberately adds or translates an obligation and records that relationship.
 
-Use [EARS](ears.md) for the normative statement in every local requirement or invariant. A glossary owns term meanings; a reference table or diagram illustrates requirements by ID. Neither adds behavioural rules outside the EARS statements.
+Use [EARS](ears.md) for the normative statement in every local requirement or invariant. A glossary owns term meanings; a reference table or diagram illustrates requirements by ID. Neither adds behavioural rules outside the EARS statements, except a [rule table](declarations.md#rule-tables), which is part of the one REQ that owns it, and a TERM with a Basis, whose list of forms a statement uses.

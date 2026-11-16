@@ -11,7 +11,7 @@ Produce text a reader can follow and act on, saying what the source material say
 ## Select the route
 
 - **Draft:** from notes, a diff or sources. Follow all steps.
-- **Improve:** existing text, when asked to improve, edit, tidy or polish it. Follow steps 1, 2, 4, 5 and 7. Edit only what would mislead the reader or make their task fail. Keep the structure, headings, lists, voice and first-person asides. Profile rules and the reader pass find problems; report the rest as findings.
+- **Improve:** existing text, when asked to improve, edit, tidy or polish it. Follow steps 1, 2, 4, 5, 6 and 7. Edit only what would mislead the reader or make their task fail. Keep the structure, headings, lists, voice and first-person asides. Profile rules and the reader pass find problems. Report the rest as findings.
 - **Reorganise:** existing text, when asked to restructure it or improve its organisation. Follow all steps, using the existing text as the source material.
 - **Review:** when asked to review or check a document. Follow steps 1, 2, 4 and 5, and return findings only. Do not rewrite unless asked.
 - **Lint:** when asked to run Vale or lint a document. Follow [Vale review](references/vale-review.md) only.
@@ -42,9 +42,9 @@ Text about a reader-facing subject is not leakage: a scope statement that helps 
 
    If the document is none of these, use the organisation rules alone and say so.
 2. **Inventory the source.** Identify the reader, their task, the claims and their kinds, and what is missing or in conflict. Keep this inventory out of the document.
-3. **Draft or reorganise.** Use the profile's required questions to find gaps, not as a template to fill. Omit a section when the source has nothing true to put in it.
-4. **Reader pass.** Read the text as someone who has only the text. State what it actually establishes. Look for unstated premises, unclear references, terms used before they are explained and transitions that assert something unproven. This is same-context self-review: prior knowledge remains, so do not describe it as blind or independent. Then read only the shape: the headings and where the paragraph breaks fall should follow the argument in order. Record a mismatch as a finding; step 6 repairs it as a connections problem.
-5. **Fidelity pass.** Check each material claim, condition and example against the source, then check the reverse direction for anything the source does not support. A keyword match is not coverage; the relationship and its qualification must survive.
+3. **Draft or reorganise.** Use the profile's required questions to find gaps, not as a template to fill. Omit a section when the source has nothing true to put in it. Write each paragraph in layers, with sentences within the length limit in the organisation rules: what the reader sees first, then one new idea per sentence.
+4. **Reader pass.** Read the text as someone who has only the text. State what it actually establishes. Look for unstated premises, unclear references, terms used before they are explained and transitions that assert something unproven. This pass is same-context self-review: prior knowledge remains, so do not describe it as blind or independent. Then read only the shape: the headings and where the paragraph breaks fall should follow the argument in order. Record a mismatch as a finding. Step 6 repairs it as a connections problem. Last, mark each sentence that adds more than one new idea or term. Step 6 splits it as a density problem. Also mark each clause the Remove rule in the organisation rules covers. Step 6 cuts it as a density problem.
+5. **Fidelity pass.** Check each material claim, condition and example against the source, then check the reverse direction for anything the source does not support. A keyword match is not coverage. The relationship and its qualification must survive.
 6. **Repair in order:** meaning, connections, density, surface. Correct the claim itself rather than appending a contradicting caveat. Change the smallest coherent passage. Stop after two repair rounds and report what remains.
 7. **Lint** with [Vale review](references/vale-review.md) when a command tool is available, after substantive repairs. If Vale cannot run, continue without it and report that separately.
 

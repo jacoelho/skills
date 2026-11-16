@@ -25,7 +25,7 @@ Decisions: [design decisions with their reason; changes to the design are added 
 ## C-1 [title] - after: [-]
 
 Seams: [declarations this change introduces, or none]
-Tests: cites [AC and INV IDs]; edge: [cases]; properties: [input domains]; open: [Q IDs]
+Tests: checks [AC and INV IDs]; evidence rows: [one per test that checks an AC, added to `<capability>.evidence.md`, and an Unchecked row for any part no test checks]; properties: [input domains]; open: [Q IDs]
 
 Unit markers: `[ ]` pending, `[~]` in progress, `[x]` done, `[a]` accepted, `[!]` blocked (reason in Notes).
 

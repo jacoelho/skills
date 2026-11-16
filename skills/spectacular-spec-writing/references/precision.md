@@ -1,6 +1,6 @@
 # Precision checks
 
-Use only the checks that can distinguish acceptable from unacceptable behaviour in the assigned scope. This is a working aid, not a required section list.
+Use only the checks that can distinguish acceptable from unacceptable behaviour in the assigned scope. The contract gets no section per check; for every rule, [the acceptance shape](#acceptance-shape) says where each fork found here ends up.
 
 ## Find a behavioural fork
 
@@ -21,6 +21,7 @@ Keep one independently reviewable obligation per requirement. If changing a clau
 | Dimension | Clarification to seek when relevant |
 | --- | --- |
 | Identity | Scope of uniqueness; comparison, normalisation, collision, missing identity. |
+| Form | For text or data the system reads: each accepted notation, separator, case, spacing, and locale variant, alone and combined with the others, and the near misses that must not match. |
 | Time | Clock or logical event; inclusive/exclusive limits; duration versus calendar period; time zone; ties. |
 | Quantifiers | Every versus some; per account versus global; each attempt versus each logical operation. |
 | State | Preconditions, terminal states, simultaneous transitions, permitted observations. For an entity with a lifecycle, the full set of states users can observe, each allowed transition with its trigger, and the response to a refused transition; a transition table may illustrate these requirements by ID. |
@@ -50,6 +51,14 @@ Do not apply this as “all technical detail is design”. Public schemas, error
 
 ## Acceptance shape
 
-A criterion records the situation, expected observation, prohibited observation where relevant, the oracle behind the expectation, and the test boundary; [declarations](declarations.md#fields) names the fields. For important cases, name a deliberately wrong implementation or changed input that should make the check fail.
+A criterion records the situation, expected observation, prohibited observation where relevant, the oracle behind the expectation, and the test boundary; [declarations](declarations.md#fields) names the fields. For every AC that states its own cases, name a deliberately wrong implementation or changed input that should make the check fail: its Counterexample.
+
+For every rule, walk [the conditions that change meaning](#conditions-that-change-meaning) and settle every dimension where two plausible implementations of the statement give different observable results. Each such fork ends as one of:
+
+- a row in the rule's [case table](declarations.md#case-tables), when the statement already settles it;
+- a new or sharper REQ, or a rule-table row, when the outcome is decided but no statement says it;
+- a Q under the decision record's Open section, listed on the `Excluded:` line, when nobody has decided it.
+
+A dimension with no fork needs no row. Choose row values at the boundary itself, such as the exact expiry instant or the last remaining unit, because a value well inside the range passes under most wrong implementations too.
 
 An invariant or a rule over every member of a domain defaults to a property check with a named input domain; a list of examples is enough only when the domain can be enumerated. A property can be useful without being an independent basis for the requirement. For example, idempotence can verify a chosen deduplication rule without establishing that the user's workflow wants that rule.

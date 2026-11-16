@@ -23,7 +23,7 @@ Each declaration cites the requirement ID it refines and states no caller-visibl
 | When | Who | Records |
 | --- | --- | --- |
 | The verifiability test fails while the contract is written | The spec writer, in step 4 of `jacoelho:spectacular-spec-writing` | The declarations and the contract's Structural commitments section |
-| A seam that bears on acceptance appears during implementation design | The implementation planner, after the user approves the design | The declarations, the record's Design table, and the contract's Structural commitments section. This is the only contract edit `jacoelho:spectacular-spec-implementation` makes. |
+| A seam that bears on acceptance appears during implementation design | The implementation planner, after the user approves the design | The declarations, the record's Design table, and the contract's Structural commitments section. It is the one [contract edit](../../spectacular-spec-implementation/SKILL.md#contract-edits) `jacoelho:spectacular-spec-implementation` makes. |
 | A seam that only coordinates the work | The implementation planner | The implementation record only |
 
 ## Review
