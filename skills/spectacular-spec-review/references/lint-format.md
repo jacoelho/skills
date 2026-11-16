@@ -1,6 +1,8 @@
 # Declaration and EARS linter
 
-The linter is a small, standard-library-only Python tool. It enforces the declaration layout ([declarations](../../spectacular-spec-writing/references/declarations.md) lists the fields and which are required), the EARS lexical grammar below, and local traceability in explicitly active Markdown documents. Every REQ/INV statement is checked, whether proposed or accepted; there is no switch to bypass EARS checks. Requirement meaning and implementation conformance still require review.
+The linter is a small, standard-library-only Python tool. It enforces the declaration layout, the EARS lexical grammar below, and local traceability in explicitly active Markdown documents. Every REQ and INV statement is checked, with or without a Basis. Requirement meaning and implementation conformance still require review.
+
+Contents: [Run](#run), [Opt in](#opt-in), [Declarations](#declarations), [Parsing](#parsing), [EARS lexical grammar](#ears-lexical-grammar), [Evidence maps](#evidence-maps), [Findings](#findings), [Output and exit codes](#output-and-exit-codes).
 
 ## Run
 
@@ -25,50 +27,57 @@ Include this exact standalone line, without indentation, in every active documen
 
 Unmarked Markdown is skipped and counted. Historical documents should not use the active marker. Template text inside valid fenced code is ignored, including an opt-in marker inside a fence. A backtick fence's info string cannot contain backticks: a malformed opener produces `invalid-fence` in an active document and its following declarations remain visible. Tilde fence info strings may contain backticks. Do not claim that a skipped document was reviewed.
 
-## Supported declarations
+## Declarations
 
-Outside fenced code, use an ATX heading at level 2 through 6, with whitespace between the identifier and its title. This example is complete: with the active marker prepended it lints clean under `--strict`.
+[Declarations](../../spectacular-spec-writing/references/declarations.md) owns the prefixes, the fields of each kind, and which are required. This example is complete: with the active marker prepended it lints clean under `--strict`.
 
 ```markdown spec-lint
+### SRC-BOOK-001 - Booking policy, version 2
+
+The booking product owner's cancellation policy.
+
 ### INV-BOOK-001 - Stock stays non-negative
-Status: accepted
 Statement: The booking service shall keep available stock non-negative.
-Basis: DEC-BOOK-001, adopted by the designated product owner.
+Basis: SRC-BOOK-001
+
+#### AC-BOOK-002 - Any request sequence keeps stock non-negative
+Situation: Stock S has 1 unit; any generated sequence of booking and cancellation requests for S is sent.
+Expected: After every request, S reports 0 or more available units.
+Oracle: SRC-BOOK-001 fixes the bound independently of the implementation.
+Boundary: The booking service API.
+Counterexample: A cancellation that releases a unit twice after a booking of the last unit reports 2.
 
 ### REQ-BOOK-001 - Cancel a pending booking
-Status: accepted
 Statement: When a pending booking is cancelled, the booking service shall atomically mark the booking cancelled and release its reserved unit.
-Basis: DEC-BOOK-001, adopted by the designated product owner.
-References: INV-BOOK-001
+Basis: SRC-BOOK-001 § Cancellation
+Rationale: releasing the unit keeps INV-BOOK-001's bound.
 
-### AC-BOOK-001 - Pending booking
-Covers: REQ-BOOK-001, INV-BOOK-001
+#### AC-BOOK-001 - Pending booking
+Covers: INV-BOOK-001
 Situation: Booking B is pending and holds one reserved unit of stock S.
 Expected: B is cancelled and the available stock of S rises by exactly one.
-Verification: Planned at the booking service API.
+Oracle: SRC-BOOK-001: a cancellation releases what the booking reserved.
+Boundary: The booking service API.
+Counterexample: A cancellation that leaves B pending, or releases two units, fails.
 ```
 
-The recognised fields are `Status`, `Statement`, `Basis`, and `References` on REQ and INV, and `Covers`, `Situation`, `Expected`, `Oracle`, `Verification`, and `Counterexample` on AC; an AC field on another declaration kind is an error. `Rationale` is ordinary prose to the linter. `Basis` is prose and is not resolved as a reference; declare a `DEC` locally and list it in `References:` when the link should be checked. A heading such as `## REQ-BOOK-001: Title` or `# REQ-BOOK-001 Title` is a `malformed-id` error; the message names the fix, and the section's fields are not reported again as orphans.
+A declaration is a column-zero ATX heading at level 2 to 6 holding an unformatted ID and a title. A heading such as `## REQ-BOOK-001: Title` or `# REQ-BOOK-001 Title` is a `malformed-id` error; the message names the fix, and the section's fields are not reported again. An AC heading must sit one level below a REQ or INV heading; the rule it sits under counts as covered.
 
-When the executable example lives in a Gherkin scenario or a test, keep a pointer AC: `Covers:` names the rule and `Expected:` names the scenario or test, for example `Expected: Scenario "Cancel a pending booking" in features/cancellation.feature passes.` The linter does not read `.feature` files or tests, so the pointer AC is what records coverage.
+Basis citations are resolved here: a Q against the entries of the `*.decisions.md` files passed in, and a SRC against the declarations. Pass the folders that hold the decision records, or every Q citation is dangling. A decision record is never an active document; the linter reads its `### Q-... - title` entries and the `## Policies`, `## Open` or `## Decided` section each sits in ([session](../../spectacular-spec-grilling/assets/session.md)). Only an entry under Decided can accept a rule.
 
-Supported prefixes: REQ, INV, AC, DEC, Q, TERM, SRC. An identifier has a prefix and one or more uppercase alphanumeric segments separated by hyphens. A heading declares one canonical home. A reference does not redeclare it.
+## Parsing
 
 Fields are plain, column-zero, single-line `Name: value` lines in the declaration's own section. The next heading, including a nested heading, ends that section. Recognised fields outside a declaration, wrong casing, indentation, list or quote prefixes, HTML wrappers, and a table `Statement` cell are errors. Declaration-shaped indented, formatted, blockquoted, list-prefixed, or HTML headings are also errors. Use unformatted IDs in column-zero level 2–6 ATX headings.
 
 Known field labels with emphasis, inline-code, HTML, or link formatting are also unsupported, whether the colon is inside or outside that formatting. For example, `**Statement:**` and `` `Statement`: `` fail; they are not parsed as replacement fields. A leading formatted field-label mention has the same shape, so put explanations in `Rationale:`, surrounding prose, or a fenced example.
 
-`Statement` belongs only to REQ/INV. Continuation text after it is an error, even after a blank line, until another named field or heading begins. Put commentary in `Rationale:` or another named field, or a separate section. Literal examples in fenced code remain outside the scan. Illustrative tables may reference rule IDs and expected observations; they cannot define a `Statement` column. The linter does not infer undeclared requirements from arbitrary prose.
+`Statement` belongs only to REQ/INV. Continuation text after it is an error, even after a blank line, until another field or heading begins. Put commentary in `Rationale:` or a separate section. Literal examples in fenced code remain outside the scan. Illustrative tables may reference rule IDs and expected observations; they cannot define a `Statement` column. A table whose first header cell is `Order`, inside a REQ, is a rule table ([declarations](../../spectacular-spec-writing/references/declarations.md#rule-tables)): it may sit directly under the Statement, which it ends, and its cells are checked as the Findings table lists. The linter does not infer undeclared requirements from arbitrary prose.
 
 Table headers require an immediately adjacent delimiter row with the same cell count; fenced examples cannot join separated lines into a table. Single-column tables and delimiters with one or more hyphens are recognised. Outside an established table, a bare hyphen or equals-sign underline forms a Markdown heading; a table delimiter needs a pipe or alignment colon. Escaped pipes remain within their cell, including inside formatted labels or links.
 
 Within an established table, body rows are checked before interpreting later lines. Body text can omit pipes. Table content cannot supply declaration fields: recognised `Name: value` lines in a table header or body are rejected before storing their values. Blank lines, fenced blocks, ATX headings, and quote, list, or thematic-break interruptions end table context. A bare `---` ends a table when reached; `===` remains body content. Quoted and inline-code examples in body rows remain illustrative data.
 
-For `References:` and `Covers:`, supply comma-separated local IDs only. Reference an external source by a local SRC declaration that identifies its source and version; the tool does not validate that source. Put narrative links on other field names or ordinary prose lines outside a Statement continuation.
-
-A field value that is entirely one bracketed template placeholder, such as `Basis: [Authorised decision]`, is a `placeholder-value` error and counts as neither filled nor missing. Only an untouched whole-field placeholder is detected: partially edited template text, such as `<event>` left after removing the outer brackets, lints as ordinary text and is left to review; quote a literal bracketed value with backticks, for example `` Expected: `[1, 2]` ``, and write a Markdown reference link as `[ADR 7][]` rather than `[ADR 7]`.
-
-Use `Status: proposed` or `Status: accepted` for REQ and INV declarations. Other statuses should be represented in non-active history or translated explicitly before opting in. Never relabel a rule accepted just to satisfy the checker.
+A field value that is entirely one bracketed template placeholder, such as `Basis: [Resolved Q IDs]`, is a `placeholder-value` error and counts as neither filled nor missing. Only an untouched whole-field placeholder is detected: partially edited template text, such as `<event>` left after removing the outer brackets, lints as ordinary text and is left to review; quote a literal bracketed value with backticks, for example `` Expected: `[1, 2]` ``, and write a Markdown reference link as `[ADR 7][]` rather than `[ADR 7]`.
 
 ## EARS lexical grammar
 
@@ -83,25 +92,76 @@ The linter checks this deterministic form of the [EARS patterns](../../spectacul
 
 The parser checks leading clauses and the obligation boundary; response prose remains opaque. Words such as `if` or `may` inside a response do not themselves create another clause or obligation. These lexical rules make enforcement predictable, not a proof that a noun phrase, outcome, or interpretation is valid.
 
-## Checks
+## Evidence maps
 
-- Duplicate IDs, including duplicate definitions in one file.
-- Malformed declared IDs and malformed reference lists in supported fields.
-- Dangling local references and references to ambiguously duplicated IDs.
-- An AC field (`Covers`, `Situation`, `Expected`, `Oracle`, `Verification`, `Counterexample`) on a non-AC block, or `Covers:` naming something other than REQ/INV.
-- REQ/INV declarations missing their statement, status, or accepted decision basis.
-- Field values left as a bracketed template placeholder.
-- REQ/INV statements violating the EARS lexical grammar: casing, clause order, empty slots, obligation boundary, balanced literals, or sentence punctuation.
-- INV statements containing a When or If activation clause; configuration and state scopes are permitted.
-- Unsupported declaration/field forms, orphan fields, Statement continuations, or Statement on another declaration kind.
-- AC declarations missing a coverage link, an expected result, or a verification line.
-- An accepted REQ/INV with no AC declaration pointing to it: warning only.
-- A REQ/INV statement using a vague term, such as `fast`, `appropriate`, `robust`, `etc`, `and/or`, or `if possible`, outside a quoted literal: warning only. The full list is `VAGUE_TERMS` in `scripts/spec_lint.py`. The list only finds candidates: whether a term is vague is decided by the definition in [terms](../../spectacular-spec-writing/references/terms.md). Replace a vague term with a measurable bound or a defined term; quote it when it is literal data, such as a returned label. A listed word that the contract defines is not vague: write it in backticks, as a reference to the defined term, which also clears the warning.
-- A symbolic link skipped during traversal whose target was not checked: warning only.
-- Duplicate recognised fields within a block.
-- An opted-in document with no supported declarations, a malformed backtick fence opener, or an unclosed code fence.
+The linter reads every `<capability>.evidence.md` under the spec roots ([evidence map](../../spectacular-spec-writing/references/declarations.md#evidence-map)); it needs no marker and is never read as a contract. Every non-blank line is an optional first `#` title, the header `| AC | File | Test |`, the delimiter row, or a row of three non-empty cells; after those rows an optional second table, the header `| AC | Unchecked |`, its delimiter row, and rows of two non-empty cells, records the part of an AC no listed test checks. `\|` is a pipe inside a cell. For each test row it reads the named file, relative to the map, and looks for the test name as written in the source, escapes included; a name that begins or ends with a letter, digit, or underscore must not run into another one, so `stop_alarm` does not match `test_stop_alarm`. In a `.feature` file the name is a whole scenario title after `Scenario:`, so a title with words appended no longer matches.
 
-Coverage links indicate claimed traceability, not execution, adequate coverage, a valid oracle, or a proof of correctness. A reference can be syntactically valid and semantically inappropriate.
+`scripts/evidence.py` writes maps in the form this section checks ([evidence map](../../spectacular-spec-writing/references/declarations.md#evidence-map)). Pass `--untested` when every AC in scope should have a test, as when an implementation closes; leave it off while contracts are being written. `--json` adds `evidence`, each AC with its rows' file, test, and `map:line`, and `unchecked`, each AC with its Unchecked text. A row shows that the named test exists, not that it passes or checks the AC well: the test run and review own those.
+
+## Findings
+
+Every code the linter emits. Warnings change the exit code only under `--strict`.
+
+| Code | Severity | When |
+| --- | --- | --- |
+| `input-error` | error | An explicit input is missing, a special file, not Markdown, or a dangling or looping link. |
+| `read-error` | error | A file cannot be read as UTF-8. |
+| `no-active-documents` | error | No input holds the active marker; the message repeats the skip counts. |
+| `no-declarations` | error | An active document declares nothing. |
+| `invalid-fence` | error | A backtick fence's info string contains a backtick. |
+| `unclosed-fence` | error | A fence is never closed, so the rest of the file is not scanned. |
+| `skipped-symlink` | warning | A link met while walking a directory was skipped and its target may hold Markdown nobody checked. |
+| `malformed-id` | error | A declaration heading has a malformed ID, a level outside 2 to 6, or no space before its title; or a decision-record heading starts with `Q-` but is not `Q-ID - Title`. |
+| `unsupported-declaration` | error | A declaration-shaped heading is indented, formatted, quoted, list-prefixed, or HTML. |
+| `duplicate-id` | error | An ID is declared more than once, in contracts or across decision records. |
+| `unsupported-field` | error | A recognised field outside a declaration, in a table, formatted, or on a kind that does not carry it; or any other `Name:` line inside a REQ, INV, or AC. |
+| `duplicate-field` | error | A declaration repeats a field. |
+| `placeholder-value` | error | A field is still an untouched bracketed template placeholder. |
+| `missing-statement` | error | A REQ or INV has no Statement. |
+| `statement-continuation` | error | Text follows a Statement before the next field or heading. |
+| `invalid-ears` | error | A Statement breaks the EARS lexical grammar, or an INV has a When or If clause. |
+| `vague-term` | warning | A Statement or rule-table cell uses a word from `VAGUE_TERMS` outside a quoted literal. |
+| `long-statement` | warning | A Statement or rule-table cell is longer than 60 words. |
+| `proposed-rule` | warning | A REQ or INV has no Basis, so it is proposed. |
+| `malformed-reference` | error | A Basis part is not a Q or SRC ID with an optional `§ section`, a quote or backtick in a Basis is unclosed or hides another citation, or Covers is not a comma-separated list of IDs. |
+| `dangling-reference` | error | A cited ID has no declaration, or a Q in Basis or Rationale is in no decision record passed in. |
+| `ambiguous-reference` | error | A cited ID is declared more than once. |
+| `basis-not-deciding` | error | A Basis cites no decided Q and no SRC: only entries under Open or Policies. |
+| `decision-section` | error | A decision-record entry is outside the `## Policies`, `## Open` and `## Decided` sections. |
+| `ac-not-nested` | error | An AC heading is not directly below a REQ or INV heading. |
+| `invalid-covers-target` | error | `Covers:` names something other than a REQ or INV. |
+| `unlinked-acceptance` | warning | A REQ or INV with a Basis has no AC under it and none naming it in `Covers:`. |
+| `missing-expected` | error | An AC has no Expected. |
+| `missing-boundary` | error | An AC has no Boundary. |
+| `missing-situation` | warning | An AC without a case table has no Situation. |
+| `missing-oracle` | warning | An AC has no Oracle. |
+| `missing-counterexample` | warning | An AC has no Counterexample. |
+| `case-table-unreferenced` | error | An AC has a table, but its Expected does not say "Every row of the case table below." |
+| `case-table-missing` | error | An Expected names the case table, but no table with rows follows. |
+| `boundary-not-domain` | warning | A Boundary names code, a file, or a date: backticks, `::`, a snake_case word, a source or feature file name, or an ISO date. |
+| `expected-names-test` | warning | An Expected names a test or test file: "tests … pass", a file whose name holds `test` or `spec`, a `.feature` file, or a source file with its directory. |
+| `oracle-names-test` | warning | An Oracle names a test or test file ([oracles](../../spectacular-spec-writing/references/declarations.md#oracles)). |
+| `unresolved-oracle` | warning | An Oracle cites a Q that no decision record passed in holds. |
+| `rule-table-missing` | error | A Statement names "rule table" but no `Order` table follows it. |
+| `rule-table-unnamed` | error | An `Order` table follows a Statement that does not name it. |
+| `rule-table-owner` | error | An INV has a rule table. |
+| `rule-table-duplicate` | error | A REQ has more than one rule table. |
+| `rule-table-columns` | error | A rule table has fewer than three columns. |
+| `rule-table-empty` | error | A rule table has no rows. |
+| `rule-table-order` | error | Rows are not numbered 1, 2, 3 in order. |
+| `rule-table-otherwise` | error | The last row's condition is not `Otherwise`, or an earlier row's is. |
+| `rule-table-obligation` | error | A rule-table cell says `shall`. |
+| `evidence-malformed` | error | An evidence-map line is not a title, header, delimiter, or well-formed row, or its path is absolute, starts with `~`, or uses backslashes. |
+| `evidence-unknown-ac` | error | No checked contract declares the row's AC. |
+| `evidence-file` | error | The listed file is missing, not a regular file, larger than 1 MiB, or not UTF-8. |
+| `evidence-test-missing` | error | The test name is not in the file: the test was renamed, moved, or deleted. |
+| `evidence-duplicate` | error | The same AC, file, and test appear twice, or an AC has two Unchecked rows. |
+| `evidence-order` | warning | A row sorts before the one above it. |
+| `unchecked-names-test` | warning | An Unchecked row mentions a test, a test file, or a listed test name. |
+| `untested-ac` | warning | With `--untested` only: an AC has no test row. |
+| `partial-ac` | warning | With `--untested` only: an AC has test rows and an Unchecked row. |
+
+The patterns behind the warnings find candidates; whether a word is vague or a Boundary names code is decided by review against [terms](../../spectacular-spec-writing/references/terms.md). A clean run means the recognised declarations satisfy the schema and lexical grammar. It does not detect paraphrased duplicates, contradictory statements, invalid refinements, undeclared requirements, interaction defects, or unsupported guarantees, nor whether a resolved decision actually settles the rule that cites it. It cannot decide whether slot text names a valid system, whether terms are defined, or whether response prose hides additional policy. Those remain the responsibility of review.
 
 ## Output and exit codes
 
@@ -118,5 +178,3 @@ When changing the linter, run its bundled regression tests from any working dire
 ```sh
 python3 -B -m unittest discover -s "$skill_dir/scripts" -p 'test_*.py' -q
 ```
-
-A clean run means the recognised declarations satisfy the supported schema and lexical grammar. It does not detect paraphrased duplicates, contradictory statements, invalid refinements, undeclared requirements, interaction defects, or unsupported guarantees. It cannot decide whether slot text names a valid system, whether terms are defined, or whether response prose hides additional policy. Those remain the responsibility of semantic review.

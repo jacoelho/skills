@@ -8,7 +8,7 @@ export const meta = {
     { title: 'Implement', detail: 'waves of units in disjoint modules; attempts escalate, then block' },
     { title: 'Verify', detail: 'repository checks' },
     { title: 'Conform', detail: 'contract (spec-review) and design check; one round of fix units' },
-    { title: 'Close', detail: 'ACs point at tests (anchored) or discard gate (feature)' },
+    { title: 'Close', detail: 'every AC has an evidence row (anchored) or discard gate (feature)' },
   ],
 }
 
@@ -85,14 +85,22 @@ const method = opt.skillPath
   : `Invoke the Skill tool with skill "${SKILL}" and read the references it links to as you need them.`
 const METHOD_MISSING = 'If you cannot load the method, do no work: say so in your result.'
 // Runners and the record writer only run commands or update lines; loading the method would cost each of them several turns.
-const brief = (role, task, input, needsMethod = true) => [
+const brief = (role, task, input, needsMethod = true, rules = []) => [
   needsMethod ? `${method} ${METHOD_MISSING}` : '',
-  `YOUR ROLE: ${role}. This workflow runs the other roles and orders the work; you cannot start subagents. ${task}`,
+  `YOUR ROLE: ${role}. This workflow runs the other roles and orders the work; you cannot start subagents.`,
+  ...[task].flat(),
+  readRules(rules),
   opt.instructions ? `Instructions from the user: ${opt.instructions}` : '',
   `INPUT (JSON):\n${JSON.stringify(input, null, 1)}`,
 ].filter(Boolean).join('\n\n')
 const READ_ONLY_RECORD = 'Read the implementation record but never write it; return your result instead.'
-const UNIT_RULES = 'Open your work from the skill\'s Decision rights section: decide what is yours, return what is not. Edit only the paths your unit lists, except files the design names as consumers of a seam you serve. Code and comments may cite contract IDs but never IDs that live only in the implementation record, which is deleted at close. ' + READ_ONLY_RECORD
+// The planner returns the absolute scripts folder and spec root, so no role has to search for them.
+let tools = { scripts: '', specRoot: '' }
+const script = (name) => `python3 ${tools.scripts}/${name} --root ${tools.specRoot}`
+const readRules = (ids) => ids.length
+  ? `Read the rules you serve with \`${script('spec.py')} show ${[...new Set(ids)].join(' ')}\`, not whole contracts; open a contract only when show cannot answer.`
+  : ''
+const UNIT_RULES = 'Open your work from the skill\'s Decision rights section: decide what is yours, return what is not. Edit only the paths your unit lists, except files the design names as consumers of a seam you serve. Tests carry no spec IDs. Implementation code and its comments may cite contract IDs, but never IDs that live only in the implementation record, which is deleted at close. ' + READ_ONLY_RECORD
 
 const str = { type: 'string' }
 const strs = { type: 'array', items: str }
@@ -106,6 +114,7 @@ const PLAN = obj({
   status: { type: 'string', enum: ['planning', 'approved', 'implementing', 'discard-ready', 'accepted', 'blocked'] },
   lifecycle: { type: 'string', enum: ['anchored', 'feature'] },
   needsApproval: bool, contractChanged: bool, verify: str,
+  scripts: str, specRoot: str,
   // The planner is the canary: in a session whose skill list predates the skill, every agent would work blind.
   methodLoaded: bool,
   specBlocked: strs, changes: { type: 'array', items: CHANGE },
@@ -160,13 +169,15 @@ async function run() {
   phase('Plan')
   const resumed = !contracts.length
   const plan = !resumed
-    ? await agent(brief('planner', 'Do the Plan steps for these contracts and write the implementation record at INPUT\'s record path (you are its only writer now), with status planning when needsApproval and INPUT\'s planGate are both true, approved otherwise. Return the plan as stored, with methodLoaded true only if you read the method. Set needsApproval when the design adds a seam, a module or a dependency between modules. List requirements stopped by a gap-map spec defect in specBlocked. Discover the repository check command unless one is given.', { contracts, record: recordPathFor(contracts[0]), verify: opt.verify, planGate: opt.gates.includes('plan') }),
+    ? await agent(brief('planner', 'Do the Plan steps for these contracts and write the implementation record at INPUT\'s record path (you are its only writer now), with status planning when needsApproval and INPUT\'s planGate are both true, approved otherwise. Return the plan as stored, with methodLoaded true only if you read the method. Set needsApproval when the design adds a seam, a module or a dependency between modules. List requirements stopped by a gap-map spec defect in specBlocked. Discover the repository check command unless one is given. Return scripts as the absolute path of jacoelho:spectacular-spec-review\'s scripts folder (it holds spec.py, spec_lint.py and evidence.py) and specRoot as the absolute path of the folder holding every contract and decision record.', { contracts, record: recordPathFor(contracts[0]), verify: opt.verify, planGate: opt.gates.includes('plan') }),
       { label: 'plan', phase: 'Plan', schema: PLAN, model: MODEL.planner })
-    : await agent(brief('planner', 'Do the Resume steps for this record (you are its only writer now): compare contract hashes, re-plan only changed requirements and set contractChanged when you did, re-run green for done implementation units in the current change (a done tests unit keeps its recorded red), and reopen what no longer holds. For each blocked unit, set it pending when the record\'s Design, its notes or the decision record now settle the reason it was blocked; keep it blocked otherwise. This call approves the gate the record stopped at: a record in status planning becomes approved; keep discard-ready as it is. Return the plan as stored, with methodLoaded true only if you read the method.', { record: opt.record, verify: opt.verify }),
+    : await agent(brief('planner', 'Do the Resume steps for this record (you are its only writer now): compare contract hashes, re-plan only changed requirements and set contractChanged when you did, re-run green for done implementation units in the current change (a done tests unit keeps its recorded red), and reopen what no longer holds. For each blocked unit, set it pending when the record\'s Design, its notes or the decision record now settle the reason it was blocked; keep it blocked otherwise. This call approves the gate the record stopped at: a record in status planning becomes approved; keep discard-ready as it is. Return the plan as stored, with methodLoaded true only if you read the method, scripts as the absolute path of jacoelho:spectacular-spec-review\'s scripts folder, and specRoot as the absolute path of the folder holding every contract and decision record.', { record: opt.record, verify: opt.verify }),
       { label: 'resume', phase: 'Plan', schema: PLAN, model: MODEL.planner })
   if (!plan) return out(null, 'error', 'The planner returned no result; rerun.')
   if (!plan.methodLoaded) return out(plan, 'error', `The planner could not load ${SKILL}, so every agent would work without the method. Start a new session (its skill list predates the skill) or pass skillPath, then rerun.`)
   current = plan
+  if (!plan.scripts || !plan.specRoot) return out(plan, 'error', 'The planner returned no scripts folder or spec root, so roles cannot read rules or edit evidence maps; rerun.')
+  tools = { scripts: plan.scripts.replace(/\/+$/, ''), specRoot: plan.specRoot.replace(/\/+$/, '') }
   const verifyCmd = (opt.verify || plan.verify || '').trim()
   // Every acceptance rests on this command: an empty one would let a runner report checks it never ran.
   if (!verifyCmd) return out(plan, 'error', `No repository check command: rerun with {verify}, or set the Checks line in ${plan.record}.`)
@@ -193,7 +204,7 @@ async function run() {
   async function runUnit(change, u, finding) {
     let failure = ''
     for (let attempt = 1; attempt <= opt.maxAttempts + 1; attempt++) {
-      const r = await agent(brief('implementer', `Implement unit ${u.id} of change ${change.id} until the tests for the code it touches pass. Other units are editing the same working tree at the same time: run only the tests and packages your unit touches, never the repository-wide checks, and never run a tool that rewrites files outside your edit paths (repository-wide formatters, generators). The repository checks run once after the change's last wave. Never edit tests. ${UNIT_RULES}`, { record: plan.record, change: change.id, unit: u, verify: verifyCmd, previousFailure: failure, finding: finding || null }),
+      const r = await agent(brief('implementer', `Implement unit ${u.id} of change ${change.id} until the tests for the code it touches pass. Other units are editing the same working tree at the same time: run only the tests and packages your unit touches, never the repository-wide checks, and never run a tool that rewrites files outside your edit paths (repository-wide formatters, generators). The repository checks run once after the change's last wave. Never edit tests. ${UNIT_RULES}`, { record: plan.record, change: change.id, unit: u, verify: verifyCmd, previousFailure: failure, finding: finding || null }, true, change.requirements),
         { label: `unit ${u.id}${attempt > 1 ? ` #${attempt}` : ''}`, phase: 'Implement', schema: UNIT_RESULT, model: attempt > opt.maxAttempts ? MODEL.planner : MODEL.implementer })
       if (!r) { failure = 'agent returned no result'; continue }
       noteResult(u, r)
@@ -242,15 +253,15 @@ async function run() {
 
   // The run never commits, so a change's work is the working tree's changes in its units' edit paths.
   const pathsOf = (changes) => [...new Set(changes.flatMap((c) => c.units.flatMap((u) => u.edits)))]
-  async function conform(scope, label, paths) {
+  async function conform(scope, label, paths, rules) {
     phase('Conform')
-    return agent(brief('reviewer', `Check conformance for ${scope}, reading the whole working tree's changes against HEAD (untracked files included); INPUT's paths are the planned scope, so a change outside them is a design-check finding unless the design lists it as a seam consumer: the contracts with jacoelho:spectacular-spec-review (its Reconcile step) and the recorded design with the skill's design check. Report material findings only, each summary stating one defect and nothing else. For a finding a unit can fix, give its owner module and the source paths to edit (never the implementation record); use kind design-change when the design itself must change and spec when a contract must. Edit nothing. ${READ_ONLY_RECORD}`, { record: plan.record, scope, paths }),
+    return agent(brief('reviewer', [`Check conformance for ${scope}, reading the whole working tree's changes against HEAD (untracked files included); INPUT's paths are the planned scope, together with the evidence maps beside the contracts, so a change outside them is a design-check finding unless the design lists it as a seam consumer: the contracts with jacoelho:spectacular-spec-review (its Reconcile step) and the recorded design with the skill's design check. `, `Run \`python3 ${tools.scripts}/spec_lint.py --untested ${tools.specRoot}\`, so every contract, evidence map and decision record is read and each Basis resolves (jacoelho:spectacular-spec-review's linter guide); an AC this scope serves with no evidence row, or any evidence-* error, is a finding.`, `Report blocker and material findings only, each summary stating one defect and nothing else. For a finding a unit can fix, give its owner module and the source paths to edit (never the implementation record); use kind design-change when the design itself must change and spec when a contract must. Edit nothing. ${READ_ONLY_RECORD}`], { record: plan.record, scope, paths }, true, rules),
       { label, phase: 'Conform', schema: CONFORM, model: MODEL.reviewer })
   }
 
   // One round of fix units per conformance check; what remains goes to the user.
   async function conformAndFix(change, scope, label, changes) {
-    const first = await conform(scope, label, pathsOf(changes))
+    const first = await conform(scope, label, pathsOf(changes), changes.flatMap((c) => c.requirements))
     if (!first) return { error: `${label} returned no result` }
     // A unit may not edit the record: the workflow is its only writer.
     const needUser = first.findings.filter((f) => f.kind !== 'unit' || f.edits.some((p) => p === plan.record || p.endsWith('.implementation.md')))
@@ -267,7 +278,7 @@ async function run() {
     phase('Implement')
     if ((await runWaves(change, findings)).length) return { blocked: true }
     if (!(await verify(change))) return { verifyFailed: true }
-    const second = await conform(scope, `${label} #2`, pathsOf(changes))
+    const second = await conform(scope, `${label} #2`, pathsOf(changes), changes.flatMap((c) => c.requirements))
     if (!second) return { error: `${label} #2 returned no result` }
     return second.findings.length ? { needUser: second.findings } : {}
   }
@@ -293,7 +304,7 @@ async function run() {
     hashChecked = false
 
     for (const u of change.units.filter((x) => x.kind === 'tests' && x.state === 'pending')) {
-      const r = await agent(brief('test writer', `Write the failing tests for change ${change.id} (unit ${u.id}), plus only the declarations they need to compile, as stubs that fail without aborting the test run (the skill's Evidence section). Expected values come from the contracts' oracles, never from running code. ${UNIT_RULES}`, { record: plan.record, change: change.id, unit: u }),
+      const r = await agent(brief('test writer', [`Write the failing tests for change ${change.id} (unit ${u.id}), plus only the declarations they need to compile, as stubs that fail without aborting the test run (the skill's Evidence section). Expected values come from the contracts' oracles, never from running code.`, `Add one row per test that checks an AC to the capability's evidence map with \`python3 ${tools.scripts}/evidence.py add <contract> <AC> <test file> <test name>\`, with the name as written in the source, escapes included, or \`add <contract> -\` with one tab-separated AC, file, and name per line on standard input (jacoelho:spectacular-spec-review's tools reference describes it). List a test under an AC only when it observes at that AC's Boundary and asserts part of its Situation and Expected. When your tests leave part of an AC unchecked, record that part in domain terms with evidence.py unchecked <contract> <AC> '<part>'; state only the unchecked part and any check outside the tests (review, a scheduled job, another AC), never what the tests check. Quote every name and text in single quotes, and give any that holds an apostrophe, $ or backtick on standard input (pass -) from a heredoc with a quoted delimiter (<<'EOF'), never an unquoted one. Never edit the map by hand. The map is yours to edit in addition to your unit's paths.`, UNIT_RULES], { record: plan.record, change: change.id, unit: u }, true, change.requirements),
         { label: `tests ${u.id}`, phase: 'Tests', schema: UNIT_RESULT, model: MODEL.testWriter })
       if (r) noteResult(u, r)
       if (!r || r.outcome !== 'done') { u.state = 'blocked'; u.blockedReason = r ? `${r.outcome}: ${r.returned.join('; ') || r.output.slice(0, 300)}` : 'no result'; continue }
@@ -374,7 +385,7 @@ async function run() {
   }
 
   phase('Close')
-  const closed = await agent(brief('planner', `Close the implementation by its lifecycle as the skill's Execute section describes. Acceptance and conformance are already done by other roles: do not repeat them. Your summary is shown to the user: list the files you edited or created and the open questions you carried into the decision record, and do not question instructions you followed. Carry every open question in the record into the capability's decision record (jacoelho:spectacular-spec-grilling's Decision record section says where) before the record can be deleted. ${plan.lifecycle === 'feature' ? 'Check the discard gate, then discard the feature contract.' : `Mark each AC's Verification as executed, naming its test${opt.keepRecord ? ', and update the record\'s contract hashes to the edited contracts' : ''}.`} ${opt.keepRecord ? 'Keep the record and set its status to accepted.' : 'Then delete the record.'}`, { record: plan.record, lifecycle: plan.lifecycle, keepRecord: opt.keepRecord }),
+  const closed = await agent(brief('planner', `Close the implementation by its lifecycle as the skill's Execute section describes. Acceptance and conformance are already done by other roles: do not repeat them. Your summary is shown to the user: list the files you edited or created and the open questions you carried into the decision record, and do not question instructions you followed. Carry every open question in the record into the capability's decision record (jacoelho:spectacular-spec-grilling's Decision record section says where) before the record can be deleted. ${plan.lifecycle === 'feature' ? 'Check the discard gate, then discard the feature contract.' : `Leave the contracts as they are; the evidence map already records which test checks which AC. Run \`python3 ${tools.scripts}/spec_lint.py --untested ${tools.specRoot}\` and report any AC in scope left without a test row.`} ${opt.keepRecord ? 'Keep the record and set its status to accepted.' : 'Then delete the record.'}`, { record: plan.record, lifecycle: plan.lifecycle, keepRecord: opt.keepRecord }),
     { label: 'close', phase: 'Close', schema: CLOSE, model: MODEL.planner })
   if (!closed || !closed.closed) return out(plan, 'error', `Closing did not complete${closed ? `: ${closed.summary}` : ''}; ${RERUN}.`)
   return out(plan, 'done', `Report to the user: ${closed.summary} The tree is uncommitted; review and commit it.`, { discarded: closed.discarded, specBlocked: plan.specBlocked })

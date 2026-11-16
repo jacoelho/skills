@@ -2,6 +2,7 @@
 """Contract tests for files the Spectacular skills ship together."""
 from __future__ import annotations
 
+import ast
 import re
 import sys
 import tempfile
@@ -30,7 +31,8 @@ def anchors(document: Path) -> set[str]:
     return {re.sub(r"[^\w\- ]", "", title.lower()).replace(" ", "-") for title in HEADING.findall(text)}
 LINTABLE_FENCE = re.compile(r"^```markdown spec-lint\n(.*?)^```$", re.MULTILINE | re.DOTALL)
 # Any recognised field that still contains a bracket is unfilled template text.
-UNFILLED_FIELD = re.compile(r"^(?:Status|Statement|Basis|References|Covers|Situation|Expected|Oracle|Verification|Counterexample): .*\[")
+UNFILLED_FIELD = re.compile(rf"^(?:{spec_lint.FIELD_LABELS}): .*\[")
+FINDING_ROW = re.compile(r"^\| `([a-z-]+)` \| (error|warning) \|", re.MULTILINE)
 
 
 def sibling(name: str) -> Path:
@@ -76,14 +78,14 @@ class BundleTests(unittest.TestCase):
 
     def test_worked_examples_lint_clean_together_under_strict(self) -> None:
         examples = sibling("spectacular-spec-writing") / "examples"
-        for contract in ("booking-cancellation/contract.md", "stock/contract.md"):
+        for contract in ("booking-cancellation/contract.md", "discount-redemption/contract.md", "stock/contract.md"):
             self.assertTrue((examples / contract).is_file(), f"{examples / contract} is missing")
 
         result = spec_lint.scan([examples])
 
         self.assertEqual(result.findings, [])
         self.assertEqual(result.exit_code(strict=True), 0)
-        self.assertEqual(result.active_documents, 2)
+        self.assertEqual(result.active_documents, 3)
 
     def test_booking_example_depends_on_the_stock_invariant_it_references(self) -> None:
         booking = sibling("spectacular-spec-writing") / "examples" / "booking-cancellation"
@@ -112,6 +114,20 @@ class BundleTests(unittest.TestCase):
             sorted((f.code, f.line) for f in result.findings),
             sorted(("placeholder-value", number) for number in unfilled),
         )
+
+    def test_linter_guide_lists_every_finding_code_the_linter_emits(self) -> None:
+        guide = (REVIEW / "references" / "lint-format.md").read_text(encoding="utf-8")
+        documented = dict(FINDING_ROW.findall(guide))
+        emitted: dict[str, str] = {}
+        tree = ast.parse((REVIEW / "scripts" / "spec_lint.py").read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "add"
+                    and len(node.args) >= 2 and isinstance(node.args[1], ast.Constant)):
+                emitted[node.args[1].value] = node.args[0].value
+        for code in spec_lint.AC_CASE_FIELD_CODE.values():
+            emitted[code] = "warning"
+
+        self.assertEqual(documented, emitted)
 
     def test_linter_guide_examples_lint_clean(self) -> None:
         guide = REVIEW / "references" / "lint-format.md"

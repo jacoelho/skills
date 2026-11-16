@@ -13,6 +13,7 @@ const unit = (id, o = {}) => ({ id, kind: 'impl', after: [], owner: 'booking/', 
 const change = (id, units, o = {}) => ({ id, title: id, kind: 'feature', requirements: [`REQ-${id}`], accepted: false, units, ...o })
 const basicPlan = (o = {}) => ({
   record: 'specs/booking.implementation.md', status: 'planning', lifecycle: 'anchored', methodLoaded: true, needsApproval: false, contractChanged: false, verify: 'make test', specBlocked: [],
+  scripts: '/skills/spectacular-spec-review/scripts', specRoot: '/repo/specs',
   changes: [change('C-1', [unit('U-1.1', { kind: 'tests', edits: ['booking/cancel_test.go'] }), unit('U-1.2', { after: ['U-1.1'] })])],
   ...o,
 })
@@ -294,12 +295,39 @@ describe('conformance scope', () => {
   })
 })
 
+describe('briefs', () => {
+  test('test writers, implementers and reviewers get the show command for their rules with the planned paths', async () => {
+    const { calls } = await run()
+    for (const prefix of ['tests ', 'unit ', 'conform ']) {
+      const call = calls.find((c) => c.label.startsWith(prefix))
+      assert.ok(call, `no ${prefix}call`)
+      assert.ok(call.prompt.includes('python3 /skills/spectacular-spec-review/scripts/spec.py --root /repo/specs show REQ-C-1'), call.prompt)
+    }
+  })
+
+  test('the role and task come before how to read the rules and the input', async () => {
+    const { prompt } = (await run()).calls.find((c) => c.label.startsWith('tests '))
+    const at = (text) => prompt.indexOf(text)
+    assert.ok(at('YOUR ROLE') < at('Write the failing tests'))
+    assert.ok(at('Write the failing tests') < at('spec.py --root'))
+    assert.ok(at('spec.py --root') < at('INPUT (JSON)'))
+  })
+})
+
 describe('stops', () => {
   test('a planner that could not load the method stops the run before any change', async () => {
     const { out, labels } = await run({ plan: basicPlan({ methodLoaded: false }) })
     assert.equal(out.stopKind, 'error')
     assert.match(out.next, /could not load/)
     assert.deepEqual(labels, ['plan'])
+  })
+
+  test('a planner that returns no scripts folder or spec root stops the run before any change', async () => {
+    for (const missing of [{ scripts: '' }, { specRoot: '' }]) {
+      const { out, labels } = await run({ plan: basicPlan(missing) })
+      assert.equal(out.stopKind, 'error')
+      assert.deepEqual(labels, ['plan'])
+    }
   })
 
   test('a finding that would edit the record goes to the user, not to a fix unit', async () => {

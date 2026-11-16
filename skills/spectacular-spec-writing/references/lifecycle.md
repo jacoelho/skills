@@ -6,7 +6,7 @@ A contract is either **anchored** or a **feature** contract. The user decides; t
 | --- | --- | --- |
 | Purpose | The maintained contract for a capability, kept in sync with the code | Guides one increment, then is discarded after it ships |
 | Home | The capability's contract, one authoritative home per rule ([ownership](ownership.md)) | A feature folder: the repository's convention, otherwise `specs/<feature>/` |
-| Lasting record | The contract itself | Executable checks for behaviour; an ADR or the PR description for decisions |
+| Lasting record | The contract itself | Executable checks for behaviour; the vertical's or root decision record for decisions |
 | Header | `Lifecycle: anchored` | `Lifecycle: feature` |
 
 ## Choose
@@ -26,9 +26,11 @@ The repository's convention wins. Otherwise a contract is a file `<capability>.m
 | --- | --- |
 | Decision record | `<capability>.decisions.md` |
 | Implementation record | `<capability>.implementation.md` |
-| Acceptance scenarios | `<capability>.feature`, or one file per rule group |
+| Evidence map | `<capability>.evidence.md` |
 
-For example `specs/booking/contract.md` has `specs/booking/booking.decisions.md` and `specs/booking/booking.implementation.md`. Only the contract carries the spec-lint marker.
+For example `specs/booking/contract.md` has `specs/booking/booking.decisions.md`, `specs/booking/booking.evidence.md`, and `specs/booking/booking.implementation.md`. Only the contract carries the spec-lint marker.
+
+A decision that spans capabilities goes in a wider record instead: `<vertical>/<vertical>.decisions.md` for one vertical, such as `specs/reading/reading.decisions.md`, or `specs/specs.decisions.md` for the whole repository. An entry is placed by its question's scope when it is created and is not moved when later rules cite it. A source several contracts rely on, such as an architecture document at a commit, is declared as a SRC in each contract that cites it, so editing one contract never touches another's file.
 
 ## References flow one way
 
@@ -44,8 +46,8 @@ A feature contract may reference anchored IDs. An anchored contract never refere
 
 Before a feature contract is discarded:
 
-1. Every accepted REQ and INV has an executable check that passes. The check, not the contract, now records the behaviour; name it after the behaviour, not the feature-contract ID.
-2. Each decision with lasting consequence is recorded, with its rejected options and their reasons, in an ADR or the PR description. The decision record from grilling is discarded with the contract.
-3. Nothing lasting references a feature-contract ID.
+1. Every REQ and INV with a Basis has an executable check that passes. The check, not the contract, now records the behaviour; name it after the behaviour, not the feature-contract ID.
+2. Each decision with lasting consequence is moved, with its rejected options and their reasons, to the vertical's or root decision record. The feature's own decision record is discarded with the contract.
+3. Nothing lasting references a feature-contract ID: search code comments for the contract's ID stem, such as `AC-CHK-`, and remove each one. The evidence map goes with the folder.
 
-Discard by deleting the folder. When the user wants it kept as read-only history, remove its spec-lint marker and add a first line saying it is superseded history, so it is no longer linted or treated as a source.
+Discard by deleting the folder. When the user wants it kept as read-only history, remove its spec-lint marker, delete its evidence map, and add a first line saying it is superseded history, so it is no longer linted or treated as a source.

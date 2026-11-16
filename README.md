@@ -33,6 +33,12 @@ Set these in `/config` (stored under `pluginConfigs` in `settings.json`):
 
 The bundled prompt is `hooks/handoff/prompts/handoff.md`; edit it in place or point `handoff_prompt_file` at your own copy.
 
+## Spec lint
+
+When you send a prompt, the hook lints every spectacular contract in the repository with the bundled linter, passing the decision records too so each basis resolves. At the end of the turn it lints them again and sends back any finding the turn introduced, so a broken reference, a malformed rule table or an untraced basis is fixed in the turn that caused it. Findings that were already there are not reported, and a finding is reported once. It catches edits made through any tool, because it compares lint results rather than watching file writes. It needs git and python3; without them it shows a status line once and stays out of the way.
+
+Set `spec_lint` to `off` in `/config` to turn it off.
+
 ## Architecture remediation workflow
 
 `/jacoelho:architecture-remediate` fixes architecture findings end to end. Each round reviews with `/jacoelho:architecture-review`, plans the fixes, has `jacoelho:consultant` agents challenge the plan, implements it in batches, verifies, runs `jacoelho:critic` on the diff, and checks each fix. Each later review covers only the previous round's changes and the code that uses them, because earlier rounds' fixes are already proven or still open in the ledger. When such a review is clean, one review of the whole diff against `baseRef` must also be clean before the run stops; it catches defects that only appear where rounds interact. The run stops once no Critical, High or Medium finding is open. A `followUpScope` you pass replaces both kinds of follow-up review. Each review's `history` entry records its scope: `initial`, `round`, `full` or `caller` (your `followUpScope`).
@@ -62,7 +68,7 @@ A run is costly, and the cost follows the number of rounds, not the size of the 
 
 `/jacoelho:spec-implement` turns one or more spectacular contracts into working, tested code, and edits the working tree without committing. `/jacoelho:spectacular-spec-implementation` owns the method; the workflow runs it for long or unattended work, and a normal session can follow the skill directly for small changes. It depends only on the spectacular skills.
 
-1. **Plan**: map each requirement against the code and tests, design which module owns what and the seams between them, stack the changes so each builds on the last, design the edge cases, and split each change into units sized for one agent. The plan is written to the implementation record.
+1. **Plan**: map each requirement against the code and tests, design which module owns what and the seams between them, stack the changes so each builds on the last, send edge cases the contract misses back to it, and split each change into units sized for one agent. The plan is written to the implementation record.
 2. **Tests**: per change, write the failing tests and confirm they fail for the right reason.
 3. **Implement**: run units in waves, in parallel when they are in different modules and edit different paths. A failing unit gets more attempts, then one on the planner's model, then is blocked; a unit needing a decision outside its rights is blocked at once. Blocked units stop only their dependants.
 4. **Verify**: run the repository's checks; a change is accepted when its tests, red after they were written, now pass.
