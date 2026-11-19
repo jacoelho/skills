@@ -121,6 +121,20 @@ test('JavaScript and TypeScript: a JSDoc block above an export or a public membe
   expect(docsOf(scans, 'b.js')).toEqual(['/** Parses input. */'])
 })
 
+test('Vue: a JSDoc block above a prop, emit or model is a doc comment', () => {
+  const scans = parseScan(
+    scanJson(
+      match('typescript-comment', 'a.vue', 3, '/** Title shown in the header. */', { column: 2 }),
+      match('typescript-public-decl-vue', 'a.vue', 4, 'title', { column: 2 }),
+      match('typescript-comment', 'a.vue', 5, '// not a doc', { column: 2 }),
+      match('typescript-public-decl-vue', 'a.vue', 6, 'size', { column: 2 }),
+      match('typescript-comment', 'a.vue', 8, '/** The selected row. */'),
+      match('typescript-public-decl-vue', 'a.vue', 9, 'selected'),
+    ),
+  )
+  expect(docsOf(scans, 'a.vue')).toEqual(['/** The selected row. */', '/** Title shown in the header. */'])
+})
+
 test('Go: a test function needs no doc comment, an exported Test-named helper does', () => {
   const scans = parseScan(
     scanJson(
@@ -277,6 +291,23 @@ test('a linter suppression needs a reason', () => {
   expect(ruleFindings(comment('// biome-ignore lint/style/noVar: generated shim', 'a.ts', 'typescript'))).toEqual([])
   expect(ruleFindings(comment('# noqa: E501', 'a.py', 'python'))).toHaveLength(1)
   expect(ruleFindings(comment('# noqa: E501  # URL cannot wrap', 'a.py', 'python'))).toEqual([])
+  expect(ruleFindings(comment('<!-- eslint-disable-next-line vue/no-v-html -->', 'a.vue', 'html'))).toHaveLength(1)
+  expect(ruleFindings(comment('<!-- eslint-disable-next-line vue/no-v-html -- sanitised by the server -->', 'a.vue', 'html'))).toEqual([])
+  expect(ruleFindings(comment('/* stylelint-disable-next-line color-no-hex */', 'a.vue', 'css'))).toHaveLength(1)
+  expect(ruleFindings(comment('/* stylelint-disable-next-line color-no-hex -- brand colour */', 'a.vue', 'css'))).toEqual([])
+  expect(ruleFindings(comment('<!-- @vue-expect-error -->', 'a.vue', 'html'))).toEqual(['linter suppression without a reason; write it as `<!-- @vue-expect-error reason -->`'])
+  expect(ruleFindings(comment('<!-- @vue-ignore -->', 'a.vue', 'html'))).toHaveLength(1)
+  expect(ruleFindings(comment('<!-- @vue-expect-error slot props are untyped upstream -->', 'a.vue', 'html'))).toEqual([])
+  expect(ruleFindings(comment('<!-- @vue-skip -->', 'a.vue', 'html'))).toEqual([])
+})
+
+test('template and style directives in a Vue component are not prose', () => {
+  expect(isDirective(comment('<!-- eslint-disable-next-line vue/no-v-html -->', 'a.vue', 'html'))).toBe(true)
+  expect(isDirective(comment('<!-- prettier-ignore -->', 'a.vue', 'html'))).toBe(true)
+  expect(isDirective(comment('<!-- @vue-skip -->', 'a.vue', 'html'))).toBe(true)
+  expect(isDirective(comment('<!-- @vue-generic {T extends string} -->', 'a.vue', 'html'))).toBe(true)
+  expect(isDirective(comment('/* stylelint-disable selector-class-pattern */', 'a.vue', 'css'))).toBe(true)
+  expect(isDirective(comment('<!-- the list renders newest first -->', 'a.vue', 'html'))).toBe(false)
 })
 
 test('ordinary prose is left to the judge, not the rules', () => {

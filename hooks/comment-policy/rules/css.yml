@@ -1,0 +1,4 @@
+id: css-comment
+language: css
+rule:
+  kind: comment

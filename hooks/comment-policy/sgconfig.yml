@@ -2,3 +2,22 @@ ruleDirs:
   - rules
 testConfigs:
   - testDir: rule-tests
+# A Vue single-file component parses as HTML; ast-grep injects its <script>
+# blocks as JavaScript, or TypeScript under lang="ts", and its <style> blocks
+# as CSS. lang="tsx" has no built-in injection.
+languageGlobs:
+  html: ['*.vue']
+languageInjections:
+  - hostLanguage: html
+    rule:
+      kind: raw_text
+      inside:
+        kind: script_element
+        has:
+          kind: start_tag
+          has:
+            kind: attribute
+            all:
+              - has: { kind: attribute_name, regex: '^lang$' }
+              - has: { kind: quoted_attribute_value, regex: '^.tsx.$' }
+    injected: tsx

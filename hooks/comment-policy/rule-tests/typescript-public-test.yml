@@ -43,3 +43,54 @@ valid:
   - "export class A {}"
 invalid:
   - "@Dec() export class A {}"
+---
+id: typescript-public-decl-vue
+valid:
+  - "withDefaults(props, { size: 1 })"
+  - "defineProps<{}>()"
+  - "interface Other { p: string }"
+  - "const o = { props: { a: 1 } }"
+  - "defineComponent({ data: { a: 1 } })"
+  - "const n = useModel()"
+invalid:
+  - "defineProps<{ title: string }>()"
+  - "defineEmits<{ (e: 'change', id: number): void }>()"
+  - "defineEmits<{ change: [id: number] }>()"
+  - "defineSlots<{ default(props: { item: string }): any }>()"
+  - "defineProps({ title: String })"
+  - "defineProps({ 'kebab-name': String })"
+  - "const model = defineModel<string>()"
+  - "defineComponent({ props: { a: String } })"
+  - "export default { emits: { pick: null } }"
+---
+id: tsx-public-decl-vue
+valid:
+  - "withDefaults(props, { size: 1 })"
+invalid:
+  - "defineProps<{ title: string }>()"
+  - "export default defineComponent({ props: { a: String } })"
+---
+id: javascript-public-decl-vue
+valid:
+  - "withDefaults(props, { size: 1 })"
+  - "const o = { props: { a: 1 } }"
+invalid:
+  - "defineProps({ title: String })"
+  - "const model = defineModel()"
+  - "export default { props: { legacy: Boolean } }"
+---
+id: typescript-public-decl-vue-local
+valid:
+  - "interface Other { p: string }"
+  - "interface Props { p: string }; defineEmits<Emits>()"
+  - "interface Props { p: string }; function f() { defineProps<Props>() }"
+invalid:
+  - "interface Props { p: string }; defineProps<Props>()"
+  - "interface Props { p: string }; const props = withDefaults(defineProps<Props>(), {})"
+  - "type Emits = { change: [] }; const emit = defineEmits<Emits>()"
+---
+id: tsx-public-decl-vue-local
+valid:
+  - "interface Other { p: string }"
+invalid:
+  - "interface Props { p: string }; defineProps<Props>()"

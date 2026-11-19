@@ -1,0 +1,5 @@
+id: html-comment
+valid:
+  - '<p>&lt;!-- no --&gt;</p>'
+invalid:
+  - '<!-- yes -->'

@@ -1,0 +1,4 @@
+id: html-comment
+language: html
+rule:
+  kind: comment
