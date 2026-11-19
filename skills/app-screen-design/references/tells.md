@@ -1,6 +1,7 @@
 # Tells
 
-What to allow, what to avoid, and what a generated dashboard looks like. All of these are defaults with reasons.
+What to allow, what to avoid, which words to cut, and what a generated dashboard looks like. All of these are defaults
+with reasons.
 
 ## Allowed on app screens, with limits
 
@@ -44,6 +45,27 @@ An app screen is read every day, and part of what page advice warns against is t
 | Every row a different hue, a "left" amount in green on every budget row | Grey for what is fine; colour only on rows at risk or over |
 | A screen that names no product and offers no action | The product's mark and scope in the shell; its main job one click away |
 | Decorative imagery | The product's own data, or nothing |
+
+## Copy
+
+*Judgement.* A screen is worked in, not read: keep the words a person needs to act, and cut the rest.
+
+| Avoid | Instead |
+| --- | --- |
+| A grey line under every heading, a blurb under every list or menu item | A second line only when it states a fact the heading does not, or when names alone cannot tell items apart |
+| Captions narrating what is visible ("This chart shows revenue", "Click below to get started", "Hover for details") | Nothing. Empty states, errors and destructive confirmations stay, as one or two sentences saying what happened and what to do next |
+| Design notes in the interface ("(updates in real time)", "(powered by AI)") | Nothing, or a tooltip where someone would look for it |
+| Facts chained with "·" or "\|" ("12 items · Updated 2m ago · Synced · v2.1") | The one fact the person acts on; a freshness stamp where staleness matters |
+| A field's label repeated by its placeholder and helper text | The visible label; a placeholder only for a format, helper text only for a constraint |
+| Slogans and staccato fragments ("Built different.", "Ship faster. Think less.") | A noun title |
+
+**The deletion test.** Remove the string and look again. If the person loses nothing they need to decide or act, it
+goes. A sentence that could sit unchanged on another product's screen ("Everything you need in one place", "Stay on top
+of your work") fails by default: it names a feeling, not this product's data or jobs.
+
+**Real state.** A status pill, badge, dot or stamp ("Live", "New", "Synced", "All systems operational") stays only if
+it renders from a value the product tracks: a condition, a field, a query result. Markup that always renders with fixed
+text is decoration; delete it. A pulsing loading skeleton is not a status mark.
 
 ## Tells of generated dashboards
 

@@ -182,7 +182,9 @@ deliberately broke and why; and the sample data to replace, listed so it can be 
 
 ## Reviewing an existing screen
 
-*Judgement.* A review is read-only unless the user asks for changes.
+*Judgement.* A review is read-only unless the user asks for changes. When making them, keep every accessible name and
+visible form label, edit text from a translation file or CMS at its source, and list any claim the code cannot verify
+(customer counts, uptime, ratings) for the owner instead of rewriting it.
 
 1. Infer steps 1 and 2 from the screen: who opens it, its one question and its one finding. If the screen does not answer
    its question, that is the first finding.
