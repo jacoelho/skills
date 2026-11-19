@@ -2,7 +2,7 @@
 // them the policy exempts, what the rules and the judge say, and the text the
 // model receives. register.ts owns git, ast-grep, the model call and the hooks.
 
-export const SUPPORTED_EXTENSIONS = ['.go', '.rs', '.ts', '.mts', '.cts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '.py'] as const
+export const SUPPORTED_EXTENSIONS = ['.go', '.rs', '.ts', '.mts', '.cts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '.py', '.vue'] as const
 export const MAX_FILES = 200
 // The judge sees comments in batches, so one slow or truncated reply costs only
 // its batch; the rest of a turn's comments wait for the next review.
@@ -173,6 +173,8 @@ const DIRECTIVE = new RegExp(
     String.raw`^/[/*]\s*@(ts-|flow\b|jsx\b|jsxImportSource\b)`,
     String.raw`^/[/*]\s*(eslint|prettier-ignore|istanbul |c8 ignore|biome-ignore|deno-lint-ignore|deno-fmt-ignore|webpackChunkName|webpackIgnore|#__PURE__|@__PURE__)`,
     String.raw`^/\*\*\s*@type\b`,
+    String.raw`^<!--\s*(eslint|prettier-ignore|@vue-)`,
+    String.raw`^/\*\s*stylelint-`,
     String.raw`^(//|#|/\*)\s*SPDX-License-Identifier:`,
   ].join('|'),
 )
@@ -197,8 +199,9 @@ const isDocForm = (c: Comment) =>
 // the package clause, a declaration group holding an exported name, or an
 // exported name, and a line comment after an exported name; in Rust, `//!` docs and outer docs
 // directly above a `pub` item; in JavaScript and TypeScript, a `/** */` block
-// directly above an exported declaration or a public member of one. Attributes
-// and decorators may sit between a doc and its item. Python has no exemption
+// directly above an exported declaration or a public member of one, or above
+// a Vue component's prop, emit, slot or model. Attributes and decorators may
+// sit between a doc and its item. Python has no exemption
 // here: the judge applies the policy's public-API rule.
 export function docComments(path: string, scan: FileScan): Set<Comment> {
   const isGoTest = path.endsWith('_test.go')
@@ -359,6 +362,8 @@ const SUPPRESSIONS: { is: RegExp; reasoned: RegExp; form: string }[] = [
   { is: /eslint-disable/, reasoned: /eslint-disable.*\s--\s*\S/, form: '// eslint-disable-next-line no-console -- reason' },
   { is: /@ts-(ignore|expect-error|nocheck)\b/, reasoned: /@ts-(ignore|expect-error|nocheck)\b[\s:—-]*\S/, form: '// @ts-expect-error reason' },
   { is: /^#\s*(noqa|type:\s*ignore|pylint:\s*disable)\b/, reasoned: /^#[^#]*#\s*\S/, form: '# noqa: E402  # reason' },
+  { is: /^<!--\s*@vue-(ignore|expect-error)\b/, reasoned: /^<!--\s*@vue-(ignore|expect-error)\b[\s:—-]*\S/, form: '<!-- @vue-expect-error reason -->' },
+  { is: /stylelint-disable/, reasoned: /stylelint-disable.*\s--\s*\S/, form: '/* stylelint-disable-next-line color-no-hex -- reason */' },
   { is: /biome-ignore/, reasoned: /biome-ignore\S*\s+\S+:\s*\S/, form: '// biome-ignore lint/suspicious/noExplicitAny: reason' },
 ]
 
@@ -366,7 +371,7 @@ export function ruleFindings(c: Comment): string[] {
   const found: string[] = []
   if (TODO.test(c.text) && !REFERENCE.test(c.text)) found.push('TODO without a tracking reference (issue URL or id)')
   for (const s of SUPPRESSIONS) {
-    const text = c.text.replace(/\s*\*\/\s*$/, '')
+    const text = c.text.replace(/\s*(\*\/|-->)\s*$/, '')
     if (s.is.test(text) && !s.reasoned.test(text)) found.push(`linter suppression without a reason; write it as \`${s.form}\``)
   }
   return found

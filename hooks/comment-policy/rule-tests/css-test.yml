@@ -1,0 +1,5 @@
+id: css-comment
+valid:
+  - 'a::before { content: "/* no */"; }'
+invalid:
+  - '/* yes */'

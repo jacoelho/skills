@@ -55,3 +55,101 @@ id: tsx-attribute
 language: tsx
 rule:
   kind: decorator
+---
+# Members of a Vue component's props, emits and slots, and its defineModel
+# bindings: Vue's language tools show their JSDoc to the component's users.
+# They are declared through compiler macros or an options object, neither of
+# which is exported; tsx-public-decl-vue-local covers a named local type.
+id: tsx-public-decl-vue
+language: tsx
+utils:
+  macro-call:
+    kind: call_expression
+    has:
+      field: function
+      regex: '^define(Props|Emits|Slots)$'
+  member-name:
+    any:
+      - kind: property_identifier
+      - kind: string
+rule:
+  any:
+    # defineProps<{ title: string }>(), defineEmits<{ (e: 'change'): void }>()
+    - all:
+        - matches: member-name
+        - inside:
+            field: name
+            any: [{ kind: property_signature }, { kind: method_signature }]
+            inside: { kind: object_type, inside: { kind: type_arguments, inside: { matches: macro-call } } }
+    - all:
+        - kind: call_signature
+        - inside: { kind: object_type, inside: { kind: type_arguments, inside: { matches: macro-call } } }
+    # defineProps({ title: String }), defineEmits({ change: null })
+    - all:
+        - matches: member-name
+        - inside: { field: key, kind: pair, inside: { kind: object, inside: { kind: arguments, inside: { matches: macro-call } } } }
+    # props and emits of defineComponent({...}) or export default {...}
+    - all:
+        - matches: member-name
+        - inside:
+            field: key
+            kind: pair
+            inside:
+              kind: object
+              inside:
+                field: value
+                kind: pair
+                has: { field: key, regex: '^(props|emits)$' }
+                inside:
+                  kind: object
+                  any:
+                    - inside: { kind: arguments, inside: { kind: call_expression, has: { field: function, regex: '^defineComponent$' } } }
+                    - inside: { kind: export_statement }
+    # const title = defineModel<string>()
+    - all:
+        - kind: identifier
+        - inside:
+            field: name
+            kind: variable_declarator
+            has: { field: value, kind: call_expression, has: { field: function, regex: '^defineModel$' } }
+---
+# Members of a local interface or type that a Vue macro names in its type
+# argument, as in interface Props { ... } with defineProps<Props>(). The macros
+# exist only in a component's <script setup>, at the top level, so the search
+# for the macro is limited to the top-level statements of .vue files: a search
+# of the whole tree for every member made a scan quadratic in file size.
+id: tsx-public-decl-vue-local
+language: tsx
+files: ['**/*.vue']
+utils:
+  macro-of-api:
+    kind: call_expression
+    all:
+      - has: { field: function, regex: '^define(Props|Emits|Slots)$' }
+      - has: { field: type_arguments, has: { kind: type_identifier, pattern: $API } }
+  macro-or-defaults:
+    any:
+      - matches: macro-of-api
+      - kind: call_expression
+        all:
+          - has: { field: function, regex: '^withDefaults$' }
+          - has: { field: arguments, has: { matches: macro-of-api } }
+rule:
+  all:
+    - any: [{ kind: property_identifier }, { kind: string }]
+    - inside:
+        field: name
+        any: [{ kind: property_signature }, { kind: method_signature }]
+        inside:
+          any:
+            - inside: { field: body, kind: interface_declaration, has: { field: name, pattern: $API } }
+            - inside: { field: value, kind: type_alias_declaration, has: { field: name, pattern: $API } }
+          inside:
+            kind: program
+            stopBy: end
+            has:
+              any:
+                - kind: expression_statement
+                  has: { matches: macro-or-defaults }
+                - any: [{ kind: lexical_declaration }, { kind: variable_declaration }]
+                  has: { kind: variable_declarator, has: { field: value, matches: macro-or-defaults } }
