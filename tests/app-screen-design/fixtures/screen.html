@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  body { margin: 0; display: flex; background: #f8f8f8; color: #0a0a0a; font: 14px/1.2 Arial, sans-serif; }
+  aside { width: 240px; flex: none; min-height: 100vh; }
+  main { flex: 1; padding: 24px; }
+  h1 { font-size: 24px; margin: 0 0 24px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 8px; padding: 24px; }
+  .wide { grid-column: span 2; }
+  .head { display: flex; align-items: center; justify-content: space-between; }
+  .meta { font-size: 12px; color: #6b6b6b; margin-top: 8px; }
+  button { height: 32px; padding: 0 12px; border: 1px solid #d4d4d4; border-radius: 6px; background: #fff; font: inherit; }
+</style>
+</head>
+<body>
+  <aside aria-label="Sidebar"></aside>
+  <main>
+    <h1>Deploys</h1>
+    <div class="grid">
+      <div class="card"><div class="head"><span>Production</span><button>Open</button></div><div class="meta">3 services</div></div>
+      <div class="card"><div class="head"><span>Staging</span><button>Open</button></div><div class="meta">2 services</div></div>
+      <div class="card"><div class="head"><span>Preview</span><button>Open</button></div><div class="meta">5 services</div></div>
+      <div class="card wide"><div class="head"><span>Recent</span><button>View all</button></div><div class="meta">Last 24 hours</div></div>
+      <div class="card"><div class="head"><span>Alerts</span><button>Mute</button></div><div class="meta">None open</div></div>
+    </div>
+  </main>
+</body>
+</html>

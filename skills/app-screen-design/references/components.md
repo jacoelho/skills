@@ -193,7 +193,8 @@ a 10-16px gap to the text.
 - **Key-value well:** a tinted well, radius 8, 32px rows, label left, figure right.
 - **Feed as row cards:** 63px tall, 8px gaps, a fill one step lighter and a border one step darker than the panel, a relative date
   on the right.
-- **Tree:** no dividers, 8px of indent per level, ink against grey by level, a pitch of about 30px, about 45px between groups.
+- **Tree:** no dividers, 8px of indent per level when rows have no icons (with icons, see
+  [rows inside a container](layout.md#rows-inside-a-container)), ink against grey by level, a pitch of about 30px, about 45px between groups.
 
 ## Forms
 

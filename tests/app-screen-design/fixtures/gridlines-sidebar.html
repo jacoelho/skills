@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- The example from github.com/pritamux/gridlines, examples/sidebar.html. Copyright (c) 2026 Pritam Paul, MIT License. Its README lists four misses:
+     trailing 15px vs 12px on "12", leading 15px vs 12px on "Workspace", label 38px vs 36px on "Views",
+     and a 3px vertical-centre miss on the Views row. -->
+<html>
+<body style="margin:0;background:#111;color:#eee;font:14px system-ui">
+  <aside aria-label="Sidebar" style="width:240px;height:400px;background:#1b1b1b;padding:8px 0">
+    <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 12px">
+      <svg width="16" height="16"><rect width="16" height="16" fill="#888"/></svg><span>Inbox</span>
+      <span style="margin-left:auto;background:#333;padding:0 6px;border-radius:4px">3</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 12px">
+      <svg width="16" height="16"><rect width="16" height="16" fill="#888"/></svg><span>My issues</span>
+      <span style="margin-left:auto;margin-right:3px;background:#333;padding:0 6px;border-radius:4px">12</span>
+    </div>
+    <div style="height:32px;padding:0 15px;display:flex;align-items:center;color:#888">Workspace</div>
+    <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 12px">
+      <svg width="16" height="16"><rect width="16" height="16" fill="#888"/></svg>
+      <span style="position:relative;top:3px;left:2px">Views</span>
+    </div>
+  </aside>
+</body>
+</html>
