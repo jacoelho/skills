@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f8f8f8; color: #0a0a0a; font: 14px/1.2 Arial, sans-serif; }
+  main { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .row { display: grid; gap: 24px; }
+  .three { grid-template-columns: repeat(3, 1fr); align-items: start; }
+  .two { grid-template-columns: 2fr 1fr; }
+  .stack { display: flex; flex-direction: column; gap: 24px; }
+  .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 8px; padding: 24px; }
+  .card p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+  <main>
+    <div class="row three" aria-label="Uneven">
+      <div class="card"><p>Revenue</p><p>€18,240</p></div>
+      <div class="card"><p>Orders</p><p>312</p><p>12 refunded</p></div>
+      <div class="card" style="margin-top: 8px"><p>Customers</p><p>1,204</p></div>
+    </div>
+    <div class="row three" aria-label="KPIs" style="align-items: stretch">
+      <div class="card"><p>Revenue</p><p style="font-size: 30px">€18,240</p></div>
+      <div class="card"><p>Orders</p><p style="font-size: 30px">312</p></div>
+      <div class="card" style="padding-top: 28px; padding-bottom: 20px"><p>Margin</p><p style="font-size: 30px">31%</p></div>
+    </div>
+    <div class="row three" aria-label="Unlike" style="align-items: stretch">
+      <div class="card"><p>Revenue</p><p style="font-size: 30px">€18,240</p></div>
+      <div class="card"><p style="font-size: 18px">Orders this week</p><p>312 orders</p><p>12 refunded</p></div>
+      <div class="card"><p>Customers</p><p style="font-size: 30px">1,204</p></div>
+    </div>
+    <div class="row two" aria-label="Tall beside stacked">
+      <div class="card"><p>Sales by day</p><svg width="100%" height="220"><rect width="100%" height="220" fill="#eef"/></svg></div>
+      <div class="stack">
+        <div class="card" style="flex: 1"><p>Top product</p><p>Sourdough</p><p>412 sold</p><p>€1,648</p></div>
+        <div class="card" style="flex: 1"><p>Top store</p><p>Baixa</p><p>1,120 orders</p><p>€9,870</p></div>
+      </div>
+    </div>
+    <div class="row two" aria-label="Stretched">
+      <div class="card"><p>Recent orders</p><p>Harbour Bakery</p><p>Northwind Studio</p><p>Café Lisboa</p><p>Ana Costa</p><p>João Reis</p><p>Marta Alves</p><p>Rui Lopes</p></div>
+      <div class="card" aria-label="Refunds"><p>Refunds</p><p>None this week</p></div>
+    </div>
+  </main>
+</body>
+</html>

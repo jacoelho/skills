@@ -15,7 +15,8 @@ measurements; sizes and ranges are measured or tested. A rule with no count, or 
 or judgement. Treat all of it as defaults
 with reasons, and break one when the product gives you a better reason.
 
-This skill ships specifications only. Build in the project's own stack and components.
+This skill ships specifications and, for step 8, a measurement script, [geometry.js](scripts/geometry.js), with a
+headless runner, [audit.mjs](scripts/audit.mjs). Build in the project's own stack and components.
 
 ## Boundaries with other skills
 
@@ -145,20 +146,52 @@ Build and view every state ([components.md](references/components.md)):
 Screenshot at 1440×900, 768 and 390px wide, and judge the pictures: a problem visible there is real, whatever the code says.
 With no browser available, say in the report that this visual check did not run.
 
-Measure before judging geometry (*judgement*). A screenshot cannot show a 2px drift. On the rendered page at 1440, read
-each visible element's box and computed styles, and group values within 1px: the left and right edges of blocks and text
-columns, gaps between siblings, padding, radii, font size and weight pairs, control heights, borders and shadows. Each
-group must map to a token or role of the style. A group that maps to none, or two groups 1-4px apart, is drift. Compare
-the counts with the [foundation](references/foundation.md) and [layout](references/layout.md): 4-9 type sizes, about 3
-weights, one gutter, one radius family, one left edge and one right edge. Any position or size you report must come from
-this audit; from a screenshot alone, call it approximate.
+Measure before judging geometry (*judgement*). A screenshot cannot show a 2px drift. Run the geometry script on the
+rendered page, with the style's tokens and with menus, dialogs and sheets open as well as closed. It reads only the DOM,
+so the stack does not matter.
+
+- **Headless:** `node "${CLAUDE_SKILL_DIR}/scripts/audit.mjs" <url> --style <slug>` measures at 1440, 768 and 390 and
+  writes a JSON report and an annotated full-page capture per width to `.geometry/`; keep that folder out of version
+  control. If Playwright is missing, install it into a scratch folder (`npm i --prefix <dir> playwright`) and set
+  `PW_DIR=<dir>`. `--wait-for <selector>` waits for content that loads after the page, `--prep <file.mjs>` opens an
+  overlay before measuring (run once per overlay), `--tokens <file>` adds an existing design system's values over the
+  style as `name: 12px` lines or JSON, `--root` names the canvas when the page has no `main`, `--containers` names elements to measure as containers, and
+  `--exclude` leaves out regions laid out by data, such as a timeline, calendar or map. `--help` lists the rest.
+- **Live browser:** evaluate the contents of `scripts/geometry.js` in the page, then call
+  `window.__geometry({ tokens })`, where `tokens` is the foundation's "Either theme" block followed by the style's block,
+  as text. This is what `--style` passes. Add `rows: true` only when you need every row's measurements.
+
+Always pass the tokens. With them, each value is checked against the tokens of its own role (`gap` for gutters, `pad`
+for card insets, `radius-card` and `radius-sheet` for panels, `radius-control` for controls, `control-height`), and one
+value off its token is one finding naming the nearest token. Tokens are px or rem; another unit on one of these names is
+an error. In a card, `pad` is the text line once any row sits
+on it. Without tokens, the script can only report values of one role close together as drift: 1-4px apart for CSS values
+such as radii and heights, 2-4px for ink positions, whose glyph side bearing is up to 1px.
+
+The script reports blocks stopping on more than one left or right edge, blocks in one band stopping on different top or
+bottom edges (blocks stacked beside a tall one count as one), cards in one band whose matching rows sit on different
+lines, blank bands over 40px inside a card, more than one gutter,
+values off their tokens, and rows off their container's text, box, icon, label or trailing line, measured by ink from inside the container's
+border. A `not-measured` finding means it found fewer than two blocks and checked no gutters or band edges (with a title
+above one block, only the title's edge), or that text sits in no container, such as a plain sidebar that is not beside `main`; pass `--containers` for it. A `root` finding means
+the page has no `main` and the sidebar was measured as a block. It also counts type sizes, weights, size and weight pairs, control heights and shadows, and does not check them against
+the tokens: compare those counts with the [foundation](references/foundation.md) and [layout](references/layout.md), such
+as 4-9 type sizes and about 3 weights. Each finding names a selector; confirm it on the capture before acting on it.
+
+The script does not check every rule in [rows inside a container](references/layout.md#rows-inside-a-container): it
+does not compare lines between containers, such as a header's and the panel below it, or check items that end partway
+across a container, tab labels or optical corrections. Nor does it check borders, gaps between siblings inside a
+container, or padding other than a card's inset; judge those, and the counts above, from the capture and the census. It does not read inside shadow roots or iframes, and it reads
+left to right only. Judge those on the capture. No findings means none of the checks it runs failed, not that the screen
+is aligned. Any position or size you report must come from this audit; with no browser that can run it, say so and call
+any measurement from a screenshot approximate.
 
 Answer these in writing:
 
 1. Does the biggest thing answer the screen's question, is it read first, and is the largest figure the one answering the
    title row's sentence?
 2. Does every block share the screen's edges? Look for a dead strip, a card stopping short, an orphan cell, or a stretched
-   card with a blank band.
+   card with a blank band. Inside each container, does every row sit on its text, box or trailing line?
 3. Is colour only on data, status, including count badges, the one primary action, person tints, and what the style's move
    assigns? Does
    the main data carry `chart-1`? Does the face show on

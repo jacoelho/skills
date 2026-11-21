@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; background: #f8f8f8; color: #0a0a0a; font: 14px/1.2 Arial, sans-serif; }
+  aside { width: 240px; flex: none; min-height: 100vh; padding: 8px 0; }
+  .nav { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; color: inherit; text-decoration: none; }
+  .nav.on { background: #eee; margin: 0 4px; padding: 0 8px; border-radius: 6px; }
+  .topbar { display: none; }
+  main { flex: 1; min-width: 0; padding: 24px; }
+  .title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-size: 24px; margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 8px; padding: 24px; }
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: 1 / -1; }
+  .label { font-size: 12px; color: #6b6b6b; }
+  .value { font-size: 30px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  button { height: 36px; padding: 0 12px; border: 1px solid #d4d4d4; border-radius: 6px; background: #fff; font: inherit; }
+  button.primary { background: #141414; color: #fff; border-color: #141414; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td { text-align: left; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-weight: 400; }
+  th { font-size: 12px; color: #6b6b6b; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .person { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+  .avatar { width: 32px; height: 32px; border-radius: 6px; background: #e8eefb; display: flex; align-items: center; justify-content: center; flex: none; }
+  .sub { font-size: 12px; color: #6b6b6b; margin-top: 4px; }
+  .switchrow { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+  [role=switch] { width: 32px; height: 20px; border-radius: 6px; background: #141414; flex: none; }
+  @media (max-width: 640px) {
+    body { flex-direction: column; }
+    aside { display: none; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 16px; }
+    main { padding: 16px; }
+    .grid { grid-template-columns: 1fr; gap: 12px; }
+    .span2, .span3 { grid-column: auto; }
+  }
+</style>
+</head>
+<body>
+  <header class="topbar" aria-label="Top bar"><span>Ledgerly</span><button aria-label="Menu">Menu</button></header>
+  <aside aria-label="Sidebar">
+    <nav aria-label="Primary">
+      <a class="nav on" href="#"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 3h18v18H3z" fill="#555"/></svg><span>Overview</span></a>
+      <a class="nav" href="#"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#555"/></svg><span>Invoices</span></a>
+      <a class="nav" href="#"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" fill="#555"/></svg><span>Customers</span></a>
+    </nav>
+  </aside>
+  <main>
+    <div class="title"><h1>Overview</h1><div><button>Export</button> <button class="primary">New invoice</button></div></div>
+    <div class="grid">
+      <div class="card span3"><div class="label">Paid this month</div><div class="value">€42,180.00</div>
+        <svg width="100%" height="120" viewBox="0 0 400 120" preserveAspectRatio="none"><polyline points="0,100 100,80 200,60 300,70 400,30" fill="none" stroke="#1d5fbf" stroke-width="2"/><text x="0" y="118" font-size="10">1 Nov</text></svg>
+      </div>
+      <div class="card span2"><div class="label">Overdue invoices</div>
+        <table>
+          <thead><tr><th>Customer</th><th>Due</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+            <tr><td>Harbour Bakery</td><td>12 Nov</td><td class="num">€1,200.00</td></tr>
+            <tr><td>Northwind Studio</td><td>15 Nov</td><td class="num">€860.50</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card"><div class="label">Approvers</div>
+        <div class="person"><span class="avatar">MA</span><div><div>Marta Alves</div><div class="sub">Finance lead</div></div></div>
+        <div class="person"><span class="avatar">JR</span><div><div>João Reis</div><div class="sub">Owner</div></div></div>
+        <div class="switchrow"><div><div>Auto-remind</div><div class="sub">3 days after due</div></div><span role="switch" aria-checked="true"></span></div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

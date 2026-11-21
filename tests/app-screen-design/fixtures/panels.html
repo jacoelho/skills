@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; background: #f8f8f8; color: #0a0a0a; font: 14px/1.2 Arial, sans-serif; }
+  aside { width: 240px; flex: none; padding: 8px 0; }
+  .row { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; color: inherit; text-decoration: none; }
+  .row svg { flex: none; }
+  .name { min-width: 0; overflow: hidden; white-space: nowrap; mask-image: linear-gradient(to right, #000 80%, transparent); }
+  .count { margin-left: auto; background: #e5e5e5; padding: 0 6px; border-radius: 4px; flex: none; }
+  main { flex: 1; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 8px; padding: 24px; }
+  .card p { margin: 0 0 12px; }
+  .footer { display: flex; justify-content: flex-end; gap: 8px; }
+  button { height: 36px; padding: 0 12px; border: 1px solid #d4d4d4; border-radius: 6px; background: #fff; font: inherit; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 8px 0; }
+  .num { text-align: right; }
+</style>
+</head>
+<body>
+  <aside aria-label="Sidebar">
+    <div class="row"><svg width="16" height="16"><rect width="16" height="16" fill="#555"/></svg><span>Ledgerly</span></div>
+    <div style="display: flex; align-items: center; gap: 8px; height: 32px; margin: 0 8px; padding: 0 6px; border: 1px solid #ccc; border-radius: 6px"><svg width="16" height="16"><rect width="16" height="16" fill="#555"/></svg><input placeholder="Search" style="border: 0; background: transparent; font: inherit; outline: 0; min-width: 0; flex: 1"></div>
+    <nav aria-label="Primary">
+      <a class="row" href="#"><svg width="16" height="16"><rect width="16" height="16" fill="#555"/></svg><span class="name">Quarterly reconciliation for the northern region</span><span class="count">4</span></a>
+      <a class="row" href="#"><svg width="16" height="16"><rect width="16" height="16" fill="#555"/></svg><span>Inbox</span><span class="count">3</span></a>
+      <a class="row" href="#"><svg width="16" height="16"><rect width="16" height="16" fill="#555"/></svg><span>Reviews</span><span class="count">2</span></a>
+    </nav>
+    <div class="row" style="padding-left:14px"><svg width="16" height="16"><rect width="16" height="16" fill="#555"/></svg><span>Marta Alves</span></div>
+  </aside>
+  <main>
+    <div class="card" role="dialog" aria-label="Delete invoice">
+      <p>Delete invoice INV-0042?</p>
+      <p>This cannot be undone.</p>
+      <div class="footer"><button>Cancel</button><button>Delete</button></div>
+    </div>
+    <div class="card" aria-label="Overdue">
+      <p>Overdue</p>
+      <table><tr><td>Harbour Bakery</td><td class="num">€1,200.00</td></tr><tr><td>Northwind Studio</td><td class="num">€860.50</td></tr></table>
+    </div>
+    <div class="card" aria-label="Notes">
+      <p style="display: flex"><span>Notes</span><span style="margin-left: auto">Open</span></p>
+      <p>Harbour Bakery asked to move the November invoice to the first week of December because their card terminal was down for most of the month and takings were lower than usual.</p>
+      <details><summary style="display: grid; grid-template-columns: auto 20ch; justify-content: space-between"><span>Payment history</span><span style="font-family: monospace">Eleven months paid<br>on time and one<br>late payment</span></summary><p>Paid on time for eleven months.</p></details>
+      <details><summary>Late payments</summary><p>One, in March.</p></details>
+      <p style="font-family: monospace">Paid on time for every month of 2025. <a href="#">View history</a></p>
+      <div style="width: 70%"><p>Drafted by Marta on 3 Nov.</p><div style="display: flex; justify-content: flex-end"><button>Edit</button></div></div>
+    </div>
+    <div class="card" aria-label="Verse" style="font: 16px/1.5 monospace; width: calc(40ch + 50px)">
+      Mar, metade da minha alma e feita de<br>
+      maresia, pois e pela mesma inquieta<br>
+      que ha no vasto clamor da mare cheia,<br>
+      que nunca nenhum bem me satisfez.
+    </div>
+    <div class="card" aria-label="Indented rows">
+      <p>Team</p>
+      <p style="padding-left: 8px">Marta Alves</p>
+      <p style="padding-left: 8px">João Reis</p>
+      <p style="padding-left: 8px">Ana Costa</p>
+    </div>
+  </main>
+</body>
+</html>

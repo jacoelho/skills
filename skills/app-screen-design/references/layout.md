@@ -1,6 +1,6 @@
 # Layout
 
-Shells, canvas, title row, tabs and filters, density and the phone.
+Shells, canvas, rows inside a container, title row, tabs and filters, density and the phone.
 
 ## Shells
 
@@ -120,6 +120,10 @@ or pair blocks of similar height. Two stacked cards beside a tall card count as 
 balance, stack the blocks, or let the shorter card fill the row with content at the top and its action or total pinned to
 the bottom.
 
+**Cards built alike share their rows** (*judgement*). In one row of cards, such as a row of KPIs, each card's title sits
+on one line and each figure on another, measured from the card's top. A card whose padding or header pushes its title
+down reads as a mistake even when the card edges agree.
+
 **A stretched card stretches only when it has content to fill** (*judgement*). Only an action or a total may be pinned to its
 foot; a legend stays directly under its chart. Otherwise move its footer link into its header, choose a
 neighbour of similar height, or stack the blocks. A blank band over about 40px inside a card is a
@@ -127,6 +131,49 @@ hole.
 
 **Narrow blocks do not span an overview** (*judgement*). A table of five columns or fewer, or a list of six rows or fewer, runs
 to about 760px at 1440 and pairs with the next block.
+
+## Rows inside a container
+
+*Judgement*, from one redrawn product sidebar and Apple's Human Interface Guidelines on layout; the study measured no edges
+inside rows. This covers the sidebar, top bar, toolbars, menus, dialogs, list rows and settings panels. The canvas edges
+above own where blocks sit; these lines own where their contents start.
+
+Each container has three vertical lines on the style's spacing tokens ([foundation](foundation.md)); in a card, the text
+line is the style's `pad`:
+
+- **Text line:** where labels, headings, values and bare icons start.
+- **Box line:** where a boxed control (fill, full border or shadow) starts. It is the text line minus the control's
+  horizontal padding, so the control's label continues the text above it. A 16px text line with 8px button padding puts the
+  box at 8px.
+- **Trailing line:** where the last item of every row ends. Trailing items of different widths, such as a count, a 28px icon
+  button and a 16px icon, centre on one line instead.
+
+Rows:
+
+- **Each item is on an edge or centred**, never between. An item 3px off centre and 5px off the edge reads as a mistake.
+- **Leading icons sit on one column.** Icons of different widths centre on it, or the labels after them stagger. Labels
+  start on one line after the column.
+- **Group labels start on the icon column's leading edge,** left of the item labels.
+- **A nested item indents one column:** its icon sits where the parent's label starts. A tree with no icons follows
+  [components.md](components.md).
+- **A logo or avatar wider than the icon column** starts on the box line; its name still starts on the text line.
+- **A bar has one centre line.** Measure centres, not tops: a 24px button and a 16px icon share it. The bar's first
+  edge-positioned item starts on the text or box line of the panel below it, and its last ends on that panel's trailing
+  line. An item centred on purpose, such as a search centred on the window, is exempt.
+- **Panels sharing an edge share the line,** such as a filter bar ending where the table under it ends. Within one product
+  area, every panel uses the same text line.
+
+Optical corrections:
+
+- **Tabs align the label,** not the hit area: the first label starts on the text line.
+- **A transparent 1px border** shifts the label 1px; cancel it in the container.
+- **Padding inside an icon's drawing** puts the glyph in from its box. Correct it with the icon's size or the column, not row
+  by row.
+- **Text side bearing is 0-1px.** Never correct it.
+
+Fix a miss in the container's padding, or in one inset variable that the rows and their header both read, never with a
+margin on one item: the next row added will miss again. A line that needs a value off the style's tokens means
+the container's padding is wrong.
 
 ## Title
 
