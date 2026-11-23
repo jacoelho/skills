@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: an engineering datasheet for one change, read before approving it
+   IDEA a datasheet: title strip, exact panels, every figure traceable to its source line
+   PICTURE the system map, before and after, at the top of the page
+   COLOUR cobalt title strip, white or near-black ground, green added, red removed, amber for contradictions and renamed boxes
+   TYPE Space Grotesk 600 for headings, Inter for text, JetBrains Mono for code
+   LAYOUT title strip, then map beside its legend; one column of sections below; stacked on a phone */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0b0e17);--ink:light-dark(#10131c,#e8ebf3);--muted:light-dark(#566079,#97a0b8);--rule:light-dark(#d9deea,#262c3d);--panel:light-dark(#f4f6fc,#121726);--accent:light-dark(#1240e0,#7d9bff);--strip:#1240e0;--add:light-dark(#0b7a3b,#5fd08f);--add-bg:light-dark(#e6f6ec,#0f2a1c);--del:light-dark(#b4232a,#ff8a8f);--del-bg:light-dark(#fbe9ea,#33161a);--warn:light-dark(#8a5a00,#ffc85c);--warn-bg:light-dark(#fff4dc,#2e2410)}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+a{color:var(--accent)}
+h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;font-weight:600;letter-spacing:-.02em;line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,4vw,44px)}
+h2{font-size:24px;margin-bottom:12px}
+h3{font-size:18px}
+code,pre,.cite{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-variant-ligatures:none}
+p code,li code,td code,dd code{background:var(--panel);padding:1px 4px;border-radius:3px;overflow-wrap:anywhere}
+.strip{background:var(--strip);color:#fff;padding:clamp(24px,4vw,48px) max(5vw,16px) 24px}
+.strip a{color:#fff}
+.strip .meta{margin-top:12px;font-size:14px;opacity:.9;display:flex;flex-wrap:wrap;gap:6px 18px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(5vw,16px)}
+section{padding:36px 0;border-bottom:1px solid var(--rule)}
+.lede{max-width:70ch}
+.lede p{margin:.4em 0}
+.lede b{display:inline-block;min-width:4.2em}
+.size{display:flex;flex-wrap:wrap;gap:8px 24px;color:var(--muted);font-size:14px;margin-top:12px}
+.size strong{color:var(--ink);font-variant-numeric:tabular-nums}
+.contradictions{margin-top:16px;padding:12px 16px;background:var(--warn-bg);border-left:3px solid var(--warn);max-width:70ch}
+.map{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px;align-items:start}
+.pair{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+figure{margin:0}
+figure.diagram{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:12px;overflow-x:auto}
+figure.diagram svg{display:block;width:100%;height:auto;margin:0 auto;color:var(--ink)}
+figure.diagram figcaption{font-size:14px;color:var(--muted);margin-top:8px}
+figure.diagram .pair-label{font-weight:600;font-size:14px;margin:0 0 4px}
+.added :is(path,polygon){stroke:var(--add)}
+.added polygon{fill:var(--add)}
+.added text{fill:var(--add)}
+.removed :is(path,polygon){stroke:var(--del)}
+.removed polygon{fill:var(--del)}
+.removed text{fill:var(--del)}
+.node.added polygon{fill:var(--add-bg)}
+.node.removed polygon{fill:var(--del-bg)}
+.node.changed polygon{stroke:var(--warn);fill:var(--warn-bg)}
+.node.changed text{fill:var(--warn)}
+.muted{opacity:.5}
+.legend{margin-top:20px;max-width:900px}
+dl.parts{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;font-size:15px}
+dl.parts dt{font-weight:600}
+dl.parts dd{margin:0}
+ol.flow{padding-left:1.4em;max-width:70ch}
+ol.flow li{margin:.3em 0}
+ol.order{list-style:none;padding:0;margin:0;display:grid;gap:8px;counter-reset:g}
+ol.order li{counter-increment:g;position:relative;padding:10px 12px 10px 3.2em;background:var(--panel);border-radius:6px}
+ol.order li::before{content:counter(g);position:absolute;left:12px;top:8px;font:600 18px "Space Grotesk",sans-serif;color:var(--accent)}
+.group .claim-line{font-size:18px;max-width:70ch;margin:8px 0 16px}
+details{border:1px solid var(--rule);border-radius:6px;padding:10px 14px;margin:14px 0;max-width:78ch}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px}
+details.predict summary::before{content:"Predict: ";color:var(--accent)}
+figure.code{margin:16px 0;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+figure.code figcaption{padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--rule);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between}
+figure.code pre{margin:0;overflow-x:auto;padding:8px 0;tab-size:2}
+.l{display:block;padding:0 12px 0 0;white-space:pre}
+.l .m{display:inline-block;width:2ch;text-align:center;color:var(--muted);user-select:none}
+.l.add{background:var(--add-bg)}
+.l.add .m{color:var(--add)}
+.l.del{background:var(--del-bg)}
+.l.del .m{color:var(--del)}
+.effects{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:8px}
+.effects > div{background:var(--panel);border-radius:6px;padding:12px 16px}
+.effects h3{font-size:15px;margin-bottom:6px}
+.effects ul{margin:0;padding-left:1.1em}
+aside.misreading{border-left:3px solid var(--del);padding:8px 14px;margin:14px 0;max-width:78ch;background:var(--del-bg)}
+aside.misreading .wrong{text-decoration:line-through;text-decoration-color:var(--del)}
+.author-claim{border-left:3px solid var(--rule);padding:6px 14px;margin:12px 0;max-width:78ch}
+.author-claim q{font-style:italic}
+.author-claim::before{display:inline-block;font-size:13px;font-weight:600;margin-right:8px}
+.author-claim[data-status=confirmed]{border-color:var(--add)}
+.author-claim[data-status=confirmed]::before{content:"✓ Author claim, confirmed";color:var(--add)}
+.author-claim[data-status=contradicted]{border-color:var(--warn);background:var(--warn-bg)}
+.author-claim[data-status=contradicted]::before{content:"✗ Author claim, contradicted";color:var(--warn)}
+.author-claim[data-status=unchecked]::before{content:"? Author claim, not checked";color:var(--muted)}
+ol.questions{padding-left:1.4em;max-width:78ch}
+ol.questions li{margin:.8em 0}
+ol.questions .facet{font-size:13px;font-weight:600;color:var(--accent);margin-right:6px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;font-size:15px;width:100%}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.test-added::before{content:"+ ";color:var(--add);font-weight:600}
+td.test-removed::before{content:"− ";color:var(--del);font-weight:600}
+td.test-modified::before{content:"~ ";color:var(--warn);font-weight:600}
+.cite{white-space:nowrap}
+.coverage{max-width:78ch}
+@media(max-width:820px){.map{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){h2{font-size:21px}table{font-size:13px}dl.parts{grid-template-columns:minmax(0,1fr);gap:2px}dl.parts dd{margin-bottom:10px}}
+</style>
+</head>
+<body>
+<header class="strip">
+<div class="wrap" style="padding:0">
+<h1>{{title}}</h1>
+<div class="meta">{{meta}}</div>
+</div>
+</header>
+<main class="wrap" data-repo="{{repo-url}}" data-pr="{{pr}}" data-head="{{head-sha}}" data-base="{{merge-base-sha}}">
+
+<section id="summary">
+<div class="lede">{{before-now}}</div>
+<div class="size">{{size}}</div>
+{{contradictions}}
+</section>
+
+<section id="system">
+<h2>System map</h2>
+{{system-diagram}}
+<div class="legend">{{components}}</div>
+</section>
+
+<section id="flow">
+<h2>Data flow</h2>
+{{data-flow}}
+</section>
+
+<section id="order">
+<h2>Reading order</h2>
+<ol class="order">{{reading-order}}</ol>
+</section>
+
+{{groups}}
+
+<section id="questions">
+<h2>Questions to settle before approving</h2>
+<ol class="questions">{{questions}}</ol>
+</section>
+
+<section id="tests">
+<h2>Tests</h2>
+{{tests}}
+</section>
+
+<section id="skim">
+<h2>Safe to skim</h2>
+{{skim}}
+</section>
+
+<section id="coverage" class="coverage">
+<h2>Coverage</h2>
+{{coverage}}
+</section>
+
+<section id="explain">
+<h2>Explain it back</h2>
+<details class="explain"><summary>In two sentences: what does this change do, and what breaks if it is wrong?</summary>{{explain}}</details>
+</section>
+
+</main>
+</body>
+</html>

@@ -127,7 +127,7 @@ Update with `claude plugin update jacoelho@jacoelho`, or turn on auto-update for
 
 ## Develop
 
-To try uncommitted edits, start a session with `claude --plugin-dir /path/to/skills`. It loads the checkout in place, and `/reload-plugins` picks up further edits. Run `claude plugin validate .`, `claude plugin test .`, `node --test tests/workflows/*.check.mjs`, `PW_DIR=<dir with playwright> node --test tests/app-screen-design/*.check.mjs` and `ast-grep test --skip-snapshot-tests` in `hooks/comment-policy/` before pushing. Workflow tests run under Node because the plugin test runner imports files as modules, which a workflow script is not; the geometry tests need a browser to lay pages out.
+To try uncommitted edits, start a session with `claude --plugin-dir /path/to/skills`. It loads the checkout in place, and `/reload-plugins` picks up further edits. Run `claude plugin validate .`, `claude plugin test .`, `node --test tests/workflows/*.check.mjs`, `node --test tests/change-overview/*.check.mjs`, `PW_DIR=<dir with playwright> node --test tests/app-screen-design/*.check.mjs` and `ast-grep test --skip-snapshot-tests` in `hooks/comment-policy/` before pushing. Workflow tests run under Node because the plugin test runner imports files as modules, which a workflow script is not; the geometry tests need a browser to lay pages out.
 
 A machine can also install from the local checkout instead of GitHub:
 
