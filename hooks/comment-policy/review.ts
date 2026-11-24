@@ -398,6 +398,32 @@ Examples:
 
 Reply with JSON only, no prose: {"findings":[{"id":<number>,"verdict":"remove"|"rewrite"|"rename","evidence":"<verbatim excerpt>","reason":"<one sentence>"}]}. An empty list when every comment should stay.`
 
+// A spec rule id, such as ORG-41, as a heading under specs/ defines it.
+const SPEC_ID = /\b[A-Z][A-Z0-9]*-\d+\b/g
+
+// specIds reads the rule ids from `git grep -o` output of spec headings.
+export function specIds(headings: string): Set<string> {
+  const ids = new Set<string>()
+  for (const line of headings.split('\n')) {
+    const id = /^#{1,6} ([A-Z][A-Z0-9]*-\d+)\b/.exec(line.trim())?.[1]
+    if (id) ids.add(id)
+  }
+  return ids
+}
+
+// citedSpecs lists the spec rule ids that the comments cite.
+export function citedSpecs(comments: readonly Comment[], ids: ReadonlySet<string>): string[] {
+  const cited = new Set<string>()
+  for (const c of comments) for (const m of c.text.matchAll(SPEC_ID)) if (ids.has(m[0])) cited.add(m[0])
+  return [...cited].sort()
+}
+
+// quotesSpec reports whether evidence quotes a spec rule id. Citing the spec
+// is what the policy asks for, so a finding resting on one is a misreading.
+export function quotesSpec(evidence: string, ids: ReadonlySet<string>): boolean {
+  return [...evidence.matchAll(SPEC_ID)].some(m => ids.has(m[0]))
+}
+
 export function judgeSystem(policy: string): string {
   return `${policy.trim()}\n\n${JUDGE_INSTRUCTIONS}`
 }
@@ -420,7 +446,10 @@ export function judgeItems(comments: readonly Comment[], source: (path: string) 
   })
 }
 
-export const judgePrompt = (items: readonly string[]) => items.join('\n\n')
+export function judgePrompt(items: readonly string[], cited: readonly string[] = []): string {
+  const specs = cited.length > 0 ? [`${cited.join(', ')} name rules in this repository's specs/. A comment citing one references the spec, as the policy asks; it is not a task or ticket reference.`] : []
+  return [...specs, ...items].join('\n\n')
+}
 
 export type JudgeFinding = { id: number; verdict: Verdict; evidence: string; reason: string }
 

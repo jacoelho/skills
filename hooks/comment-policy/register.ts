@@ -14,6 +14,7 @@ import {
   STATUS_ARGS,
   addedComments,
   blockText,
+  citedSpecs,
   emptyDiff,
   fingerprint,
   isDirective,
@@ -26,7 +27,9 @@ import {
   parseStatus,
   parseVerdicts,
   pendingOf,
+  quotesSpec,
   ruleFindings,
+  specIds,
   supported,
 } from './review'
 
@@ -392,6 +395,13 @@ async function saveSettled($: EngineInterface, s: Session, added: readonly strin
   await $.store.set(SETTLED_KEY, [...merged].slice(-MAX_SETTLED)).catch(err => $.ui.log(`comment-policy: verdicts not stored: ${message(err)}`, { to: 'debug' }))
 }
 
+// The rule ids the repository's specs/ defines, tracked or not; none when it
+// has no specs or git cannot read them.
+async function specRules($: EngineInterface, root: string): Promise<Set<string>> {
+  const r = await git($, root, ['grep', '--untracked', '--no-color', '-h', '-o', '-E', '^#{1,6} [A-Z][A-Z0-9]*-[0-9]+', '--', 'specs/'], { timeoutMs: PROBE_TIMEOUT_MS }).catch(() => null)
+  return r && r.exitCode === 0 ? specIds(r.stdout) : new Set()
+}
+
 // The judge's findings for one batch, or null when it gave no usable answer.
 async function judge($: EngineInterface, root: string, comments: readonly Comment[], signal: AbortSignal): Promise<Finding[] | null> {
   if (comments.length === 0) return []
@@ -402,19 +412,22 @@ async function judge($: EngineInterface, root: string, comments: readonly Commen
     sources.set(c.path, text !== undefined && text.length <= MAX_SOURCE_BYTES ? text.split('\n') : undefined)
   }
   const items = judgeItems(comments, p => sources.get(p))
+  const specs = await specRules($, root)
   try {
     const policy = await $.fs.read(`${$.plugin.root}/hooks/comment-policy/policy.md`)
     const r = await $.model.complete({
       model: JUDGE_MODEL,
       system: judgeSystem(policy),
-      prompt: judgePrompt(items),
+      prompt: judgePrompt(items, citedSpecs(comments, specs)),
       effort: 'low',
       maxTokens: JUDGE_MAX_TOKENS,
       timeoutMs: JUDGE_TIMEOUT_MS,
     }, { signal })
     if (!r.isAnswered) throw new Error(r.reason)
     // parseVerdicts keeps ids within 1..comments.length.
-    return parseVerdicts(r.text, items).map(v => ({ comment: comments[v.id - 1]!, kind: v.verdict, reason: v.reason, evidence: v.evidence }))
+    return parseVerdicts(r.text, items)
+      .filter(v => !quotesSpec(v.evidence, specs))
+      .map(v => ({ comment: comments[v.id - 1]!, kind: v.verdict, reason: v.reason, evidence: v.evidence }))
   } catch (err) {
     $.ui.toast(`comment-policy: judge unavailable (${message(err)}); those comments wait for the next review`)
     return null

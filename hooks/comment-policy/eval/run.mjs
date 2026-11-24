@@ -8,8 +8,8 @@
 // globals, leaves this Bun script alone.
 import { readFileSync } from 'node:fs'
 
-import { judgeItems, judgePrompt, judgeSystem, parseVerdicts } from '../review.ts'
-import { CASES } from './cases.ts'
+import { citedSpecs, judgeItems, judgePrompt, judgeSystem, parseVerdicts } from '../review.ts'
+import { CASES, SPEC_IDS } from './cases.ts'
 
 const runs = Number(process.argv[2] ?? 1)
 const policy = readFileSync(new URL('../policy.md', import.meta.url), 'utf8')
@@ -26,7 +26,7 @@ let misses = 0
 for (let run = 1; run <= runs; run++) {
   const child = Bun.spawnSync(
     ['claude', '-p', '--model', 'haiku', '--effort', 'low', '--tools', '', '--no-session-persistence', '--setting-sources', '', '--system-prompt', judgeSystem(policy)],
-    { stdin: new TextEncoder().encode(judgePrompt(items)) },
+    { stdin: new TextEncoder().encode(judgePrompt(items, citedSpecs(comments, SPEC_IDS))) },
   )
   if (child.exitCode !== 0) throw new Error(`claude -p failed (exit ${child.exitCode}): ${child.stderr.toString().slice(0, 500)}`)
   const flagged = new Map(parseVerdicts(child.stdout.toString(), items).map(f => [f.id, f]))

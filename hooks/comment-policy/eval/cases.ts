@@ -1,7 +1,10 @@
 // Labelled comments for calibrating the judge: `flag` when the policy says the
 // comment should not stay as written, `keep` otherwise. Each case is one comment
-// on `line` (1-based) of `source`.
+// on `line` (1-based) of `source`. SPEC_IDS are the rule ids the cases'
+// repository defines under specs/, as the hook reads them.
 export type Case = { name: string; path: string; language: string; source: string; line: number; expected: 'flag' | 'keep' }
+
+export const SPEC_IDS: ReadonlySet<string> = new Set(['DOC-33'])
 
 export const CASES: Case[] = [
   {
@@ -81,6 +84,22 @@ export const CASES: Case[] = [
     path: 'rig.ts',
     language: 'typescript',
     source: 'type Rig = {\n  // The tree the next snapshot writes.\n  tree: { value: string }\n}\n',
+    line: 2,
+    expected: 'flag',
+  },
+  {
+    name: 'cites the spec that owns the rule',
+    path: 'draft.ts',
+    language: 'typescript',
+    source: "export function saveDraft(id: string, draft: Draft) {\n  // Unsaved edits survive a reload on this device (DOC-33).\n  localStorage.setItem(`draft:${id}`, JSON.stringify(draft))\n}\n",
+    line: 2,
+    expected: 'keep',
+  },
+  {
+    name: 'cites a ticket no spec defines',
+    path: 'retry.ts',
+    language: 'typescript',
+    source: "export async function fetchWithRetry(url: string) {\n  // Added for PROJ-42 after the outage.\n  return retry(() => fetch(url), 3)\n}\n",
     line: 2,
     expected: 'flag',
   },
