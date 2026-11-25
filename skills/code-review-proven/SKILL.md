@@ -63,5 +63,19 @@ End with the folder of saved proofs. A CONFIRMED proof is a ready regression tes
 
 ## Held-back flags
 
-- `--comment`: post CONFIRMED and UNPROVEN findings as inline PR comments, the way `code-review --comment` does, each with its verdict and evidence. Post nothing else.
+- `--comment`: add CONFIRMED and UNPROVEN findings to one pending review on the PR, written as in Comment format. Post nothing else, and never submit the review: the user reads, edits and submits it on GitHub. Without a PR target, post nothing and say so.
+  1. GitHub allows one pending review per user per PR. List reviews with `gh api repos/{owner}/{repo}/pulls/<n>/reviews` and look for one in state `PENDING` by `gh api user --jq .login`. If one exists, post nothing, report its URL and print the comments in the reply so the user can add them; never delete or submit it.
+  2. Write a JSON file under `${TMPDIR:-/tmp}` with `commit_id` (the reviewed commit from Proof tree) and `comments`, each with `path`, `line`, `side: "RIGHT"` and `body`, and no `event` field: without `event` GitHub creates the review as `PENDING`. A finding whose line is not in the diff goes in the review's `body` with its `path:line`, because GitHub rejects the whole request when any inline comment falls outside the diff.
+  3. Post it with `gh api -X POST repos/{owner}/{repo}/pulls/<n>/reviews --input <file>`, check the response has `state` `PENDING`, and report the review's `html_url`.
+
+## Comment format
+
+A comment is a question that names the case, then the claim from step 1: the cited line and its wrong result, and how a caller's input reaches it.
+
+> Could this fail when `items` is empty? `items[0]` on line 42 would panic, and the handler passes the request body through without checking it.
+
+- Ask a question even for CONFIRMED findings. Follow the question with the evidence so it does not read as a quiz: for CONFIRMED, the proof's run command and failure line; for UNPROVEN, what blocked the proof.
+- Propose no fix: no suggested code, no suggestion block, no "consider". The fix belongs to the author.
+- Address the code, not the author: "this", "line 42", never "you".
+- No severity label, praise or preamble.
 - `--fix`: only when the proofs ran in the working tree; fixes made in a temporary worktree would be deleted with it. Otherwise apply nothing, say why, and name the command to check out the reviewed commit and rerun. When allowed, apply fixes to the working tree for CONFIRMED findings only, then copy each fixed finding's proof back, run it, report whether it now passes, and move it out again unless asked to keep it.
