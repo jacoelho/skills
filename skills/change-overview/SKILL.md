@@ -1,6 +1,6 @@
 ---
 name: change-overview
-description: "Builds one page that explains a large or unfamiliar pull request or branch to the person who must approve and own it: how the components connect, how data flows, what changed, and what it implies, all taken from the code. Use when asked to explain, walk through or give an overview of a PR or diff before approving it. Not a defect hunt (use code-review) or a design judgement (use jacoelho:architecture-review)."
+description: "Builds one page that explains a large or unfamiliar pull request or branch to the person who must approve and own it: how the components connect, how data flows, what changed, and what it implies, all taken from the code. Use when asked to explain, walk through or give an overview of a PR or diff before approving it. Not a defect hunt (use code-review) or a design judgement (use jacoelho:architecture)."
 argument-hint: "[PR number | URL | branch; default: the PR of the current branch]"
 ---
 
@@ -95,7 +95,7 @@ For each group, answer from the code:
 - **What it gives up:** a guarantee weakened, an error no longer surfaced, a fallback removed, a parallel path left in place.
 - **What it assumes:** a precondition the new code relies on that nothing enforces.
 
-Then go through [facets](references/facets.md) and keep only the facets whose subject this change has. Each kept facet becomes a question on the page with the evidence that answers it, or the note that the code does not answer it.
+Then go through [questions](references/questions.md) and keep only the questions whose subject this change has. Each kept question becomes a question on the page with the evidence that answers it, or the note that the code does not answer it.
 
 ### 7. Write the page
 
@@ -160,7 +160,7 @@ The groups in order, each as its one sentence linking to its section. This is th
 
 ### Questions to settle before approving
 
-The facet questions from step 6, each with its evidence or with "the code does not answer this". Order them by the reader's exposure, not alphabetically.
+The questions from step 6, each with its evidence or with "the code does not answer this". Order them by the reader's exposure, not alphabetically.
 
 ### Tests
 
