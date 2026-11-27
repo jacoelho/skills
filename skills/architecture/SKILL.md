@@ -56,7 +56,8 @@ uninspected.
 **Focus.** The user may name facets or rules to review, in the facets' own
 names or in their words: "implicit" or "hidden state machines" is the facet 4
 signal for hidden state machines, and "enforcement" the facet 8 signal for
-unenforced rules. Name the resolved facets and rules in the report. A focus
+unenforced rules, and "axiomatic design", "design matrix" or "functional
+independence" is facet 2's requirement map. Name the resolved facets and rules in the report. A focus
 steers step 1: before ranking, search for the focus's signals (fields written
 from several modules for facet 1, import lists for dependency rules,
 deprecated, legacy or compatibility markers and forwarding wrappers for facet
@@ -68,8 +69,13 @@ Steps 2–5 apply to the selected boundaries.
 
 **2. Trace ownership.** For each selected boundary, identify the owner of each
 fact, invariant, state transition and resource, and which other modules depend on
-that knowledge. Done when every selected boundary has a named owner or a recorded
-ambiguity. Carry each ambiguity to step 4 as a candidate breach of **Complete
+that knowledge. Then build the *requirement map*: list what the selected
+boundaries must deliver, each a behaviour a consumer relies on, taken from the
+project's documents, tests and public surface, and for each requirement the
+modules that must change when it changes, each cell citing the line that shows
+it. Rows cover only the selected boundaries; a cell not read goes to Coverage.
+Done when every selected boundary has a named owner or a recorded ambiguity, and
+a requirement map. Carry each ambiguity to step 4 as a candidate breach of **Complete
 design** (facet 9); its scenario is two plausible readings that behave
 differently.
 
@@ -147,6 +153,9 @@ result taken from the requirement. When no such test exists, say so and why.
 When a recommendation moves a boundary, ownership or contract, name the project
 document that records it and must change with it (facet 9).
 
+For a finding about coupled requirements, show their rows of the requirement
+map before and after the recommended change.
+
 When the class of defect could be reintroduced by a later change, name the
 cheapest guard that rejects it, taking the first that can: a design in which the
 defect cannot be expressed, a type, a lint or architecture check (a forbidden
@@ -157,7 +166,10 @@ that nothing runs guards nothing.
 
 1. **Assessment:** three to five sentences: design properties any fix must
    preserve, the dominant weaknesses, the main source of coupling or complexity,
-   and, when reviewing a change, whether it improves or worsens maintainability.
+   when reviewing a change, whether it improves or worsens maintainability, and
+   the inspected boundaries' shape from the requirement map (uncoupled,
+   decoupled or coupled; facet 2), decided after step 4 and naming any coupled
+   requirements.
 2. **Findings**, most severe first:
 
    **[Severity] Title**: confirmed | conditional

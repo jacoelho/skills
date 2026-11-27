@@ -12,7 +12,9 @@ Most rules in facets 1, 2, 3, 4 and 6 answer one question about two pieces of co
 should they change together? They name three ways to get it wrong: pieces that
 must change together but sit apart or are linked only by convention; pieces tied
 together that change for different reasons; and pieces with no reason of their
-own to change. Use the question to read a signal, then cite the rule it breaches;
+own to change. Coupling between modules is sometimes necessary; coupling between
+requirements that change for different reasons is what does damage. Use the
+question to read a signal, then cite the rule it breaches;
 when no rule covers it, judge it by consequence as the skill directs.
 
 Terms used throughout:
@@ -104,6 +106,27 @@ provisional values point to (a limit marked provisional, a planned variant)
 over a generic one. For each scenario, name
 where the change belongs and what else must change. Report it only when the
 coordination it requires is avoidable under **Localise change**.
+
+**Requirement map.** Read the map from step 2 of the skill, ordering
+requirements and modules to find its shape:
+
+- *Uncoupled:* each requirement changes through modules no other requirement
+  needs.
+- *Decoupled:* dependencies between requirements run one way, so they can change
+  in a fixed order. Either direction is acceptable. When a contract or type
+  declares the dependency it is necessary coordination, not a finding.
+- *Coupled:* two requirements each depend on a module the other needs, and no
+  ordering removes it. This is a candidate under **Localise change**.
+
+A module serving unrelated requirements is a candidate under **Deep modules**,
+and a requirement spread across modules with no declared dependency between
+them is one under **Localise change** or **Capability modules**. A shape is
+evidence for a candidate, never a finding by itself, and neither shape
+guarantees correctness or replaceability. Divide requirements by the reasons
+they change, as the project's documents and history show, since the shape
+depends on the division. Imports show only structural independence: shared
+mutable state, a shared transaction, timing and an unstated behavioural
+assumption are cells too.
 
 ## 3. Cohesion
 
