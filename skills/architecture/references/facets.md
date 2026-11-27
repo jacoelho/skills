@@ -1,14 +1,14 @@
-# Review lenses
+# Facets
 
-Each lens has **Rules** and **Look for**. A rule states the target design and,
+Each facet has **Rules** and **Look for**. A rule states the target design and,
 where the line is not obvious, what counts as a breach; cite it by its bold name.
 **Look for** lists signals where breaches tend to hide; it focuses attention and
 is not a checklist to answer. A rule applies only where its subject exists: a
-system with no network boundary has no distribution semantics to judge. A lens
+system with no network boundary has no distribution semantics to judge. A facet
 yields a finding when its candidate passes the skill's **Confirm each candidate**
 step, as confirmed or conditional, or is a breach the reviewed change introduces.
 
-Most rules in lenses 1, 2, 3 and 5 answer one question about two pieces of code:
+Most rules in facets 1, 2, 3, 4 and 6 answer one question about two pieces of code:
 should they change together? They name three ways to get it wrong: pieces that
 must change together but sit apart or are linked only by convention; pieces tied
 together that change for different reasons; and pieces with no reason of their
@@ -23,7 +23,35 @@ Terms used throughout:
 - A *hot path* is code the stated workload, a measurement or clear algorithmic
   evidence places on the per-item or per-request path.
 
-## 1. Change at a distance and change amplification
+## 1. Single source of truth
+
+Every fact, rule and lifecycle has one home. Two homes drift apart: a change
+reaches one, the other keeps the old behaviour, and both still compile.
+
+Rules:
+
+- **Single owner.** Every fact, invariant, state transition, capability and
+  execution path has one authoritative owner across the system, and one
+  canonical representation within a module. Each additional representation or
+  path names the concrete constraint that requires it.
+- **Centralised policy.** Each decision is encoded in one place. Two places are
+  one decision when they must change identically for every requirement; they
+  breach this rule unless they derive from one definition. Where a process or
+  language boundary prevents one definition, they are coordination, and facet 8
+  expects a test spanning both sides. Places that change together but encode
+  different decisions (a producer and its consumer, a schema and its migration)
+  are coordination, judged by **Localise change**. Places that merely look alike
+  are similar code; leave them separate, since small duplication costs less than
+  false coupling.
+
+Look for:
+
+- one rule, constant or assumption encoded in several places;
+- an invariant enforced at several boundaries instead of owned at one;
+- competing writers to one piece of state, or duplicate state machines for one
+  lifecycle.
+
+## 2. Coupling and change at a distance
 
 *Change at a distance*: editing one module changes the behaviour of, or forces
 edits in, a module that does not visibly depend on it. *Change amplification*: a
@@ -37,19 +65,6 @@ Rules:
   contract or type. Coordinated change is *necessary* when one requirement spans
   the modules and that dependency is declared; all other coordinated change is
   *avoidable*.
-- **Single owner.** Every fact, invariant, state transition, capability and
-  execution path has one authoritative owner across the system, and one
-  canonical representation within a module. Each additional representation or
-  path names the concrete constraint that requires it.
-- **Centralised policy.** Each decision is encoded in one place. Two places are
-  one decision when they must change identically for every requirement; they
-  breach this rule unless they derive from one definition. Where a process or
-  language boundary prevents one definition, they are coordination, and lens 7
-  expects a test spanning both sides. Places that change together but encode
-  different decisions (a producer and its consumer, a schema and its migration)
-  are coordination, judged by **Localise change**. Places that merely look alike
-  are similar code; leave them separate, since small duplication costs less than
-  false coupling.
 - **Explicit dependencies.** A module receives its dependencies as parameters or
   constructor arguments, and the module graph is acyclic. Breaches: globals,
   service locators, hidden registries, initialisation by import or load order,
@@ -61,11 +76,9 @@ Rules:
 
 Look for:
 
-- one rule, constant or assumption encoded in several places;
 - coupling through strings, identifiers, naming conventions or file layout;
 - implicit ordering between operations or lifecycle stages;
 - configuration read far from the code it affects;
-- an invariant enforced at several boundaries instead of owned at one;
 - callers relying on behaviour a module does not promise, such as iteration
   order, timing or side effects;
 - implementation inheritance across modules, where a subtype depends on the
@@ -92,7 +105,7 @@ over a generic one. For each scenario, name
 where the change belongs and what else must change. Report it only when the
 coordination it requires is avoidable under **Localise change**.
 
-## 2. Ownership and cohesion
+## 3. Cohesion
 
 Rules:
 
@@ -105,7 +118,7 @@ Rules:
 - **Deep modules.** A module hides a decision behind a surface simpler than its
   implementation. Breach: one module combining unrelated concerns so a change to
   one risks the other. Wrappers that hide nothing are judged by **Smallest
-  design** (lens 5).
+  design** (facet 6).
 - **One term per concept.** Each concept has one term, each term one meaning,
   and each module is named after the capability it owns. Breaches: one term
   naming two concepts, two terms naming one concept, or a vague-role module name
@@ -113,13 +126,11 @@ Rules:
 
 Look for:
 
-- competing writers to one piece of state, or duplicate state machines for one
-  lifecycle (**Single owner**);
 - a capability whose tests live apart from its rules;
 - several small modules that are always read and changed together; a larger
   cohesive module serves better.
 
-## 3. Interfaces and information hiding
+## 4. Interfaces and information hiding
 
 Rules:
 
@@ -155,6 +166,10 @@ outweighs them. When the comparison is close, the rule binds.
 Look for:
 
 - callers coordinating steps the module should own;
+- a hidden state machine: booleans, nullable fields or status strings whose
+  combinations encode a lifecycle, with transitions made by several callers, so
+  invalid combinations are representable (**Illegal states unrepresentable**,
+  **Single owner**);
 - internal representation visible through the surface, so an internal change
   reaches callers (*information leakage*);
 - a surface that hides essential semantics (ownership, lifetimes, ordering,
@@ -166,7 +181,7 @@ names, arguments, defaults and errors, and usable without knowing the
 implementation, is judged by a specialist when your instructions assign public
 API shape to one; otherwise judge it here, reading the surface as its consumer.
 
-## 4. Correctness and failure semantics
+## 5. Correctness and failure semantics
 
 Judge the guarantees the system claims, under the conditions it faces.
 
@@ -197,7 +212,7 @@ Look for:
 - consistency and transaction boundaries that do not match the invariant they
   protect.
 
-## 5. Accidental complexity
+## 6. Accidental complexity
 
 Measure complexity by concepts, dependencies, states and coordination steps a
 maintainer must hold; line count alone is not evidence.
@@ -209,7 +224,7 @@ Rules:
   contract, or isolates a policy that changes independently; otherwise it is a
   breach, such as a *shallow wrapper* that forwards, renames or redistributes
   work. Interfaces, and adaptors that implement one, are judged by **Narrow
-  interfaces** (lens 3). A name, a single call site or hypothetical reuse
+  interfaces** (facet 4). A name, a single call site or hypothetical reuse
   justifies nothing either way; name the concrete burden it adds or removes.
 - **Delete obsolete paths.** Replaced behaviour is deleted. A compatibility
   path, shim or parallel implementation stays only when a requirement, persisted
@@ -230,7 +245,7 @@ Look for:
   understands, a sleep or retry that waits for state another module owns, or a
   disabled test. Each often records a requirement the model does not express.
 
-## 6. Resources and performance
+## 7. Resources and performance
 
 Rules:
 
@@ -261,7 +276,7 @@ matters wherever it breaks a stated limit. Keep ownership and concurrency
 semantics readable rather than trading them for gains no requirement or
 measurement asks for.
 
-## 7. Verifiability
+## 8. Verifiability
 
 Rules:
 
@@ -279,12 +294,15 @@ Rules:
 Look for:
 
 - important behaviour or invariants testable only through internals;
+- a rule the authority documents state, such as a dependency direction or a
+  forbidden call, that no project check enforces, so a later change can break
+  it unnoticed;
 - a cross-boundary contract, including one shared across languages, with no
   test spanning both sides;
 - test setup disproportionately heavy for the behaviour tested, pointing at a
   boundary in the wrong place.
 
-## 8. Architecture documentation
+## 9. Architecture documentation
 
 Rules:
 

@@ -1,8 +1,8 @@
-# Facets
+# Questions
 
-A facet is a question the approver should be able to answer about the change. Keep a facet only when the change has its subject: a change with no process boundary has no delivery question. Each kept facet goes on the page as its question, with the code that answers it or the statement that the code does not.
+Each section is a question the approver should be able to answer about the change. Keep a question only when the change has its subject: a change with no process boundary has no delivery question. Each kept question goes on the page with the code that answers it or the statement that the code does not.
 
-Facets direct attention. They are not rules and do not produce verdicts.
+Questions direct attention. They are not rules and do not produce verdicts.
 
 ## Ownership
 

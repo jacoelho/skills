@@ -1,8 +1,8 @@
 # jacoelho
 
-A Claude Code plugin with my personal skills, subagents, workflows and hooks. This repository is both the plugin and its marketplace.
+A Claude Code plugin with my personal skills, subagents and hooks. This repository is both the plugin and its marketplace.
 
-Skills live in `skills/`, agents in `agents/`, workflows in `workflows/`, hooks modules in `hooks/`, and tests in `tests/`. Everything is namespaced by the plugin name: skills and workflows run as `/jacoelho:<name>` and agents are `jacoelho:<agent>`.
+Skills live in `skills/`, agents in `agents/`, hooks modules in `hooks/`, and tests in `tests/`. Everything is namespaced by the plugin name: skills run as `/jacoelho:<name>` and agents are `jacoelho:<agent>`.
 
 ## Prompt intake
 
@@ -80,30 +80,15 @@ Case: create "Pancakes" twice.
 
 `python3 skills/spectacular/scripts/spec.py status` counts rules, assumptions and open questions and reports malformed entries; `questions` and `review` print the two lists, `answer` applies your answers, and `reviewed` settles the assumptions on a review list you were sent. Deleting `specs/` removes the method: nothing in the code or tests refers to an entry.
 
-## Architecture remediation workflow
+## Architecture
 
-`/jacoelho:architecture-remediate` fixes architecture findings end to end. Each round reviews with `/jacoelho:architecture-review`, plans the fixes, has `jacoelho:consultant` agents challenge the plan, implements it in batches, verifies, runs `jacoelho:critic` on the diff, and checks each fix. Each later review covers only the previous round's changes and the code that uses them, because earlier rounds' fixes are already proven or still open in the ledger. When such a review is clean, one review of the whole diff against `baseRef` must also be clean before the run stops; it catches defects that only appear where rounds interact. The run stops once no Critical, High or Medium finding is open. A `followUpScope` you pass replaces both kinds of follow-up review. Each review's `history` entry records its scope: `initial`, `round`, `full` or `caller` (your `followUpScope`).
-
-A finding counts as fixed only when its acceptance check proves it. The plan gives each finding a command, usually a test the fix adds, that must exit 0 once the defect is gone. After the round, the command must fail on the tree as it was before the round, with the round's tests copied in, and pass on the tree now. A test command that selects no test proves nothing. The workflow takes that before-tree as a snapshot at the start of each round, an unreferenced commit made through a temporary index, so your index and working tree are untouched. A planned finding that is not proven fixed stays open into the next round even if the next review does not raise it again. A later review can reopen a proven finding only by naming what its check misses.
-
-The run stops after the round-1 plan by default and returns it as `checkpoint`, because that plan holds the run's costliest decisions. Review it, edit it if you want, and continue with the same arguments plus `"approvedPlan": <checkpoint>`; round 1 then implements that plan without reviewing or planning again. Pass `"autoApprove": true` to run unattended.
-
-`consultantModel` (default `opus`) sets the model of the `jacoelho:consultant` plan reviewers; `""` uses the agent definition's model. Consultants receive each finding's id, severity, title, location and impact, not its evidence: they read the cited code themselves. The planner checks its own draft against the testing criteria and the consultants' questions before they see it.
-
-Pass a scope, and optionally `instructions`, free text every stage that judges or edits must follow:
+`/jacoelho:architecture` reviews a diff, branch or module for ownership, coupling and boundaries, and edits nothing. Name facets or rules to focus it, in the skill's terms or your own ("single source of truth", "hidden state machines", "enforcement"): it searches for their signals first and opens findings only under them. Ask it to fix the findings, or pass `fix`, and it works through them in the same session, most severe first, inside a worktree on its own branch. Each fix starts with an acceptance check that must fail on the last commit and pass after the fix, and is committed alone; a type change that leaves no failing command is held to contract tests passing before and after. The budget is the ten most severe Critical and High findings, or with a focus the ten most severe it opens. Defects the fixes introduce are fixed or reverted whatever the budget. Findings that need an owner's decision are recorded with the question and skipped, and a finding whose second fix attempt fails is reverted and marked blocked. The run state lives in a ledger beside the worktree, so an interrupted run resumes from it. Before stopping it runs the repository's checks and reviews the boundaries its commits changed once, with every facet. It calls `jacoelho:critic` only when the diff touches an exported API, a persisted format, concurrency or security.
 
 ```text
-/jacoelho:architecture-remediate internal/billing
-/jacoelho:architecture-remediate {"scope": "internal/billing", "instructions": "keep the v1 wire format"}
-/jacoelho:architecture-remediate help
-/jacoelho:architecture-remediate {"scope": "internal/billing", "reviewOnly": true}
+/jacoelho:architecture internal/billing
+/jacoelho:architecture internal/billing fix
+/jacoelho:architecture internal/billing hidden state machines fix
 ```
-
-`reviewOnly` runs one review split across agents and edits nothing: the way to review a scope too large for a single `/jacoelho:architecture-review`. The skill owns the review method and the roles each agent takes (Scope, Group review, Merge); the workflow decides how many agents run and which boundaries each gets.
-
-The scope is required, because a run edits the working tree: a bare call, `help` or an unknown option starts no agents and returns the option list instead. The run never commits. It returns `tree` (`untouched`, `verified`, `failing`, or `unverified` when it stopped mid-round) and `next`, which says what to do about that state, plus planned findings not proven fixed (`unresolvedFindings`), critic findings it could not resolve, and any round whose hot-path changes have no benchmark comparison (`unmeasured`). Each round's `history` entry keeps the perf result, every verify-fix and critic-fix outcome, and each acceptance check with its verdict; the critic gets at most two fixes, and the last one is always reviewed again; while it runs, `/workflows` shows one line per agent outcome. Benchmarks run once per round, in the perf step: verification judges exit codes only, and fix agents are told not to rerun the suite. Asking in plain language works too; Claude builds the arguments. The defaults assume a Go repository.
-
-A run is costly, and the cost follows the number of rounds, not the size of the scope: each round is a review, a plan, consultants, implementers, a verification, a critic and an acceptance run. Two runs on a 20,000-line repository used 76 agents, 7.4 million tokens and 6.2 hours for four rounds, and 61 agents, 5.9 million tokens and 4.4 hours for three. To spend less, pass `maxRounds` 1 or 2 and `reviewers` 1, set a token target, and point `baseRef` at a commit that already holds earlier remediation, because the review before a clean stop covers the whole diff against `baseRef`. With a token target, the run stops before a round it cannot finish, counting the two reviews that follow it, and before any review it cannot afford; `next` then says what was left unreviewed. The result's `next` asks the calling session to report agents, tokens and running time with the result; `cost` holds the reviews and rounds the script counted.
 
 ## Install
 
@@ -127,7 +112,7 @@ Update with `claude plugin update jacoelho@jacoelho`, or turn on auto-update for
 
 ## Develop
 
-To try uncommitted edits, start a session with `claude --plugin-dir /path/to/skills`. It loads the checkout in place, and `/reload-plugins` picks up further edits. Run `claude plugin validate .`, `claude plugin test .`, `node --test tests/workflows/*.check.mjs`, `node --test tests/change-overview/*.check.mjs`, `PW_DIR=<dir with playwright> node --test tests/app-screen-design/*.check.mjs` and `ast-grep test --skip-snapshot-tests` in `hooks/comment-policy/` before pushing. Workflow tests run under Node because the plugin test runner imports files as modules, which a workflow script is not; the geometry tests need a browser to lay pages out.
+To try uncommitted edits, start a session with `claude --plugin-dir /path/to/skills`. It loads the checkout in place, and `/reload-plugins` picks up further edits. Run `claude plugin validate .`, `claude plugin test .`, `node --test tests/change-overview/*.check.mjs`, `PW_DIR=<dir with playwright> node --test tests/app-screen-design/*.check.mjs` and `ast-grep test --skip-snapshot-tests` in `hooks/comment-policy/` before pushing. The geometry tests need a browser to lay pages out.
 
 A machine can also install from the local checkout instead of GitHub:
 
