@@ -1,6 +1,6 @@
 ---
 name: app-screen-design
-description: Design and build application screens that people work in, such as dashboards, admin and back office, analytics, reports, settings, billing, inboxes, queues, list and table screens, wallets, builders and object detail pages. Use when creating or restyling any of these, in any stack, or when reviewing whether one reads as a generated template. Not for landing pages or marketing sites (use frontend-design:frontend-design). General chart construction stays with dataviz; KPI rows, dashboard layout and chart hue on app screens follow this skill.
+description: Design and build application screens that people work in, such as dashboards, admin and back office, analytics, reports, settings, billing, inboxes, queues, list and table screens, wallets, builders and object detail pages. Use when creating or restyling any of these, in any stack, or when reviewing whether one reads as a generated template or writing and tightening its labels, hints, empty states, toasts and confirmations. Not for landing pages or marketing sites (use frontend-design:frontend-design). General chart construction stays with dataviz; KPI rows, dashboard layout and chart hue on app screens follow this skill.
 argument-hint: "[screen to build, restyle or review]"
 ---
 
@@ -120,6 +120,9 @@ its fallback wherever a target browser lacks a feature.
 
 Motion is feedback only: press, hover, focus, a menu opening, a row arriving. Nothing on the screen performs an entrance.
 
+Write copy by the ladder in [tells.md](references/tells.md#copy). Open questions, notes for reviewers of this build,
+prototype badges, sample-data warnings and demo controls go in the report, not on the screen.
+
 ### 6. Data that tells the truth
 
 *Judgement, and judges checked every one of these.*
@@ -211,7 +214,8 @@ Then check against [tells.md](references/tells.md). Fix the worst three and look
 ### 9. Report
 
 Tell the user, briefly: the style and why; the face and the signature element; each screen's one question; rules you
-deliberately broke and why; and the sample data to replace, listed so it can be found.
+deliberately broke and why; the sample data to replace, listed so it can be found; and the open questions left for the
+owner.
 
 ## Reviewing an existing screen
 

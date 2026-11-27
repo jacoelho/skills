@@ -48,7 +48,44 @@ An app screen is read every day, and part of what page advice warns against is t
 
 ## Copy
 
-*Judgement.* A screen is worked in, not read: keep the words a person needs to act, and cut the rest.
+*Judgement.* A screen is worked in, not read: keep the words a person needs to act, and cut the rest. Most bad copy is
+not badly written; it should not be on the screen. Decide whether a string exists before how it reads, and run this pass
+before any phrasing or voice pass: polishing a string that should go only makes the wrong thing read better.
+
+### The ladder
+
+Walk each string down these rungs in order. Stop at the first that fires.
+
+1. **Does the product's user need it for their task?** Development progress, open design decisions and notes for
+   reviewers of this build go in the report (step 9), not on the screen, and so do prototype badges, sample-data
+   warnings and demo controls. A brief asking to keep open questions explicit for review asks for them in the report,
+   not for an in-app decision form; build a review interface only when reviewing is the product's own workflow.
+   Operational approvals, blockers and evidence notes stay when they change what the product's users do.
+2. **Is the value meaningless without the label?** Only then does a caption earn its place. "Retry limit" needs no "how
+   many times we retry" under it; a bare "30" does need "seconds".
+3. **Does it rule out a failure rather than describe a behaviour?** A line under Cancel saying it "keeps the files
+   already transferred, unlike the old cancel" exists because of a fixed bug, and hands the person a worry they arrived
+   without. The fix is the fix, not a caption about it. The same goes for copy defending a design decision or hedging
+   about something that works ("this may look slow but it is not", "the count may be off for a moment").
+4. **Rewrite without the failing part; if nothing is left, delete the element.** An empty `hint` prop comes off the
+   component, and an explanatory `<p>` is deleted, not cut to a stub. Controls for reviewing this build go with their
+   copy; renaming one does not give it a product task.
+
+### What stays
+
+Copy stays when the person cannot act without it:
+
+- **A consequence at the moment of choosing**, under a destructive button: "Anything not yet synced is lost." Keep the
+  consequence and cut any permission slip after it, such as "only use this when a sync is stuck": it tells the person
+  when they may press a button they can already see.
+- **A scope or compatibility fact the control cannot show:** "Works with keys issued after March; older keys need
+  rotating first."
+- **What an empty state means and what to do next:** "No projects yet. Create one and it will appear here."
+- **Units, scale or format** on a bare value.
+
+Copy needed only in a rare state appears in that state, not permanently on the screen.
+
+### Common cuts
 
 | Avoid | Instead |
 | --- | --- |
@@ -66,6 +103,15 @@ of your work") fails by default: it names a feeling, not this product's data or 
 **Real state.** A status pill, badge, dot or stamp ("Live", "New", "Synced", "All systems operational") stays only if
 it renders from a value the product tracks: a condition, a field, a query result. Markup that always renders with fixed
 text is decoration; delete it. A pulsing loading skeleton is not a status mark.
+
+### Working the pass
+
+- **Read each string beside what surrounds it on screen:** the label, the value, the button. Redundancy is invisible in
+  the string alone.
+- **Cut whole clauses, not words.** Finding which half of a two-sentence hint does no work beats trimming "Leave this
+  blank to use the default setting for your account" to "Leave blank for the default".
+- **In a review, copy is one finding** listing each string as `file:line`, its current text, and the rewrite or `cut`,
+  with the rung it failed in a few words. Leave strings that pass alone.
 
 ## Tells of generated dashboards
 
