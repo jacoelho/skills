@@ -1,0 +1,33 @@
+extends: existence
+message: "'%s' asserts sincerity or weight instead of carrying it. Delete it and let the sentence stand."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+nonword: true
+# Narrower than a blanket adverb ban, which RULES.md rejects: only sentence-initial sincerity
+# markers and 'let me be ...'. 'genuine trade-off' and 'report it honestly' are literal.
+tokens:
+- '^(?:honestly|frankly|candidly|to\s+be\s+(?:honest|frank|clear|direct))\s*,'
+- '\blet\s+me\s+be\s+(?:clear|direct|honest|frank)\b'
+tests:
+- name: flags a sentence-initial sincerity marker
+  input: Honestly, the cache is fine.
+  contains: Register.Sincerity
+- name: flags to be clear mid-paragraph
+  input: The job retries. To be clear, it retries once.
+  contains: Register.Sincerity
+- name: flags let me be clear
+  input: Let me be clear about the scope.
+  contains: Register.Sincerity
+- name: a literal adverb is a fact about the reporting
+  input: Report the relocation honestly.
+  want: ''
+- name: a genuine trade-off is literal
+  input: Where there is a genuine trade-off, compare two designs.
+  want: ''
+- name: clear as an adjective is ordinary
+  input: Make the error message clear.
+  want: ''
+- name: ignores inline code
+  input: The label is `Honestly, yes`.
+  want: ''

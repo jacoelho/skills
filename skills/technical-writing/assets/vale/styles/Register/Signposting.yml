@@ -7,6 +7,7 @@ tokens:
 - let['’]s\s+(?:dive|jump)\s+(?:in|into)
 - let['’]s\s+(?:explore|unpack|break\s+(?:it|this|that)\s+down)
 - without\s+further\s+ado
+- let\s+me\s+walk\s+(?:you\s+)?through
 - buckle\s+up
 - here['’]s\s+(?:what|everything)\s+you\s+need\s+to\s+know
 - (?:below\s+is|here\s+is)\s+an?\s+(?:detailed|comprehensive)\s+(?:overview|breakdown|guide)
@@ -16,6 +17,9 @@ tests:
   contains: Register.Signposting
 - name: flags a curly apostrophe and a line break
   input: "Let’s break\nit down."
+  contains: Register.Signposting
+- name: flags a walk-through opener
+  input: Let me walk you through the changes.
   contains: Register.Signposting
 - name: flags an overview wrapper
   input: Below is a detailed overview of the changes.

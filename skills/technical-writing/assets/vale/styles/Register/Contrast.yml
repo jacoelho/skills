@@ -1,7 +1,9 @@
 extends: existence
 message: "'%s' frames a point against a claim nobody made. State the point directly."
 level: suggestion
-scope: sentence & ~heading
+# text, not sentence: the two-sentence form 'This isn't X. It's Y.' crosses a sentence boundary,
+# and paragraph scope skips list items.
+scope: text
 ignorecase: true
 nonword: true
 # The plain distinction "X, not Y" is left alone: precise writing needs it.
@@ -9,7 +11,13 @@ nonword: true
 tokens:
 - '(?<!\bdo\s)(?<!\bdon[''’]t\s)\bnot\s+(?:just|merely|simply)\s+(?![^,.;:]*\bbut\s+also\b)[^,.;:]{1,60}?[,;]?\s+(?:but|it[''’]s)\b'
 - '\bit[''’]s\s+not\s+(?:about\s+)?[^,.;:]{1,40}[,;]\s+it[''’]s\b'
-- '\bthis\s+isn[''’]t\s+(?:about\s+)?[^,.;:]{1,40}[,;]\s+it[''’]s\b'
+- '\b(?:this|it)\s+isn[''’]t\s+(?:about\s+)?[^,.;:]{1,40}[,;]\s+it[''’]s\b'
+# Across a full stop only with 'about' or a framing subject: "It's not set by default. It's read from
+# the environment." is two literal claims.
+- '\b(?:it[''’]s\s+not|(?:this|it)\s+isn[''’]t)\s+about\s+[^,.;:]{1,40}\.\s+it[''’]s\s+about\b'
+- '\bthe\s+(?:question|point|problem|issue)\s+isn[''’]t\s+[^,.;:]{1,40}[,;.]\s+it[''’]s\b'
+- '\bless\s+like\s+[^,.;:]{1,40}?\s+and\s+more\s+like\b'
+- '\brather\s+than\s+(?:merely|simply|just)\b'
 tests:
 - name: flags a not-just pattern
   input: Logging is not just a debugging aid but a contract.
@@ -20,6 +28,30 @@ tests:
 - name: flags a this-isn't pattern
   input: This isn't about speed; it's about safety.
   contains: Register.Contrast
+- name: flags the two-sentence form
+  input: This isn't about speed. It's about trust.
+  contains: Register.Contrast
+- name: a same-sentence pair still needs no about
+  input: It's not a cache, it's a queue.
+  contains: Register.Contrast
+- name: flags the two-sentence form in a list item
+  input: '- The question isn’t cost. It’s trust.'
+  contains: Register.Contrast
+- name: flags less like more like
+  input: The design is less like a cache and more like a queue.
+  contains: Register.Contrast
+- name: flags rather than merely
+  input: The proxy routes requests rather than merely forwarding them.
+  contains: Register.Contrast
+- name: a plain rather than is a choice between alternatives
+  input: Use a queue rather than a cron job.
+  want: ''
+- name: two literal claims across a full stop are not a contrast
+  input: It's not set by default. It's read from the environment.
+  want: ''
+- name: a literal this-isn't pair is not a contrast
+  input: This isn't cached. It's recomputed on each call.
+  want: ''
 - name: a plain distinction is required voice
   input: Use a literal, not a regex.
   want: ''

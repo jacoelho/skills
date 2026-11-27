@@ -28,6 +28,12 @@ See [the docs](https://go.dev/doc?utm_source=chatgpt.com).
 
 The worker stops; the queue drains. This means the backlog clears.
 
+Honestly, the parser does the heavy lifting. This isn't about speed. It's about trust.
+
+- **Speed:** the cache halves reads.
+
+**Key takeaways**
+
 """ + " ".join(["word"] * 31) + ".\n"
 
 # Wording the profile must leave alone.
@@ -45,9 +51,15 @@ Register the bot as an AI provider. Attach Delve to the running process.
 Separate words with underscores. The object is promoted to the next generation.
 The operation represents a shift of two bits. The dashboard refreshes, reflecting the new values.
 IPv6 is not widely available on our hosts. Do not just restart the pod but drain it first.
-It is not only faster but also safer.
+It is not only faster but also safer. Use a queue rather than a cron job.
+Report the relocation honestly. Where there is a genuine trade-off, compare designs.
+End each sentence with a full stop. The handler surfaces the error to the caller.
+The scheduler is fair to both queues. The bottom line of the table shows totals.
+Why does the job retry twice? It's not set by default. It's read from the environment.
 
 - ✓ passed → next
+- **Required**
+- Stop the service **before** deleting the volume.
 
 Run `delve` or:
 
@@ -65,6 +77,11 @@ ONE_OWNER = [
     "The release shipped, showcasing the API.", "In today's digital landscape, teams ship.",
     "In today's rapidly evolving landscape, teams ship.", "The code plays a pivotal role.",
     "It stands as a testament to care.", "The tool is a game-changing, game changer.",
+    "In short, the cache helps.", "Let me walk you through the changes.",
+    "The parser does the heavy lifting.", "Honestly, the cache is fine.",
+    "This isn't about speed. It's about trust.", "Postgres is widely regarded as the safe default.",
+    "To be fair, the cache helps.", "Why? Cost.", "- **Speed:** the cache halves reads.",
+    "**Key takeaways**", "**The bottom line:** ship it.",
 ]
 GUARDED = ("Register.", "Workflow.ProcessLeakage", "Workflow.GeneratedMarkup", "Workflow.Placeholder",
            "Clarity.UnsupportedQuality")
@@ -127,7 +144,8 @@ def main() -> None:
         "Clarity.PlainLanguage", "Clarity.UnsupportedQuality", "Requirements.VagueRequirement",
         "Workflow.ProcessLeakage", "Workflow.GeneratedMarkup", "Workflow.Placeholder",
         "Register.StockVocabulary", "Register.Significance", "Clarity.Semicolon",
-        "Clarity.AmbiguousReference",
+        "Clarity.AmbiguousReference", "Register.Sincerity", "Register.Mannered", "Register.Contrast",
+        "Register.InlineHeader", "Register.FormulaicHeading",
     }
     assert expected <= checks, expected - checks
     assert code == 0 and not any(a["Severity"] == "error" for a in alerts), alerts

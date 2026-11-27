@@ -1,13 +1,17 @@
 extends: existence
 message: "'%s' is a stock heading. Name what the section says."
 level: suggestion
-scope: heading
-ignorecase: true
+# raw, so a bold pseudo-heading (**Key takeaways**) shares the phrase list with real headings.
+# Consequence: a heading inside a fenced Markdown example is flagged too.
+scope: raw
 nonword: true
 # 'Conclusion' and 'Final thoughts' are allowed: human articles use them.
-# Bold pseudo-headings (**Key takeaways**) are paragraph text and out of scope.
 tokens:
-- '^(?:key\s+takeaways?|the\s+bottom\s+line|why\s+(?:this|it)\s+matters|what\s+you[''’]ll\s+learn|wrapping\s+up|future\s+outlook|challenges\s+and\s+(?:legacy|opportunities))\b'
+# One phrase group, three heading forms: ATX (also quoted or indented), setext, and a line that is
+# wholly bold. A bold label followed by text, such as **The bottom line:** ship it, is left to Summary.
+- '(?im)^(?:>[ \t]*)*[ ]{0,3}#{1,6}[ \t]+(?:key\s+takeaways?|the\s+bottom\s+line|why\s+(?:this|it)\s+matters|what\s+you[''’]ll\s+learn|wrapping\s+up|future\s+outlook|challenges\s+and\s+(?:legacy|opportunities))\b'
+- '(?im)^(?:>[ \t]*)*(?:key\s+takeaways?|the\s+bottom\s+line|why\s+(?:this|it)\s+matters|what\s+you[''’]ll\s+learn|wrapping\s+up|future\s+outlook|challenges\s+and\s+(?:legacy|opportunities))\b[^\n]*\n(?:>[ \t]*)*(?:=+|-+)[ \t]*$'
+- '(?im)^(?:>[ \t]*)*(?:\*\*|__)(?:key\s+takeaways?|the\s+bottom\s+line|why\s+(?:this|it)\s+matters|what\s+you[''’]ll\s+learn|wrapping\s+up|future\s+outlook|challenges\s+and\s+(?:legacy|opportunities))[:.]?(?:\*\*|__)[ \t]*$'
 tests:
 - name: flags a level-one stock heading
   input: '# Key takeaways'
@@ -27,6 +31,21 @@ tests:
 - name: the phrase in body text is not a heading
   input: The bottom line of the table shows totals.
   want: ''
-- name: a bold pseudo-heading is a documented blind spot
+- name: flags a bold pseudo-heading
   input: '**Key takeaways**'
+  contains: Register.FormulaicHeading
+- name: flags a quoted heading
+  input: '> ## Key takeaways'
+  contains: Register.FormulaicHeading
+- name: flags a setext heading
+  input: "Key takeaways\n-------------"
+  contains: Register.FormulaicHeading
+- name: a bold label followed by text is not a heading
+  input: '**The bottom line:** ship it.'
   want: ''
+- name: a bold phrase mid-paragraph is not a heading
+  input: The section ends with **key takeaways** for each team.
+  want: ''
+- name: a heading in a fenced example is a documented blind spot
+  input: "```md\n## Key takeaways\n```"
+  contains: Register.FormulaicHeading

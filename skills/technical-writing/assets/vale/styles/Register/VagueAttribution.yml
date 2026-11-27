@@ -10,6 +10,7 @@ tokens:
 - many\s+(?:developers|engineers|experts|people|teams|users)\s+(?:believe|agree|say|feel|argue)
 - it\s+is\s+(?:widely|generally|commonly)\s+(?:believed|accepted|agreed|known)
 - industry\s+reports
+- (?:is|are|was|were)\s+widely\s+(?:regarded|considered|seen)\s+as
 tests:
 - name: flags an unnamed authority
   input: Experts agree that monorepos scale.
@@ -19,6 +20,9 @@ tests:
   contains: Register.VagueAttribution
 - name: a nearby citation is a documented blind spot
   input: Studies show a 4% gain (Smith 2021).
+  contains: Register.VagueAttribution
+- name: flags a reputation claim
+  input: Postgres is widely regarded as the safe default.
   contains: Register.VagueAttribution
 - name: a named source is fine
   input: The 2021 Smith study measured a 4% gain.
