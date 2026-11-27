@@ -43,7 +43,7 @@ A paragraph break is a claim: the blank line tells the reader one unit of though
 - Prefer active voice. Use passive voice only when the actor is unknown or irrelevant, or the outcome is the point.
 - Replace "it", "this" or "these" with the noun when the previous sentence offers more than one candidate. Keep "that" after verbs such as "show", "ensure" and "recommend".
 - Keep technical terms to three words or fewer. Restructure a longer one with "of", "for" or "on". Spell out a long official name on first use, then use one short form.
-- Prefer short, literal words. Avoid idioms and figurative phrasal verbs ("roll out", "spin up") when a direct verb ("release", "start") fits.
+- Prefer short, literal words. Avoid idioms and figurative phrasal verbs ("roll out", "spin up") when a direct verb ("release", "start") fits. Avoid figures that stand in for a statement, such as "load-bearing" for "necessary" or "earns its keep" for "is worth keeping". Use a figure only when it explains what the literal phrase cannot, and only once: a figure repeated through a section stands in for the explanation.
 - Use one term for one concept. Do not vary technical nouns for style.
 - Introduce an acronym on first use unless the audience already treats it as a standard term.
 - Replace unsupported adjectives such as "robust", "seamless", "scalable" or "simple" with the mechanism or consequence the source gives. If it gives none, cut the adjective.
@@ -64,6 +64,7 @@ These rules apply only where readers scan and compare: headings, list items, tab
 - Numbered lists for steps that must happen in order.
 - Tables only when readers compare stable fields across items.
 - No deep nesting or decorative callouts.
+- Bold a list item's opening words only when they are the term the item defines or what a reader scans for. Bold for one thing a scanning reader must not miss, not for emphasis throughout.
 
 ## Priority
 
@@ -76,4 +77,17 @@ When these rules conflict:
 
 ## Remove
 
-Throat-clearing, sales language, rhetorical questions, decorative emphasis, forced groups of three, artificial conclusions, and transitions that assert a relationship the text has not established. Also remove reports of checks that found nothing and need no action from the reader. Also remove a clause the reader could infer from the one before, such as "…, and nobody restarts them manually" after "failed workers restart automatically". Keep a clause that adds a fact or limits scope, such as a removed flag, and a subject or condition repeated after a split. Keep drawbacks, dissent, exceptions and open questions visible: they are not noise.
+Do not polish a sentence that should not exist: cut it.
+
+Throat-clearing, sales language, rhetorical questions, decorative emphasis, sincerity markers ("honestly", "to be clear"), forced groups of three, artificial conclusions, and transitions that assert a relationship the text has not established. A closing moral or slogan ("boring wins") goes too: state the judgement as a claim about this case ("we chose Postgres because we already run it"). Also remove reports of checks that found nothing and need no action from the reader. Also remove a clause the reader could infer from the one before, such as "…, and nobody restarts them manually" after "failed workers restart automatically". Keep a clause that adds a fact or limits scope, such as a removed flag, and a subject or condition repeated after a split. Keep drawbacks, dissent, exceptions and open questions visible: they are not noise.
+
+Also remove a sentence that answers a question the reader would not have asked. The same goes for a sentence that rules out a failure instead of describing behaviour, such as "this does not delete existing files" when nothing suggested it would. It plants the worry it denies. Keep it when the reader could reasonably expect the failure: a changed default, a removed option, or behaviour the old version had. Name the old state as the sentence rule on replaced state describes.
+
+## Check the repair
+
+Splitting and cutting fail in their own ways. After repairs, reread each changed passage and undo any cut that lost information or a connection:
+
+- Every sentence is complete. Do not compress into fragments, slogans, abbreviations or arrow chains to meet a length limit: cut a whole clause that carries nothing instead.
+- The connectives the reasoning needs survive: "because", "so", "but", "unless".
+- No pattern was traded for another, such as "load-bearing" for "critical". Write the literal statement.
+- Sentences and paragraphs did not become uniform. Length still follows the thought.

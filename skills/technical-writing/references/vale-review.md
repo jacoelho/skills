@@ -6,7 +6,7 @@ Vale checks mechanics after substantive repairs. It cannot judge organisation, p
 
 Use an existing project configuration when there is one, and pass it explicitly. Do not change its files or replace it with the bundled profile. Run `vale sync` only if its declared packages need it.
 
-Otherwise use the bundled profile. It checks British spelling, repetition, plain-language phrases and unsupported quality words. It flags dense prose: long sentences and paragraphs, a high sentence average, semicolons and bare "This" subjects. It also flags vague requirements, production residue and phrasing typical of generated text (`Register`, suggestions only). If the user or project uses another English variant, pass `--config` with a suitable profile, or disregard `Technical.Spelling` findings for that document.
+Otherwise use the bundled profile. It checks British spelling, repetition, plain-language phrases and unsupported quality words. It flags dense prose: long sentences and paragraphs, a high sentence average, semicolons and bare "This" subjects. It also flags vague requirements, production residue and phrasing typical of generated text (`Register`, suggestions only), including mannered figures, sincerity markers and bold labels on list items. If the user or project uses another English variant, pass `--config` with a suitable profile, or disregard `Technical.Spelling` findings for that document.
 
 ## Run
 
@@ -42,7 +42,9 @@ Accept a finding only when it identifies a defect in this text.
 - Keep deliberate repetition, precise terms and useful qualifications.
 - Never change meaning, certainty, normative words such as `must` or `should`, quotations or exact identifiers to clear an alert.
 - Never invent a target or mechanism to clear `Requirements.VagueRequirement` or `Clarity.UnsupportedQuality`. Report the gap or cut the adjective.
-- Treat a `Register` finding as a cue, not proof. Rewrite only when a plainer statement of the same fact exists. Never swap in a synonym to clear the alert. Several in one paragraph point to a section that needs redrafting from the facts.
+- Treat a `Register` finding as a cue, not proof. Rewrite only when a plainer statement of the same fact exists. Never swap in a synonym to clear the alert, and never trade one generated pattern for another: "load-bearing" for "critical", "it's not X, it's Y" for "X, not Y". Several in one paragraph point to a section that needs redrafting from the facts.
+- Treat a `Register.InlineHeader` alert as a fix only when the bold label restates the sentence after it. Keep the label when the item defines that term or readers scan the list for it.
+- After accepting splits and cuts, apply the repair check in [organisation rules](organisation.md): an alert is not cleared by a fragment.
 - Use code spans for real identifiers, never to hide findings.
 - Add a term to a project vocabulary only when it is correct and the project owns that vocabulary.
 

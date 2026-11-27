@@ -1,0 +1,46 @@
+extends: existence
+message: "'%s' is a figure standing in for a literal statement. Say what it stands for, or cut it."
+level: suggestion
+scope: sentence & ~heading
+ignorecase: true
+# Only figures with no literal sense in software prose. 'surface', 'signal', 'seam' and 'latent'
+# are left alone: each is a literal technical term somewhere.
+tokens:
+- load[\s-]+bearing
+- earn(?:s|ed|ing)?\s+(?:its|their|his|her|my|our|your)\s+keep
+- heavy\s+lifting
+- scar\s+tissue
+- the\s+shape\s+of\s+the\s+(?:problem|solution|change|fix)
+- an?\s+(?:dial|knob|lever)\s+worth\s+(?:turning|pulling)
+- worth\s+stating\s+plainly
+tests:
+- name: flags a mannered adjective
+  input: The cache is the load-bearing piece here.
+  contains: Register.Mannered
+- name: flags an unhyphenated form across a line break
+  input: "The test is load\nbearing."
+  contains: Register.Mannered
+- name: flags an inflected idiom
+  input: The wrapper earned its keep.
+  contains: Register.Mannered
+- name: flags heavy lifting
+  input: The parser does the heavy lifting.
+  contains: Register.Mannered
+- name: flags the shape of the problem
+  input: First, understand the shape of the problem.
+  contains: Register.Mannered
+- name: a literal surface verb is technical prose
+  input: The handler surfaces the error to the caller.
+  want: ''
+- name: a test seam is a technical term
+  input: Add a seam so the clock can be faked.
+  want: ''
+- name: ignores headings
+  input: '# Load-bearing walls'
+  want: ''
+- name: ignores inline code
+  input: The flag is `load-bearing`.
+  want: ''
+- name: ignores fenced code
+  input: "```text\nheavy lifting\n```"
+  want: ''

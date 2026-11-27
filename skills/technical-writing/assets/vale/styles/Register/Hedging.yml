@@ -10,6 +10,9 @@ tokens:
 - (?:needless\s+to\s+say|it\s+goes\s+without\s+saying)
 - (?:may|might|could)\s+(?:potentially|possibly|perhaps)
 - it\s+could\s+be\s+argued\s+that
+- to\s+be\s+fair(?=,)
+- the\s+truth\s+(?:probably\s+|likely\s+)?lies\s+somewhere\s+in\s+(?:between|the\s+middle)
+- both\s+(?:approaches|options|sides)\s+have\s+(?:their\s+)?merits?
 - based\s+on\s+(?:the\s+)?available\s+information
 - (?:is|are)\s+not\s+widely\s+(?:documented|disclosed)
 - while\s+specific\s+details\s+are\s+(?:limited|scarce)
@@ -29,6 +32,18 @@ tests:
 - name: flags the uncontracted worth-noting form
   input: It is worth noting that the cache is local.
   contains: Register.Hedging
+- name: flags a performed balance
+  input: To be fair, the cache helps.
+  contains: Register.Hedging
+- name: flags a both-have-merit hedge
+  input: Both approaches have merit.
+  contains: Register.Hedging
+- name: flags a split-the-difference hedge
+  input: The truth probably lies somewhere in between.
+  contains: Register.Hedging
+- name: a fair scheduler is literal
+  input: The scheduler is fair to both queues.
+  want: ''
 - name: limited availability is a plain fact
   input: IPv6 is not widely available on our hosts.
   want: ''

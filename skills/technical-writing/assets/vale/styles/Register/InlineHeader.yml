@@ -1,0 +1,38 @@
+extends: existence
+message: "List item opens with bold text '%s'. Keep it when it is the term the item defines or what a reader scans for; otherwise drop the bold and let the sentence stand."
+level: suggestion
+# raw: the list scope strips the ** markup. Consequence: fenced Markdown examples are flagged too,
+# a documented blind spot shared with Workflow.GeneratedMarkup.
+# A bold item with nothing after it is a short list entry, not a label, and is left alone.
+scope: raw
+nonword: true
+tokens:
+- '(?m)^[ \t]*(?:[-*+]|\d+[.)])[ \t]+(?:\*\*[^*\n]+\*\*|__[^_\n]+__)(?=[:.]?[ \t]*[^\s*_])'
+tests:
+- name: flags a label with the colon inside the bold
+  input: '- **Speed:** the cache halves reads.'
+  contains: Register.InlineHeader
+- name: flags a label with the colon outside the bold
+  input: '- **Speed**: the cache halves reads.'
+  contains: Register.InlineHeader
+- name: flags a bold lead sentence
+  input: '- **Keep the claim.** Observations stay observations.'
+  contains: Register.InlineHeader
+- name: flags a numbered item
+  input: '1. **Draft** from notes.'
+  contains: Register.InlineHeader
+- name: flags underscore bold
+  input: '* __Speed:__ the cache halves reads.'
+  contains: Register.InlineHeader
+- name: a bold item on its own is a list entry
+  input: '- **Required**'
+  want: ''
+- name: bold mid-item is emphasis, not a label
+  input: '- Stop the service **before** deleting the volume.'
+  want: ''
+- name: a bold paragraph outside a list is not an item
+  input: '**Speed:** the cache halves reads.'
+  want: ''
+- name: fenced examples are a documented blind spot
+  input: "```md\n- **Speed:** example\n```"
+  contains: Register.InlineHeader

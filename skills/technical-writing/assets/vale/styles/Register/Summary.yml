@@ -8,6 +8,7 @@ nonword: true
 tokens:
 - '^(?:in\s+conclusion|in\s+summary|to\s+sum\s+up|to\s+summari[sz]e|all\s+in\s+all),'
 - '^despite\s+(?:these|its|the)\s+challenges\b'
+- '^(?:in\s+short|(?:the\s+)?bottom\s+line)[,:]'
 tests:
 - name: flags a summing opener
   input: In conclusion, the cache helps.
@@ -18,6 +19,15 @@ tests:
 - name: flags a challenges formula
   input: Despite these challenges, the project thrives.
   contains: Register.Summary
+- name: flags in short
+  input: In short, the cache helps.
+  contains: Register.Summary
+- name: flags a bottom-line opener
+  input: 'Bottom line: ship it.'
+  contains: Register.Summary
+- name: a literal bottom line is fine
+  input: The bottom line of the table shows totals.
+  want: ''
 - name: mid-sentence use is not an opener
   input: Results appear in summary, then in detail.
   want: ''

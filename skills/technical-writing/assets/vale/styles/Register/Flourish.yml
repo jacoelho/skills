@@ -1,14 +1,21 @@
 extends: existence
 message: "'%s' is a rhetorical flourish. Give the fact it introduces."
 level: suggestion
-scope: sentence & ~heading
+scope: sentence & ~heading & ~table
 ignorecase: true
 nonword: true
 tokens:
 - '\band\s+that[''’]s\s+the\s+(?:beauty|magic|point)\b'
 - '\bhere[''’]s\s+the\s+(?:thing|kicker|catch|twist)\b'
-- '\bthe\s+(?:answer|result|truth|best\s+part|catch)\?'
+- '\bthe\s+(?:answer|result|truth|best\s+part|catch|fix|problem|upshot|takeaway|kicker)\?'
 - '\bspoiler(?:\s+alert)?:'
+- '\bplot\s+twist:'
+- '\bwhat\s+most\s+(?:people|teams|developers|engineers)\s+(?:miss|get\s+wrong|don[''’]t\s+realise|don[''’]t\s+realize)\b'
+- '\bthe\s+part\s+(?:nobody|no\s+one)\s+talks\s+about\b'
+- '\blet\s+that\s+sink\s+in\b'
+- '^why\?$'
+# A whole sentence only: 'full stop' is the British name of the punctuation mark.
+- '^full\s+stop\.?$'
 tests:
 - name: flags a reveal
   input: And that's the beauty of it.
@@ -19,6 +26,31 @@ tests:
 - name: flags a staged question
   input: The result? A faster build.
   contains: Register.Flourish
+- name: flags a staged why
+  input: Why? Cost.
+  contains: Register.Flourish
+- name: flags a full-stop closer
+  input: It ships on Fridays. Full stop.
+  contains: Register.Flourish
+- name: flags an exclusivity reveal
+  input: Here is what most people miss about retries.
+  contains: Register.Flourish
+- name: flags plot twist
+  input: 'Plot twist: the cache was cold.'
+  contains: Register.Flourish
+- name: the punctuation mark is literal
+  input: End each sentence with a full stop.
+  want: ''
+- name: a full why question is fine
+  input: Why does the job retry twice?
+  want: ''
+- name: a table header question is a label
+  input: '| Rule | Why? |
+
+    | --- | --- |
+
+    | a | b |'
+  want: ''
 - name: a real question is fine
   input: What is the result when the queue is full?
   want: ''
